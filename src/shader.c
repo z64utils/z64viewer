@@ -11,13 +11,11 @@
  * private
  *
  */
-struct Shader
-{
+struct Shader {
 	GLuint id;
 };
 
-void cleanup(Shader *s)
-{
+void cleanup(Shader* s) {
 	if (!s)
 		return;
 	
@@ -25,25 +23,19 @@ void cleanup(Shader *s)
 		glDeleteProgram(s->id);
 }
 
-static void assertOpenGlCompilation(GLuint id, const char *type)
-{
+static void assertOpenGlCompilation(GLuint id, const char* type) {
 	GLint success;
 	GLchar log[1024];
 	
-	if (!strcmp(type, "PROGRAM"))
-	{
+	if (!strcmp(type, "PROGRAM")) {
 		glGetProgramiv(id, GL_LINK_STATUS, &success);
-		if (!success)
-		{
+		if (!success) {
 			glGetProgramInfoLog(id, sizeof(log) / sizeof(log[0]), 0, log);
 			fprintf(stderr, "program linker error:\n%s\n", log);
 		}
-	}
-	else
-	{
+	} else {
 		glGetShaderiv(id, GL_COMPILE_STATUS, &success);
-		if (!success)
-		{
+		if (!success) {
 			glGetShaderInfoLog(id, sizeof(log) / sizeof(log[0]), 0, log);
 			fprintf(stderr, "shader '%s' compiler error:\n%s\n", type, log);
 		}
@@ -56,8 +48,7 @@ static void assertOpenGlCompilation(GLuint id, const char *type)
  *
  */
 
-void Shader_update(Shader *s, const char *vs, const char *fs)
-{
+void Shader_update(Shader* s, const char* vs, const char* fs) {
 	GLuint v;
 	GLuint f;
 	
@@ -90,17 +81,15 @@ void Shader_update(Shader *s, const char *vs, const char *fs)
 	glDeleteShader(f);
 }
 
-void Shader_use(Shader *s)
-{
+void Shader_use(Shader* s) {
 	if (!s)
 		return;
 	
 	glUseProgram(s->id);
 }
 
-Shader *Shader_new(void)
-{
-	Shader *s = calloc(1, sizeof(*s));
+Shader* Shader_new(void) {
+	Shader* s = calloc(1, sizeof(*s));
 	
 	if (!s)
 		return 0;
@@ -108,8 +97,7 @@ Shader *Shader_new(void)
 	return s;
 }
 
-void Shader_delete(Shader *s)
-{
+void Shader_delete(Shader* s) {
 	if (!s)
 		return;
 	
@@ -118,23 +106,18 @@ void Shader_delete(Shader *s)
 	free(s);
 }
 
-void Shader_setInt(Shader *s, const char *name, int i)
-{
+void Shader_setInt(Shader* s, const char* name, int i) {
 	glUniform1i(glGetUniformLocation(s->id, name), i);
 }
 
-void Shader_setVec2(Shader *s, const char *name, float v0, float v1)
-{
+void Shader_setVec2(Shader* s, const char* name, float v0, float v1) {
 	glUniform2f(glGetUniformLocation(s->id, name), v0, v1);
 }
 
-void Shader_setVec3(Shader *s, const char *name, float v0, float v1, float v2)
-{
+void Shader_setVec3(Shader* s, const char* name, float v0, float v1, float v2) {
 	glUniform3f(glGetUniformLocation(s->id, name), v0, v1, v2);
 }
 
-void Shader_setMat4(Shader *s, const char *name, const void *m)
-{
+void Shader_setMat4(Shader* s, const char* name, const void* m) {
 	glUniformMatrix4fv(glGetUniformLocation(s->id, name), 1, GL_FALSE, m);
 }
-

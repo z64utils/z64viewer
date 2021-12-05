@@ -3,4 +3,6 @@ bin/
 *.zmap
 *.zroom
 *.zobj
-
+__include/**
+*.txt
+*.exe
