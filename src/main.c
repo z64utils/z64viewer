@@ -1,11 +1,12 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <stb_image.h>
 #include <flythrough_camera.h>
 #include <zroom.h>
 #include <n64.h>
 #include <bigendian.h>
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
 #include <stdbool.h>
