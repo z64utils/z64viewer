@@ -1,0 +1,6 @@
+bin/
+*.zscene
+*.zmap
+*.zroom
+*.zobj
+
