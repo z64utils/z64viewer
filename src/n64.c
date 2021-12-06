@@ -935,12 +935,12 @@ static void gbiFunc_setcombine(void* cmd) {
 
 static void gbiFunc_geometrymode(void* cmd) {
 	uint8_t* b = cmd;
-	uint32_t clearbits = u32r(b) & 0xffffff;
+	uint32_t clearbits = ~(u32r(b) & 0xffffff);
 	uint32_t setbits = u32r(b + 4);
 	
-	gMatState.geometrymode = (gMatState.geometrymode & ~clearbits) | setbits;
+	gMatState.geometrymode = (gMatState.geometrymode & clearbits) | setbits;
 	
-	/* FIXME some fences in Kokiri Forest use vertex colors when they shouldn't */
+	/* vertex colors */
 	if (clearbits & G_LIGHTING)
 		gVertexColors = 1;
 	if (setbits & G_LIGHTING)
