@@ -1050,6 +1050,39 @@ void* n64_virt2phys(unsigned int segaddr) {
 	return b + (segaddr & 0xffffff);
 }
 
+uint32_t n64_phys2virt(void *cmd)
+{
+	uint8_t *b = cmd;
+	uint32_t dist = -1;
+	int smallest = -1;
+	int i;
+	
+	if (!b)
+		return 0;
+	
+	for (i = 0; i < SEGMENT_MAX; ++i)
+	{
+		uint8_t *this = gSegment[i];
+		
+		if (!this)
+			continue;
+		
+		if (b < this)
+			continue;
+		
+		if (b - this < dist)
+		{
+			smallest = i;
+			dist = b - this;
+		}
+	}
+	
+	if (smallest >= 0)
+		return (smallest << 24) | dist;
+	
+	return 0;
+}
+
 void n64_draw(void* dlist) {
 	uint8_t* cmd;
 	
