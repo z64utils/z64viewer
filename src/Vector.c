@@ -172,7 +172,6 @@ void Vec_AddVecSphToVec3f(Vec3f* dest, VecSph* sph) {
 }
 
 f32 Math_SmoothStepToF(f32* pValue, f32 target, f32 fraction, f32 step, f32 minStep) {
-	target = target * gDeltaTime;
 	step = step * gDeltaTime;
 	minStep = minStep * gDeltaTime;
 	
@@ -212,7 +211,6 @@ f32 Math_SmoothStepToF(f32* pValue, f32 target, f32 fraction, f32 step, f32 minS
 }
 
 s16 Math_SmoothStepToS(s16* pValue, s16 target, s16 scale, s16 step, s16 minStep) {
-	target = target * gDeltaTime;
 	step = step * gDeltaTime;
 	minStep = minStep * gDeltaTime;
 	s16 stepSize = 0;
