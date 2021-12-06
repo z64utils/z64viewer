@@ -1,3 +1,4 @@
+#ifdef Z64VIEWER_WANT_MAIN
 #include <z64viewer.h>
 
 typedef struct drawParams
@@ -38,4 +39,5 @@ int main(void)
 	
 	z64viewer_terminate();
 }
+#endif
 
