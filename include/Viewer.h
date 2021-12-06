@@ -10,8 +10,9 @@ typedef struct ViewerContext {
 	ObjectContext objCtx;
 } ViewerContext;
 
-void z64viewer_update(ViewerContext* viewerCtx);
-void z64viewer_init(ViewerContext* viewerCtx);
-void z64viewer_draw3Dviewport(ViewerContext* viewerCtx);
+void Viewer_Update(ViewerContext* viewerCtx);
+void Viewer_Init(ViewerContext* viewerCtx);
+void Viewer_Draw_3DViewport(ViewerContext* viewerCtx);
+void Viewer_Draw(ViewerContext* viewerCtx);
 
 #endif

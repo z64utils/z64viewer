@@ -7,10 +7,14 @@
 
 struct ViewerContext;
 
+typedef void (* CallDraw)(void*);
+
 typedef struct {
-	Vec2f winScale;
-	Vec2f viewportScale;
+	Vec2f       winScale;
+	Vec2f       viewportScale;
 	GLFWwindow* mainWindow;
+	void*       mainCtx;
+	CallDraw    drawCall;
 } AppInfo;
 
 extern f64 gDeltaTime;

@@ -1,4 +1,4 @@
-#include <z64viewer.h>
+#include <Viewer.h>
 
 static MtxF* gMatrixStack;
 static MtxF* gCurrentMatrix;

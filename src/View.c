@@ -157,4 +157,8 @@ void View_FramebufferCallback(GLFWwindow* window, s32 width, s32 height) {
 	glViewport(0, 0, width, height);
 	__appInfo->winScale.x = width;
 	__appInfo->winScale.y = height;
+	
+	if (__appInfo->drawCall && __appInfo->mainCtx) {
+		__appInfo->drawCall(__appInfo->mainCtx);
+	}
 }
