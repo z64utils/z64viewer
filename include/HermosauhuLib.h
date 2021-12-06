@@ -106,7 +106,7 @@ void String_GetPath(char* dst, char* src);
 void String_GetBasename(char* dst, char* src);
 void String_GetFilename(char* dst, char* src);
 
-PrintfSuppressLevel gPrintfSuppress;
+extern PrintfSuppressLevel gPrintfSuppress;
 
 #define PRNT_DGRY "\e[90;2m"
 #define PRNT_GRAY "\e[0;90m"

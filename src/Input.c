@@ -1,4 +1,4 @@
-#include <z64scene.h>
+#include <z64viewer.h>
 
 GlobalContext* pGlobalCtx;
 
