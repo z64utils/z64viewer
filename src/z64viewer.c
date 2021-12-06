@@ -128,6 +128,15 @@ void z64viewer_update(void)
 	glfwPollEvents();
 }
 
+void z64viewer_get_windowDimensions(int *w, int *h)
+{
+	assert(w);
+	assert(h);
+	
+	*w = globalCtx.app.winScale.x;
+	*h = globalCtx.app.winScale.y;
+}
+
 s32 z64viewer_init(const char *windowTitle) {
 	printf_SetPrefix("");
 	printf_SetSuppressLevel(PSL_DEBUG);

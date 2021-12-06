@@ -31,5 +31,6 @@ void z64viewer_room(void *zroom);
 void z64viewer_update(void);
 void z64viewer_draw(void drawFunc(void *udata), void *udata);
 s32 z64viewer_init(const char *windowTitle);
+void z64viewer_get_windowDimensions(int *w, int *h);
 
 #endif
