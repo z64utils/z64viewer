@@ -1050,7 +1050,7 @@ void* n64_virt2phys(unsigned int segaddr) {
 	return b + (segaddr & 0xffffff);
 }
 
-uint32_t n64_phys2virt(void *cmd)
+unsigned int n64_phys2virt(void *cmd)
 {
 	uint8_t *b = cmd;
 	uint32_t dist = -1;
