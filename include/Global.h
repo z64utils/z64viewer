@@ -11,7 +11,6 @@ typedef void (* CallDraw)(void*);
 
 typedef struct {
 	Vec2f       winScale;
-	Vec2f       viewportScale;
 	GLFWwindow* mainWindow;
 	void*       mainCtx;
 	CallDraw    drawCall;

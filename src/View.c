@@ -136,7 +136,7 @@ void View_Update(ViewContext* viewCtx, InputContext* inputCtx, Vec2f* winDim) {
 		50,
 		winDim->x / winDim->y,
 		0.1,
-		500,
+		5000,
 		0.01f
 	);
 	
