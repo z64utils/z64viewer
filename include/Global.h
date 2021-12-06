@@ -10,10 +10,18 @@ struct ViewerContext;
 typedef void (* CallDraw)(void*);
 
 typedef struct {
-	Vec2f       winScale;
+	PosDim view3D;
+	PosDim sidePanel;
+} SubScreens;
+
+typedef struct {
+	SubScreens  subscreen;
 	GLFWwindow* mainWindow;
-	void*       mainCtx;
 	CallDraw    drawCall;
+	void* mainCtx;
+	Vec2f winDim;
+	Vec2f prevWinDim;
+	bool  isCallback;
 } AppInfo;
 
 extern f64 gDeltaTime;

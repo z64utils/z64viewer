@@ -140,6 +140,7 @@ typedef struct {
 	Vec2i pos;
 	Vec2i prevPos;
 	Vec2i vel;
+	Vec2i jumpVelComp;
 	f64   scrollY;
 	InputType clickL;
 	InputType clickR;

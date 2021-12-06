@@ -33,9 +33,12 @@ void Input_Update(InputContext* input, AppInfo* app) {
 	Vec2i* mVel = &input->mouse.vel;
 	Vec2i* mPrev = &input->mouse.prevPos;
 	
-	mVel->x = mPos->x - mPrev->x;
-	mVel->y = mPos->y - mPrev->y;
+	mVel->x = mPos->x - mPrev->x + input->mouse.jumpVelComp.x;
+	mVel->y = mPos->y - mPrev->y + input->mouse.jumpVelComp.y;
 	*mPrev = *mPos;
+	
+	input->mouse.jumpVelComp.x = 0;
+	input->mouse.jumpVelComp.y = 0;
 }
 
 void Input_KeyCallback(GLFWwindow* window, s32 key, s32 scancode, s32 action, s32 mods) {

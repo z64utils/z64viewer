@@ -3,7 +3,7 @@
 void Viewer_Update(ViewerContext* viewerCtx) {
 	// input
 	Input_Update(&viewerCtx->inputCtx, &viewerCtx->appInfo);
-	View_Update(&viewerCtx->viewCtx, &viewerCtx->inputCtx, &viewerCtx->appInfo.winScale);
+	View_Update(&viewerCtx->viewCtx, &viewerCtx->inputCtx, &viewerCtx->appInfo.winDim);
 	
 	Input_End(&viewerCtx->inputCtx);
 	glfwPollEvents();
@@ -17,8 +17,8 @@ void Viewer_Init(ViewerContext* viewerCtx) {
 	
 	viewerCtx->appInfo.mainCtx = viewerCtx;
 	viewerCtx->appInfo.drawCall = (CallDraw)Viewer_Draw;
-	viewerCtx->appInfo.winScale.x = 1400;
-	viewerCtx->appInfo.winScale.y = 700;
+	viewerCtx->appInfo.winDim.x = 1400;
+	viewerCtx->appInfo.winDim.y = 700;
 	
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -30,8 +30,8 @@ void Viewer_Init(ViewerContext* viewerCtx) {
 	#endif
 	
 	viewerCtx->appInfo.mainWindow = glfwCreateWindow(
-		viewerCtx->appInfo.winScale.x,
-		viewerCtx->appInfo.winScale.y,
+		viewerCtx->appInfo.winDim.x,
+		viewerCtx->appInfo.winDim.y,
 		"z64viewer",
 		NULL,
 		NULL
@@ -55,6 +55,8 @@ void Viewer_Init(ViewerContext* viewerCtx) {
 	View_Init(&viewerCtx->viewCtx, &viewerCtx->inputCtx, &viewerCtx->appInfo);
 	Input_SetInputPointer(&viewerCtx->inputCtx);
 	glfwSetTime(2);
+	
+	viewerCtx->viewCtx.cameraControl = true;
 }
 
 void Viewer_Draw_3DViewport(ViewerContext* viewerCtx) {
@@ -76,8 +78,11 @@ void Viewer_Draw(ViewerContext* viewerCtx) {
 	LightContext* lightCtx = &viewerCtx->lightCtx;
 	ViewContext* viewCtx = &viewerCtx->viewCtx;
 	
+	appInfo->subscreen.view3D.dim.x = appInfo->winDim.x;
+	appInfo->subscreen.view3D.dim.y = appInfo->winDim.y;
+	
 	Input_Update(inputCtx, appInfo);
-	View_Update(viewCtx, inputCtx, &appInfo->winScale);
+	View_Update(viewCtx, inputCtx, &appInfo->winDim);
 	Input_End(inputCtx);
 	
 	glClearColor(

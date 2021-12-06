@@ -134,14 +134,16 @@ void View_Update(ViewContext* viewCtx, InputContext* inputCtx, Vec2f* winDim) {
 	Matrix_Projection(
 		&sMtxProj,
 		50,
-		winDim->x / winDim->y,
+		__appInfo->subscreen.view3D.dim.x / __appInfo->subscreen.view3D.dim.y,
 		0.1,
 		5000,
 		0.01f
 	);
 	
-	View_Camera_OrbitMode(viewCtx, inputCtx);
-	View_Camera_FlyMode(viewCtx, inputCtx);
+	if (viewCtx->cameraControl) {
+		View_Camera_OrbitMode(viewCtx, inputCtx);
+		View_Camera_FlyMode(viewCtx, inputCtx);
+	}
 	yaw = Vec_Yaw(&cam->eye, &cam->at);
 	pitch = Vec_Pitch(&cam->eye, &cam->at);
 	Matrix_LookAt(&sMtxView, cam->eye, cam->at, cam->roll);
@@ -155,8 +157,11 @@ void View_FramebufferCallback(GLFWwindow* window, s32 width, s32 height) {
 	// make sure the viewport matches the new window dimensions; note that width and
 	// height will be significantly larger than specified on retina displays.
 	glViewport(0, 0, width, height);
-	__appInfo->winScale.x = width;
-	__appInfo->winScale.y = height;
+	__appInfo->prevWinDim.x = __appInfo->winDim.x;
+	__appInfo->prevWinDim.y = __appInfo->winDim.y;
+	__appInfo->winDim.x = width;
+	__appInfo->winDim.y = height;
+	__appInfo->isCallback = true;
 	
 	if (__appInfo->drawCall && __appInfo->mainCtx) {
 		__appInfo->drawCall(__appInfo->mainCtx);

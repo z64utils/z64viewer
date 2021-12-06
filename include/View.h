@@ -27,6 +27,7 @@ typedef struct {
 	CamSettings settings;
 	Camera* currentCamera;
 	Camera  camera[4];
+	bool    cameraControl;
 } ViewContext;
 
 void View_Init(ViewContext* view, InputContext* input, AppInfo* appInfo);

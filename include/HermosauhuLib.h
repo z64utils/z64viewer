@@ -127,7 +127,7 @@ extern PrintfSuppressLevel gPrintfSuppress;
 #define ABS_MAX(a, b)        (ABS(a) > ABS(b) ? (a) : (b))
 #define ABS_MIN(a, b)        (ABS(a) < ABS(b) ? (a) : (b))
 #define ARRAY_COUNT(arr)     (s32)(sizeof(arr) / sizeof(arr[0]))
-#define ABS(val)             (val < 0 ? -val : val)
+#define ABS(val)             ((val) < 0 ? -(val) : (val))
 #define CLAMP(val, min, max) ((val) < min ? min : (val) > max ? max : (val))
 #define CLAMP_MIN(val, min)  ((val) < min ? min : (val))
 #define CLAMP_MAX(val, max)  ((val) > max ? max : (val))
