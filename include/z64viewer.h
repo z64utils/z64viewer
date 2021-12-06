@@ -12,6 +12,6 @@ typedef struct ViewerContext {
 
 void z64viewer_update(ViewerContext* viewerCtx);
 void z64viewer_init(ViewerContext* viewerCtx);
-void z64viewer_draw3Dviewport(ViewerContext* z64Ctx);
+void z64viewer_draw3Dviewport(ViewerContext* viewerCtx);
 
 #endif

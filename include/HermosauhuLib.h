@@ -131,6 +131,7 @@ extern PrintfSuppressLevel gPrintfSuppress;
 #define CLAMP(val, min, max) ((val) < min ? min : (val) > max ? max : (val))
 #define CLAMP_MIN(val, min)  ((val) < min ? min : (val))
 #define CLAMP_MAX(val, max)  ((val) > max ? max : (val))
+#define ArrayCount(arr)      (u32)(sizeof(arr) / sizeof(arr[0]))
 
 #define String_Copy(dst, src)   strcpy(dst, src)
 #define String_Merge(dst, src)  strcat(dst, src)
