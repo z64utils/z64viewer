@@ -1,14 +1,12 @@
-#include <z64viewer.h>
+#include <_global.h>
 
-GlobalContext* pGlobalCtx;
+InputContext* __pInput;
 
-void Input_Init(GlobalContext* globalCtx) {
-	pGlobalCtx = globalCtx;
+void Input_SetInputPointer(InputContext* input) {
+	__pInput = input;
 }
 
-void Input_Update(GlobalContext* globalCtx) {
-	Input* input = &globalCtx->input;
-	
+void Input_Update(InputContext* input, AppInfo* app) {
 	{
 		static double last = 0;
 		double cur = glfwGetTime();
@@ -28,8 +26,8 @@ void Input_Update(GlobalContext* globalCtx) {
 	input->mouse.clickMid.press = (input->mouse.clickMid.prev == 0 && input->mouse.clickMid.hold);
 	input->mouse.clickMid.prev = input->mouse.clickMid.hold;
 	
-	if (glfwGetKey(globalCtx->app.mainWindow, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-		glfwSetWindowShouldClose(globalCtx->app.mainWindow, true);
+	if (glfwGetKey(app->mainWindow, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+		glfwSetWindowShouldClose(app->mainWindow, true);
 	
 	Vec2i* mPos = &input->mouse.pos;
 	Vec2i* mVel = &input->mouse.vel;
@@ -41,7 +39,7 @@ void Input_Update(GlobalContext* globalCtx) {
 }
 
 void Input_KeyCallback(GLFWwindow* window, s32 key, s32 scancode, s32 action, s32 mods) {
-	Input* input = &pGlobalCtx->input;
+	InputContext* input = __pInput;
 	int hold = action != GLFW_RELEASE;
 	s32 pressed = action == GLFW_RELEASE;
 	
@@ -49,14 +47,14 @@ void Input_KeyCallback(GLFWwindow* window, s32 key, s32 scancode, s32 action, s3
 }
 
 void Input_CursorCallback(GLFWwindow* window, f64 xpos, f64 ypos) {
-	Input* input = &pGlobalCtx->input;
+	InputContext* input = __pInput;
 	
 	input->mouse.pos.x = xpos;
 	input->mouse.pos.y = ypos;
 }
 
 void Input_MouseClickCallback(GLFWwindow* window, s32 button, s32 action, s32 mods) {
-	Input* input = &pGlobalCtx->input;
+	InputContext* input = __pInput;
 	s32 pressed = action != GLFW_RELEASE;
 	s32 hold = action == GLFW_PRESS;
 	
@@ -74,9 +72,9 @@ void Input_MouseClickCallback(GLFWwindow* window, s32 button, s32 action, s32 mo
 }
 
 void Input_ScrollCallback(GLFWwindow* window, f64 x, f64 y) {
-	pGlobalCtx->input.mouse.scrollY = y;
+	__pInput->mouse.scrollY = y;
 }
 
-void Input_End(GlobalContext* globalCtx) {
-	globalCtx->input.mouse.scrollY = 0;
+void Input_End(InputContext* input) {
+	input->mouse.scrollY = 0;
 }

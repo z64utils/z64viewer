@@ -149,15 +149,15 @@ typedef struct {
 typedef struct {
 	MouseInput mouse;
 	InputType  key[KEY_MAX];
-	f32 deltaTimeSec;
-} Input;
+} InputContext;
 
 void Input_KeyCallback(GLFWwindow* window, s32 key, s32 scancode, s32 action, s32 mods);
 void Input_CursorCallback(GLFWwindow* window, f64 xpos, f64 ypos);
 void Input_MouseClickCallback(GLFWwindow* window, s32 button, s32 action, s32 mods);
 void Input_ScrollCallback(GLFWwindow* window, f64 x, f64 y);
-void Input_Init(struct GlobalContext* globalCtx);
-void Input_Update(struct GlobalContext* globalCtx);
-void Input_End(struct GlobalContext* globalCtx);
+
+void Input_SetInputPointer(InputContext* input);
+void Input_Update(InputContext* input, AppInfo* app);
+void Input_End(InputContext* input);
 
 #endif

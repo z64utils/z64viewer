@@ -1,43 +1,37 @@
 #ifdef Z64VIEWER_WANT_MAIN
+
 #include <z64viewer.h>
 
-typedef struct drawParams
-{
-	MemFile zScene;
-	MemFile zRoom;
-} DrawParams;
+static ViewerContext* viewerCtx;
 
-static void draw(void *udata)
-{
-	DrawParams *params = udata;
+int main(void) {
+	viewerCtx = Lib_Malloc(0, sizeof(ViewerContext));
+	bzero(viewerCtx, sizeof(ViewerContext));
+	z64viewer_init(viewerCtx);
 	
-	z64viewer_scene(params->zScene.data);
-	z64viewer_room(params->zRoom.data);
-}
-
-int main(void)
-{
-	DrawParams params = {0};
-	// void* zobj = loadfile("object_link_boy.zobj", 0);
-	// void* gameplay_keep = loadfile("gameplay_keep.zobj", 0);
-	params.zScene = MemFile_Initialize();
-	params.zRoom = MemFile_Initialize();
-	
-	MemFile_LoadFile(&params.zScene, "scene.zscene");
-	MemFile_LoadFile(&params.zRoom, "room_0.zmap");
-	
-	if (z64viewer_init("z64viewer"))
-		return 0;
-	
-	// render loop
-	// -----------
-	while (!z64viewer_shouldWindowClose())
-	{
-		z64viewer_update();
-		z64viewer_draw(draw, &params);
+	while (!glfwWindowShouldClose(viewerCtx->appInfo.mainWindow)) {
+		AppInfo* appInfo = &viewerCtx->appInfo;
+		InputContext* inputCtx = &viewerCtx->inputCtx;
+		LightContext* lightCtx = &viewerCtx->lightCtx;
+		ViewContext* viewCtx = &viewerCtx->viewCtx;
+		
+		Input_Update(inputCtx, appInfo);
+		View_Update(viewCtx, inputCtx, &appInfo->winScale);
+		Input_End(inputCtx);
+		glfwPollEvents();
+		
+		glClearColor(
+			lightCtx->ambient.r,
+			lightCtx->ambient.g,
+			lightCtx->ambient.b,
+			1.0f
+		);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		z64viewer_draw3Dviewport(viewerCtx);
+		glfwSwapBuffers(appInfo->mainWindow);
 	}
 	
-	z64viewer_terminate();
+	glfwTerminate();
 }
-#endif
 
+#endif

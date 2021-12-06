@@ -4,6 +4,7 @@
 #include <HermosauhuLib.h>
 #include <Vector.h>
 #include <Matrix.h>
+#include <Input.h>
 
 typedef struct {
 	Vec3f eye;
@@ -26,9 +27,11 @@ typedef struct {
 	CamSettings settings;
 	Camera* currentCamera;
 	Camera  camera[4];
-} View;
+} ViewContext;
 
-void View_Init(struct GlobalContext* globalCtx);
-void View_Update(struct GlobalContext* globalCtx);
+void View_Init(ViewContext* view, InputContext* input, AppInfo* appInfo);
+void View_Update(ViewContext* view, InputContext* input, Vec2f* winDim);
+
+void View_FramebufferCallback(GLFWwindow* window, s32 width, s32 height);
 
 #endif

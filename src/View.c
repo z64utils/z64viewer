@@ -1,40 +1,40 @@
-#include <z64viewer.h>
+#include <_global.h>
 
 MtxF sMtxView;
 MtxF sMtxProj;
+AppInfo* __appInfo;
 
-void View_Camera_FlyMode(GlobalContext* globalCtx) {
-	Camera* cam = ACTIVE_CAM;
-	Input* input = &globalCtx->input;
+void View_Camera_FlyMode(ViewContext* viewCtx, InputContext* inputCtx) {
+	Camera* cam = viewCtx->currentCamera;
 	Vec3f vel = { 0 };
 	Vec3f zro = { 0 };
 	Vec3f thisPos = { 0 };
 	Vec3f nextPos = { 0 };
 	static f32 speed;
 	
-	if (input->key[KEY_LEFT_SHIFT].hold) {
+	if (inputCtx->key[KEY_LEFT_SHIFT].hold) {
 		Math_SmoothStepToF(&speed, 4.0f, 0.25f, 1.00f, 0.00001f);
 	} else {
 		Math_SmoothStepToF(&speed, 1.0f, 0.25f, 1.00f, 0.00001f);
 	}
 	
-	vel.x += input->key[KEY_A].hold ? speed : 0.0f;
-	vel.x -= input->key[KEY_D].hold ? speed : 0.0f;
-	vel.z += input->key[KEY_W].hold ? speed : 0.0f;
-	vel.z -= input->key[KEY_S].hold ? speed : 0.0f;
+	vel.x += inputCtx->key[KEY_A].hold ? speed : 0.0f;
+	vel.x -= inputCtx->key[KEY_D].hold ? speed : 0.0f;
+	vel.z += inputCtx->key[KEY_W].hold ? speed : 0.0f;
+	vel.z -= inputCtx->key[KEY_S].hold ? speed : 0.0f;
 	
 	Vec3f* eye = &cam->eye;
 	Vec3f* at = &cam->at;
 	
-	if (input->mouse.clickL.hold) {
+	if (inputCtx->mouse.clickL.hold) {
 		VecSph camSph = {
 			.r = Vec_DistXYZ(eye, at),
 			.yaw = Vec_Yaw(at, eye),
 			.pitch = Vec_Pitch(at, eye)
 		};
 		
-		camSph.yaw -= input->mouse.vel.x * 100;
-		camSph.pitch -= input->mouse.vel.y * 100;
+		camSph.yaw -= inputCtx->mouse.vel.x * 65;
+		camSph.pitch -= inputCtx->mouse.vel.y * 65;
 		
 		*at = *eye;
 		
@@ -62,8 +62,8 @@ void View_Camera_FlyMode(GlobalContext* globalCtx) {
 	}
 }
 
-void View_Camera_OrbitMode(GlobalContext* globalCtx) {
-	Camera* cam = ACTIVE_CAM;
+void View_Camera_OrbitMode(ViewContext* viewCtx, InputContext* inputCtx) {
+	Camera* cam = viewCtx->currentCamera;
 	VecSph orbitSph = {
 		.r = Vec_DistXYZ(&cam->at, &cam->eye),
 		.yaw = Vec_Yaw(&cam->eye, &cam->at),
@@ -71,10 +71,10 @@ void View_Camera_OrbitMode(GlobalContext* globalCtx) {
 	};
 	f32 distMult = (orbitSph.r * 0.1);
 	
-	if (globalCtx->input.mouse.clickMid.hold) {
-		if (globalCtx->input.key[KEY_LEFT_SHIFT].hold) {
+	if (inputCtx->mouse.clickMid.hold) {
+		if (inputCtx->key[KEY_LEFT_SHIFT].hold) {
 			VecSph velSph = {
-				.r = globalCtx->input.mouse.vel.y * distMult * 0.02f,
+				.r = inputCtx->mouse.vel.y * distMult * 0.02f,
 				.yaw = Vec_Yaw(&cam->at, &cam->eye),
 				.pitch = Vec_Pitch(&cam->at, &cam->eye) + 0x3FFF
 			};
@@ -83,7 +83,7 @@ void View_Camera_OrbitMode(GlobalContext* globalCtx) {
 			Vec_AddVecSphToVec3f(&cam->at, &velSph);
 			
 			velSph = (VecSph) {
-				.r = globalCtx->input.mouse.vel.x * distMult * 0.02f,
+				.r = inputCtx->mouse.vel.x * distMult * 0.02f,
 				.yaw = Vec_Yaw(&cam->at, &cam->eye) + 0x3FFF,
 				.pitch = 0
 			};
@@ -91,23 +91,23 @@ void View_Camera_OrbitMode(GlobalContext* globalCtx) {
 			Vec_AddVecSphToVec3f(&cam->eye, &velSph);
 			Vec_AddVecSphToVec3f(&cam->at, &velSph);
 		} else {
-			orbitSph.yaw -= globalCtx->input.mouse.vel.x * 100;
-			orbitSph.pitch += globalCtx->input.mouse.vel.y * 100;
+			orbitSph.yaw -= inputCtx->mouse.vel.x * 100;
+			orbitSph.pitch += inputCtx->mouse.vel.y * 100;
 		}
 	}
 	
-	orbitSph.r = CLAMP_MIN(orbitSph.r - (distMult * (globalCtx->input.mouse.scrollY)), 2.0f);
+	orbitSph.r = CLAMP_MIN(orbitSph.r - (distMult * (inputCtx->mouse.scrollY)), 2.0f);
 	cam->eye = cam->at;
 	
 	Vec_AddVecSphToVec3f(&cam->eye, &orbitSph);
 }
 
-void View_Init(GlobalContext* globalCtx) {
-	View* view = &globalCtx->view;
+void View_Init(ViewContext* viewCtx, InputContext* inputCtx, AppInfo* appInfo) {
 	Camera* cam;
 	
-	globalCtx->view.currentCamera = &globalCtx->view.camera[0];
-	cam = ACTIVE_CAM;
+	__appInfo = appInfo;
+	viewCtx->currentCamera = &viewCtx->camera[0];
+	cam = viewCtx->currentCamera;
 	
 	cam->eye = (Vec3f) { 0.0f, 8.0f, 0 };
 	
@@ -121,28 +121,27 @@ void View_Init(GlobalContext* globalCtx) {
 	Matrix_LookAt(&sMtxView, cam->eye, cam->at, cam->roll);
 }
 
-void View_Update(GlobalContext* globalCtx) {
-	Camera* cam = ACTIVE_CAM;
-	View* view = &globalCtx->view;
+void View_Update(ViewContext* viewCtx, InputContext* inputCtx, Vec2f* winDim) {
+	Camera* cam = viewCtx->currentCamera;
 	MtxF model = gMtxFClear;
 	Vec3f up;
 	s16 yaw;
 	s16 pitch;
 	
-	view->mtxProj = &sMtxProj;
-	view->mtxView = &sMtxView;
+	viewCtx->mtxProj = &sMtxProj;
+	viewCtx->mtxView = &sMtxView;
 	
 	Matrix_Projection(
 		&sMtxProj,
 		50,
-		(f32)globalCtx->app.winScale.x / globalCtx->app.winScale.y,
+		winDim->x / winDim->y,
 		0.1,
 		500,
 		0.01f
 	);
 	
-	View_Camera_OrbitMode(globalCtx);
-	View_Camera_FlyMode(globalCtx);
+	View_Camera_OrbitMode(viewCtx, inputCtx);
+	View_Camera_FlyMode(viewCtx, inputCtx);
 	yaw = Vec_Yaw(&cam->eye, &cam->at);
 	pitch = Vec_Pitch(&cam->eye, &cam->at);
 	Matrix_LookAt(&sMtxView, cam->eye, cam->at, cam->roll);
@@ -150,4 +149,12 @@ void View_Update(GlobalContext* globalCtx) {
 	n64_setMatrix_model(&model);
 	n64_setMatrix_view(&sMtxView);
 	n64_setMatrix_projection(&sMtxProj);
+}
+
+void View_FramebufferCallback(GLFWwindow* window, s32 width, s32 height) {
+	// make sure the viewport matches the new window dimensions; note that width and
+	// height will be significantly larger than specified on retina displays.
+	glViewport(0, 0, width, height);
+	__appInfo->winScale.x = width;
+	__appInfo->winScale.y = height;
 }

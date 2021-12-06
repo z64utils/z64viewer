@@ -119,6 +119,9 @@ extern PrintfSuppressLevel gPrintfSuppress;
 #define PRNT_RNL  PRNT_RSET PRNT_NL
 #define PRNT_TODO "\e[91;2m" "TODO"
 
+#define OsPrintf   printf_debug
+#define OsPrintfEx printf_debugExt
+
 #define MAX(a, b)            ((a) > (b) ? (a) : (b))
 #define MIN(a, b)            ((a) < (b) ? (a) : (b))
 #define ABS_MAX(a, b)        (ABS(a) > ABS(b) ? (a) : (b))
