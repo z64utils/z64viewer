@@ -31,8 +31,6 @@ typedef struct {
 } ViewContext;
 
 void View_Init(ViewContext* view, InputContext* input, AppInfo* appInfo);
-void View_Update(ViewContext* view, InputContext* input, Vec2f* winDim);
-
-void View_FramebufferCallback(GLFWwindow* window, s32 width, s32 height);
+void View_Update(ViewContext* viewCtx, InputContext* inputCtx, AppInfo* appInfo, Vec2f* winDim);
 
 #endif

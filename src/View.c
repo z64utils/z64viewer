@@ -2,7 +2,6 @@
 
 MtxF sMtxView;
 MtxF sMtxProj;
-AppInfo* __appInfo;
 
 void View_Camera_FlyMode(ViewContext* viewCtx, InputContext* inputCtx) {
 	Camera* cam = viewCtx->currentCamera;
@@ -105,7 +104,6 @@ void View_Camera_OrbitMode(ViewContext* viewCtx, InputContext* inputCtx) {
 void View_Init(ViewContext* viewCtx, InputContext* inputCtx, AppInfo* appInfo) {
 	Camera* cam;
 	
-	__appInfo = appInfo;
 	viewCtx->currentCamera = &viewCtx->camera[0];
 	cam = viewCtx->currentCamera;
 	
@@ -121,7 +119,7 @@ void View_Init(ViewContext* viewCtx, InputContext* inputCtx, AppInfo* appInfo) {
 	Matrix_LookAt(&sMtxView, cam->eye, cam->at, cam->roll);
 }
 
-void View_Update(ViewContext* viewCtx, InputContext* inputCtx, Vec2f* winDim) {
+void View_Update(ViewContext* viewCtx, InputContext* inputCtx, AppInfo* appInfo, Vec2f* winDim) {
 	Camera* cam = viewCtx->currentCamera;
 	MtxF model = gMtxFClear;
 	Vec3f up;
@@ -134,7 +132,7 @@ void View_Update(ViewContext* viewCtx, InputContext* inputCtx, Vec2f* winDim) {
 	Matrix_Projection(
 		&sMtxProj,
 		50,
-		__appInfo->subscreen.view3D.dim.x / __appInfo->subscreen.view3D.dim.y,
+		appInfo->subscreen.view3D.dim.x / appInfo->subscreen.view3D.dim.y,
 		0.1,
 		5000,
 		0.01f
@@ -151,17 +149,4 @@ void View_Update(ViewContext* viewCtx, InputContext* inputCtx, Vec2f* winDim) {
 	n64_setMatrix_model(&model);
 	n64_setMatrix_view(&sMtxView);
 	n64_setMatrix_projection(&sMtxProj);
-}
-
-void View_FramebufferCallback(GLFWwindow* window, s32 width, s32 height) {
-	// make sure the viewport matches the new window dimensions; note that width and
-	// height will be significantly larger than specified on retina displays.
-	glViewport(0, 0, width, height);
-	__appInfo->prevWinDim.x = __appInfo->winDim.x;
-	__appInfo->prevWinDim.y = __appInfo->winDim.y;
-	__appInfo->winDim.x = width;
-	__appInfo->winDim.y = height;
-	__appInfo->isCallback = true;
-	
-	z64_Draw();
 }

@@ -14,6 +14,14 @@
 #include <Light.h>
 #include <Object.h>
 
+static AppInfo* __appInfo;
+static InputContext* __inputCtx;
+static ViewContext* __viewCtx;
+static ObjectContext* __objCtx;
+static LightContext* __lightCtx;
+
+void z64_FramebufferCallback(GLFWwindow* window, s32 width, s32 height);
+
 void z64_Init(
 	const char* title,
 	AppInfo* appInfo,

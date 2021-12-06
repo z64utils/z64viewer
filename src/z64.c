@@ -1,10 +1,17 @@
 #include <z64.h>
 
-AppInfo* __appInfo;
-InputContext* __inputCtx;
-ViewContext* __viewCtx;
-ObjectContext* __objCtx;
-LightContext* __lightCtx;
+void z64_FramebufferCallback(GLFWwindow* window, s32 width, s32 height) {
+	// make sure the viewport matches the new window dimensions; note that width and
+	// height will be significantly larger than specified on retina displays.
+	glViewport(0, 0, width, height);
+	__appInfo->prevWinDim.x = __appInfo->winDim.x;
+	__appInfo->prevWinDim.y = __appInfo->winDim.y;
+	__appInfo->winDim.x = width;
+	__appInfo->winDim.y = height;
+	__appInfo->isCallback = true;
+	
+	z64_Draw();
+}
 
 /* / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / */
 
@@ -57,7 +64,7 @@ void z64_Init(
 	}
 	glfwMakeContextCurrent(appInfo->mainWindow);
 	
-	glfwSetFramebufferSizeCallback(appInfo->mainWindow, View_FramebufferCallback);
+	glfwSetFramebufferSizeCallback(appInfo->mainWindow, z64_FramebufferCallback);
 	glfwSetCursorPosCallback(appInfo->mainWindow, Input_CursorCallback);
 	glfwSetMouseButtonCallback(appInfo->mainWindow, Input_MouseClickCallback);
 	glfwSetKeyCallback(appInfo->mainWindow, Input_KeyCallback);
@@ -78,7 +85,7 @@ void z64_Init(
 void z64_Draw() {
 	Input_Update(__inputCtx, __appInfo);
 	__appInfo->updateCall(__appInfo->context);
-	View_Update(__viewCtx, __inputCtx, &__appInfo->winDim);
+	View_Update(__viewCtx, __inputCtx, __appInfo, &__appInfo->winDim);
 	Input_End(__inputCtx);
 	
 	glClearColor(
