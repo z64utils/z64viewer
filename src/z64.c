@@ -104,7 +104,6 @@ void z64_Draw() {
 	}
 	__appInfo->isCallback = false;
 	glfwSwapBuffers(__appInfo->mainWindow);
-	OsPrintfEx("glfwSwapBuffers");
 }
 
 void z64_Update() {
