@@ -1,4 +1,4 @@
-#include <_global.h>
+#include <z64.h>
 
 MtxF sMtxView;
 MtxF sMtxProj;
@@ -163,7 +163,5 @@ void View_FramebufferCallback(GLFWwindow* window, s32 width, s32 height) {
 	__appInfo->winDim.y = height;
 	__appInfo->isCallback = true;
 	
-	if (__appInfo->drawCall && __appInfo->mainCtx) {
-		__appInfo->drawCall(__appInfo->mainCtx);
-	}
+	z64_Draw();
 }

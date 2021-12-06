@@ -1,4 +1,4 @@
-#include <_global.h>
+#include <z64.h>
 
 #define HU8(HX) (0.00392156862745f * (HX))
 #define HS8(HX) ((char)(HX))

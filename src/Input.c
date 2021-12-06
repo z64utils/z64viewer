@@ -1,4 +1,4 @@
-#include <_global.h>
+#include <z64.h>
 
 InputContext* __pInput;
 

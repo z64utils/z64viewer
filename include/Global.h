@@ -7,7 +7,7 @@
 
 struct ViewerContext;
 
-typedef void (* CallDraw)(void*);
+typedef void (* CallbackFunc)(void*);
 
 typedef struct {
 	PosDim view3D;
@@ -15,10 +15,12 @@ typedef struct {
 } SubScreens;
 
 typedef struct {
-	SubScreens  subscreen;
-	GLFWwindow* mainWindow;
-	CallDraw    drawCall;
-	void* mainCtx;
+	SubScreens   subscreen;
+	GLFWwindow*  mainWindow;
+	CallbackFunc updateCall;
+	CallbackFunc drawCall3D;
+	CallbackFunc drawCall2D;
+	void* context;
 	Vec2f winDim;
 	Vec2f prevWinDim;
 	bool  isCallback;
