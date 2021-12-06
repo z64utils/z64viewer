@@ -938,7 +938,7 @@ static void gbiFunc_geometrymode(void* cmd) {
 	uint32_t clearbits = ~(u32r(b) & 0xffffff);
 	uint32_t setbits = u32r(b + 4);
 	
-	gMatState.geometrymode = (gMatState.geometrymode & clearbits) | setbits;
+	gMatState.geometrymode = (gMatState.geometrymode & ~clearbits) | setbits;
 	
 	/* vertex colors */
 	if (clearbits & G_LIGHTING)
@@ -947,22 +947,21 @@ static void gbiFunc_geometrymode(void* cmd) {
 		gVertexColors = 0;
 	
 	/* backface/frontface culling */
-	if (clearbits & (G_CULL_FRONT | G_CULL_BACK)) {
-		glEnable(GL_CULL_FACE);
-		switch (setbits & (G_CULL_FRONT | G_CULL_BACK)) {
-		    case G_CULL_FRONT | G_CULL_BACK:
-			    glCullFace(GL_FRONT_AND_BACK);
-			    break;
-		    case G_CULL_FRONT:
-			    glCullFace(GL_FRONT);
-			    break;
-		    case G_CULL_BACK:
-			    glCullFace(GL_BACK);
-			    break;
-		    default:
-			    glDisable(GL_CULL_FACE);
-			    break;
-		}
+	glEnable(GL_CULL_FACE);
+	switch (gMatState.geometrymode & (G_CULL_FRONT | G_CULL_BACK))
+	{
+		case G_CULL_FRONT | G_CULL_BACK:
+			glCullFace(GL_FRONT_AND_BACK);
+			break;
+		case G_CULL_FRONT:
+			glCullFace(GL_FRONT);
+			break;
+		case G_CULL_BACK:
+			glCullFace(GL_BACK);
+			break;
+		default:
+			glDisable(GL_CULL_FACE);
+			break;
 	}
 }
 
