@@ -45,6 +45,8 @@ static uint32_t gRdpHalf2;
 static bool gHideGeometry = false;
 static bool gVertexColors = false;
 static bool gFogEnabled = true;
+static bool gForceBl = false;
+static bool gCvgXalpha = false;
 
 static enum n64_zmode gOnlyThisZmode;
 static enum n64_zmode gCurrentZmode;
@@ -296,6 +298,8 @@ static void othermode(void) {
 	uint32_t indep = (lo & 0b1111111111111000) >> 3;
 	
 	gCurrentZmode = (indep & 0b0000110000000) >> 7;
+	gForceBl = (indep & 0b0100000000000) >> 11;
+	gCvgXalpha = (indep & 0b0001000000000) >> 9;
 	
 	gHideGeometry = false;
 	if (gOnlyThisZmode != ZMODE_ALL && gCurrentZmode != gOnlyThisZmode)
@@ -601,36 +605,41 @@ static void doMaterial(void) {
 			
 			ADD("vec3 final;");
 			ADD("vec4 shading;");
-			ADD("float alpha;");
+			ADD("float alpha = 1.0;");
 			ADD("shading = vColor;");
 			ADD("shading.rgb *= vLightColor;");
 			
-			/* alpha cycle 0 */
-			ADDF("alpha = %s;", alphaValueString(0, (hi >> 12) & 0x7));
-			ADDF("alpha -= %s;", alphaValueString(1, (lo >> 12) & 0x7));
-			ADDF("alpha *= %s;", alphaValueString(2, (hi >>  9) & 0x7));
-			ADDF("alpha += %s;", alphaValueString(3, (lo >>  9) & 0x7));
-			ADD("FragColor.a = alpha;");
-			
-			/* alpha cycle 0 */
-			ADDF("alpha = %s;", alphaValueString(0, (lo >> 21) & 0x7));
-			ADDF("alpha -= %s;", alphaValueString(1, (lo >> 3) & 0x7));
-			ADDF("alpha *= %s;", alphaValueString(2, (lo >> 18) & 0x7));
-			ADDF("alpha += %s;", alphaValueString(3, (lo >>  0) & 0x7));
-			ADD("FragColor.a = alpha;");
+			if (gCvgXalpha || gForceBl)
+			{
+				/* alpha cycle 0 */
+				ADDF("alpha = %s;", alphaValueString(0, (hi >> 12) & 0x7));
+				ADDF("alpha -= %s;", alphaValueString(1, (lo >> 12) & 0x7));
+				ADDF("alpha *= %s;", alphaValueString(2, (hi >>  9) & 0x7));
+				ADDF("alpha += %s;", alphaValueString(3, (lo >>  9) & 0x7));
+				ADD("FragColor.a = alpha;");
+				
+				/* alpha cycle 1 */
+				ADDF("alpha = %s;", alphaValueString(0, (lo >> 21) & 0x7));
+				ADDF("alpha -= %s;", alphaValueString(1, (lo >> 3) & 0x7));
+				ADDF("alpha *= %s;", alphaValueString(2, (lo >> 18) & 0x7));
+				ADDF("alpha += %s;", alphaValueString(3, (lo >>  0) & 0x7));
+				ADD("FragColor.a = alpha;");
 			
 			/* TODO optimization: only include this bit if texture is sampled */
 			ADD("if (alpha == 0.0) discard;");
+			}
+			else
+				ADD("FragColor.a = 1.0;");
 			
 			/* TODO optimization: detect when unnecessary and omit */
-			/* color cycle 1 */
+			/* color cycle 0 */
 			ADDF("final = %s;", colorValueString(0, (hi >> 20) & 0xf));
 			ADDF("final -= %s;", colorValueString(1, (lo >> 28) & 0xf));
 			ADDF("final *= %s;", colorValueString(2, (hi >> 15) & 0x1f));
 			ADDF("final += %s;", colorValueString(3, (lo >> 15) & 0x7));
 			ADD("FragColor.rgb = final;");
 			
-			/* alpha cycle 1 */
+			/* color cycle 1 */
 			ADDF("final = %s;", colorValueString(0, (hi >> 5) & 0xf));
 			ADDF("final -= %s;", colorValueString(1, (lo >> 24) & 0xf));
 			ADDF("final *= %s;", colorValueString(2, (hi >> 0) & 0x1f));
