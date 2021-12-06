@@ -18,6 +18,7 @@ enum n64_zmode {
 
 void n64_set_segment(int seg, void* data);
 void* n64_virt2phys(unsigned int segaddr);
+unsigned int n64_phys2virt(void *cmd);
 void n64_draw(void* dlist);
 void n64_set_onlyZmode(enum n64_zmode zmode);
 
