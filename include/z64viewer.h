@@ -1,5 +1,5 @@
-#ifndef __Z64SCENE_H__
-#define __Z64SCENE_H__
+#ifndef __Z64VIEWER_H__
+#define __Z64VIEWER_H__
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <zroom.h>
