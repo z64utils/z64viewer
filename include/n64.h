@@ -16,11 +16,18 @@ enum n64_zmode {
 	ZMODE_ALL
 };
 
+enum n64_geoLayer {
+	GEOLAYER_ALL,
+	GEOLAYER_OPAQUE,
+	GEOLAYER_OVERLAY
+};
+
 void n64_set_segment(int seg, void* data);
 void* n64_virt2phys(unsigned int segaddr);
 unsigned int n64_phys2virt(void *cmd);
 void n64_draw(void* dlist);
 void n64_set_onlyZmode(enum n64_zmode zmode);
+void n64_set_onlyGeoLayer(enum n64_geoLayer geoLayer);
 
 void n64_setMatrix_model(void* data);
 void n64_setMatrix_view(void* data);

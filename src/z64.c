@@ -124,6 +124,9 @@ void z64_Draw_Room(MemFile* zroom) {
 	};
 	
 	n64_draw(setup);
+	n64_set_onlyGeoLayer(GEOLAYER_OPAQUE);
+	zroom_draw(zroom->data);
+	n64_set_onlyGeoLayer(GEOLAYER_OVERLAY);
 	zroom_draw(zroom->data);
 }
 

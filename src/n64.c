@@ -48,6 +48,7 @@ static bool gFogEnabled = true;
 static bool gForceBl = false;
 static bool gCvgXalpha = false;
 
+static enum n64_geoLayer gOnlyThisGeoLayer;
 static enum n64_zmode gOnlyThisZmode;
 static enum n64_zmode gCurrentZmode;
 
@@ -305,6 +306,26 @@ static void othermode(void) {
 	if (gOnlyThisZmode != ZMODE_ALL && gCurrentZmode != gOnlyThisZmode)
 		gHideGeometry = true;
 	
+	if (!gHideGeometry && gOnlyThisGeoLayer != GEOLAYER_ALL)
+	{
+		int isOverlay = gForceBl || gCvgXalpha;
+		switch (gOnlyThisGeoLayer)
+		{
+			case GEOLAYER_OPAQUE:
+				if (isOverlay)
+					gHideGeometry = true;
+				break;
+			
+			case GEOLAYER_OVERLAY:
+				if (!isOverlay)
+					gHideGeometry = true;
+				break;
+			
+			case GEOLAYER_ALL:
+				break;
+		}
+	}
+	
 	/* hack for eliminating z-fighting on decals */
 	switch (gCurrentZmode) {
 	    case ZMODE_DEC: /* ZMODE_DEC */
@@ -422,8 +443,6 @@ static const char* alphaValueString(int idx, int v) {
 }
 
 static void doMaterial(void) {
-	if (gHideGeometry)
-		return;
 	
 	int tile = 0; /* G_TX_RENDERTILE */
 	
@@ -471,6 +490,9 @@ static void doMaterial(void) {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapS);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapT);
 		
+		if (gHideGeometry)
+			continue;
+		
 		//uls >>= 2; /* discard precision; sourcing pixels directly */
 		//ult >>= 2;
 		
@@ -501,6 +523,9 @@ static void doMaterial(void) {
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, wow);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
+	
+	if (gHideGeometry)
+		return;
 	
 #define SHADER_SOURCE(...) "#version 330 core\n" # __VA_ARGS__
 	/* TODO track state changes; if no states changed, don't compile new shader */
@@ -692,8 +717,6 @@ static float shift_to_multiplier(const int shift) {
 }
 
 static void gbiFunc_vtx(void* cmd) {
-	if (gHideGeometry)
-		return;
 	
 	uint8_t* b = cmd;
 	
@@ -707,6 +730,9 @@ static void gbiFunc_vtx(void* cmd) {
 		doMaterial();
 		gMatState.mtlReady = 1;
 	}
+	
+	if (gHideGeometry)
+		return;
 	
 	while (numv--) {
 		float scale = 0.001f;
@@ -1179,3 +1205,8 @@ void n64_set_lights(float lights[16]) {
 void n64_set_onlyZmode(enum n64_zmode zmode) {
 	gOnlyThisZmode = zmode;
 }
+
+void n64_set_onlyGeoLayer(enum n64_geoLayer geoLayer) {
+	gOnlyThisGeoLayer = geoLayer;
+}
+
