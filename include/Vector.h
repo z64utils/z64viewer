@@ -43,17 +43,17 @@ typedef struct {
 } VecSph;
 
 typedef struct {
-	f32 xMin;
-	f32 xMax;
-	f32 yMin;
-	f32 yMax;
+	f32 x;
+	f32 y;
+	f32 w;
+	f32 h;
 } Rectf;
 
 typedef struct {
-	s32 xMin;
-	s32 xMax;
-	s32 yMin;
-	s32 yMax;
+	s32 x;
+	s32 y;
+	s32 w;
+	s32 h;
 } Recti;
 
 s16 Math_Atan2S(f32 x, f32 y);
