@@ -183,6 +183,13 @@ void* Lib_Malloc(void* data, s32 size) {
 	return data;
 }
 
+void* Lib_Calloc(void* data, s32 size) {
+	data = Lib_Malloc(data, size);
+	memset(data, 0, size);
+	
+	return data;
+}
+
 void* Lib_Realloc(void* data, s32 size) {
 	data = realloc(data, size);
 	

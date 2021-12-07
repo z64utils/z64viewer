@@ -43,9 +43,18 @@ typedef struct {
 } VecSph;
 
 typedef struct {
-	Vec2f pos;
-	Vec2f dim;
-} PosDim;
+	f32 xMin;
+	f32 xMax;
+	f32 yMin;
+	f32 yMax;
+} Rectf;
+
+typedef struct {
+	s32 xMin;
+	s32 xMax;
+	s32 yMin;
+	s32 yMax;
+} Recti;
 
 s16 Math_Atan2S(f32 x, f32 y);
 f32 Vec_DistXZ(Vec3f* a, Vec3f* b);

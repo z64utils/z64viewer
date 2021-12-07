@@ -11,8 +11,6 @@ typedef struct ViewerContext {
 } ViewerContext;
 
 void Viewer_Update(ViewerContext* viewerCtx);
-void Viewer_Init(ViewerContext* viewerCtx);
-void Viewer_Draw_3DViewport(ViewerContext* viewerCtx);
-void Viewer_Main(ViewerContext* viewerCtx);
+void Viewer_Draw(ViewerContext* viewerCtx);
 
 #endif

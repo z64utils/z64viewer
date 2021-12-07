@@ -8,7 +8,7 @@ void z64_FramebufferCallback(GLFWwindow* window, s32 width, s32 height) {
 	__appInfo->prevWinDim.y = __appInfo->winDim.y;
 	__appInfo->winDim.x = width;
 	__appInfo->winDim.y = height;
-	__appInfo->isCallback = true;
+	__appInfo->isResizeCallback = true;
 	
 	z64_Draw();
 }
@@ -24,8 +24,7 @@ void z64_Init(
 	LightContext* lightCtx,
 	void* context,
 	CallbackFunc updateCall,
-	CallbackFunc drawCall3D,
-	CallbackFunc drawCall2D
+	CallbackFunc drawCall
 ) {
 	printf_SetPrefix("");
 	printf_SetSuppressLevel(PSL_DEBUG);
@@ -38,8 +37,7 @@ void z64_Init(
 	
 	appInfo->context = context;
 	appInfo->updateCall = updateCall;
-	appInfo->drawCall3D = drawCall3D;
-	appInfo->drawCall2D = drawCall2D;
+	appInfo->drawCall = drawCall;
 	appInfo->winDim.x = 1400;
 	appInfo->winDim.y = 700;
 	
@@ -75,7 +73,7 @@ void z64_Init(
 	}
 	
 	Matrix_Init();
-	View_Init(viewCtx, inputCtx, appInfo);
+	View_Init(viewCtx, inputCtx);
 	Input_SetInputPointer(inputCtx);
 	glfwSetTime(2);
 	
@@ -85,7 +83,7 @@ void z64_Init(
 void z64_Draw() {
 	Input_Update(__inputCtx, __appInfo);
 	__appInfo->updateCall(__appInfo->context);
-	View_Update(__viewCtx, __inputCtx, __appInfo, &__appInfo->winDim);
+	View_Update(__viewCtx, __inputCtx);
 	Input_End(__inputCtx);
 	
 	glClearColor(
@@ -96,20 +94,10 @@ void z64_Draw() {
 	);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	
-	if (__appInfo->drawCall3D) {
-		glViewport(
-			__appInfo->subscreen.view3D.pos.x,
-			__appInfo->subscreen.view3D.pos.y,
-			__appInfo->subscreen.view3D.dim.x,
-			__appInfo->subscreen.view3D.dim.y
-		);
-		__appInfo->drawCall3D(__appInfo->context);
+	if (__appInfo->drawCall) {
+		__appInfo->drawCall(__appInfo->context);
 	}
-	if (__appInfo->drawCall2D) {
-		glViewport(0, 0, __appInfo->winDim.x, __appInfo->winDim.y);
-		__appInfo->drawCall2D(__appInfo->context);
-	}
-	__appInfo->isCallback = false;
+	__appInfo->isResizeCallback = false;
 	glfwSwapBuffers(__appInfo->mainWindow);
 }
 

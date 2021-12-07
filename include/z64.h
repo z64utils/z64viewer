@@ -31,8 +31,7 @@ void z64_Init(
 	LightContext* lightCtx,
 	void* context,
 	CallbackFunc updateCall,
-	CallbackFunc drawCall3D,
-	CallbackFunc drawCall2D
+	CallbackFunc drawCall
 );
 void z64_Draw();
 void z64_Update();

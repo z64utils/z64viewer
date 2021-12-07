@@ -10,20 +10,13 @@ struct ViewerContext;
 typedef void (* CallbackFunc)(void*);
 
 typedef struct {
-	PosDim view3D;
-	PosDim sidePanel;
-} SubScreens;
-
-typedef struct {
-	SubScreens   subscreen;
 	GLFWwindow*  mainWindow;
 	CallbackFunc updateCall;
-	CallbackFunc drawCall3D;
-	CallbackFunc drawCall2D;
+	CallbackFunc drawCall;
 	void* context;
-	Vec2f winDim;
-	Vec2f prevWinDim;
-	bool  isCallback;
+	Vec2i winDim;
+	Vec2i prevWinDim;
+	bool  isResizeCallback;
 } AppInfo;
 
 extern f64 gDeltaTime;

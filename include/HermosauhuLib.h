@@ -71,6 +71,7 @@ void printf_WinFix();
 /* 👺 LIB 👺 */
 void* Lib_MemMem(const void* haystack, size_t haystackSize, const void* needle, size_t needleSize);
 void* Lib_Malloc(void* data, s32 size);
+void* Lib_Calloc(void* data, s32 size);
 void* Lib_Realloc(void* data, s32 size);
 void Lib_ByteSwap(void* src, s32 size);
 

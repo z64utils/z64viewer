@@ -6,7 +6,7 @@ static ViewerContext* viewerCtx;
 
 int main(void) {
 	viewerCtx = Lib_Malloc(0, sizeof(ViewerContext));
-	bzero(viewerCtx, sizeof(ViewerContext));
+	memset(viewerCtx, 0, sizeof(ViewerContext));
 	z64_Init(
 		"z64viewer",
 		&viewerCtx->appInfo,
@@ -16,8 +16,7 @@ int main(void) {
 		&viewerCtx->lightCtx,
 		viewerCtx,
 		(CallbackFunc)Viewer_Update,
-		(CallbackFunc)Viewer_Draw_3DViewport,
-		NULL
+		(CallbackFunc)Viewer_Draw
 	);
 	
 	MemFile_LoadFile(&viewerCtx->objCtx.scene, "scene.zscene");

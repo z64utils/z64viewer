@@ -101,7 +101,7 @@ void View_Camera_OrbitMode(ViewContext* viewCtx, InputContext* inputCtx) {
 	Vec_AddVecSphToVec3f(&cam->eye, &orbitSph);
 }
 
-void View_Init(ViewContext* viewCtx, InputContext* inputCtx, AppInfo* appInfo) {
+void View_Init(ViewContext* viewCtx, InputContext* inputCtx) {
 	Camera* cam;
 	
 	viewCtx->currentCamera = &viewCtx->camera[0];
@@ -119,7 +119,7 @@ void View_Init(ViewContext* viewCtx, InputContext* inputCtx, AppInfo* appInfo) {
 	Matrix_LookAt(&sMtxView, cam->eye, cam->at, cam->roll);
 }
 
-void View_Update(ViewContext* viewCtx, InputContext* inputCtx, AppInfo* appInfo, Vec2f* winDim) {
+void View_Update(ViewContext* viewCtx, InputContext* inputCtx) {
 	Camera* cam = viewCtx->currentCamera;
 	MtxF model = gMtxFClear;
 	Vec3f up;
@@ -132,7 +132,7 @@ void View_Update(ViewContext* viewCtx, InputContext* inputCtx, AppInfo* appInfo,
 	Matrix_Projection(
 		&sMtxProj,
 		50,
-		appInfo->subscreen.view3D.dim.x / appInfo->subscreen.view3D.dim.y,
+		(f32)viewCtx->projectDim.x / (f32)viewCtx->projectDim.y,
 		0.1,
 		5000,
 		0.01f
@@ -149,4 +149,8 @@ void View_Update(ViewContext* viewCtx, InputContext* inputCtx, AppInfo* appInfo,
 	n64_setMatrix_model(&model);
 	n64_setMatrix_view(&sMtxView);
 	n64_setMatrix_projection(&sMtxProj);
+}
+
+void View_SetProjectionDimensions(ViewContext* viewCtx, Vec2i* dim) {
+	viewCtx->projectDim = *dim;
 }
