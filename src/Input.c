@@ -7,6 +7,8 @@ void Input_SetInputPointer(InputContext* input) {
 }
 
 void Input_Update(InputContext* input, AppInfo* app) {
+	MouseInput* mouse = &input->mouse;
+	
 	{
 		static double last = 0;
 		double cur = glfwGetTime();
@@ -19,26 +21,44 @@ void Input_Update(InputContext* input, AppInfo* app) {
 		input->key[i].prev = input->key[i].hold;
 	}
 	
-	input->mouse.clickL.press = (input->mouse.clickL.prev == 0 && input->mouse.clickL.hold);
-	input->mouse.clickL.prev = input->mouse.clickL.hold;
-	input->mouse.clickR.press = (input->mouse.clickR.prev == 0 && input->mouse.clickR.hold);
-	input->mouse.clickR.prev = input->mouse.clickR.hold;
-	input->mouse.clickMid.press = (input->mouse.clickMid.prev == 0 && input->mouse.clickMid.hold);
-	input->mouse.clickMid.prev = input->mouse.clickMid.hold;
+	mouse->clickL.press = (mouse->clickL.prev == 0 && mouse->clickL.hold);
+	mouse->clickL.prev = mouse->clickL.hold;
+	mouse->clickR.press = (mouse->clickR.prev == 0 && mouse->clickR.hold);
+	mouse->clickR.prev = mouse->clickR.hold;
+	mouse->clickMid.press = (mouse->clickMid.prev == 0 && mouse->clickMid.hold);
+	mouse->clickMid.prev = mouse->clickMid.hold;
+	
+	mouse->click.press = (
+		mouse->clickL.press ||
+		mouse->clickR.press ||
+		mouse->clickMid.press
+	);
+	
+	mouse->click.hold = (
+		mouse->clickL.hold ||
+		mouse->clickR.hold ||
+		mouse->clickMid.hold
+	);
+	
+	mouse->cursorAction = (
+		mouse->click.press ||
+		mouse->click.hold ||
+		mouse->scrollY
+	);
 	
 	if (glfwGetKey(app->mainWindow, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(app->mainWindow, true);
 	
-	Vec2i* mPos = &input->mouse.pos;
-	Vec2i* mVel = &input->mouse.vel;
-	Vec2i* mPrev = &input->mouse.prevPos;
+	Vec2i* mPos = &mouse->pos;
+	Vec2i* mVel = &mouse->vel;
+	Vec2i* mPrev = &mouse->prevPos;
 	
-	mVel->x = mPos->x - mPrev->x + input->mouse.jumpVelComp.x;
-	mVel->y = mPos->y - mPrev->y + input->mouse.jumpVelComp.y;
+	mVel->x = mPos->x - mPrev->x + mouse->jumpVelComp.x;
+	mVel->y = mPos->y - mPrev->y + mouse->jumpVelComp.y;
 	*mPrev = *mPos;
 	
-	input->mouse.jumpVelComp.x = 0;
-	input->mouse.jumpVelComp.y = 0;
+	mouse->jumpVelComp.x = 0;
+	mouse->jumpVelComp.y = 0;
 }
 
 void Input_KeyCallback(GLFWwindow* window, s32 key, s32 scancode, s32 action, s32 mods) {
@@ -51,26 +71,28 @@ void Input_KeyCallback(GLFWwindow* window, s32 key, s32 scancode, s32 action, s3
 
 void Input_CursorCallback(GLFWwindow* window, f64 xpos, f64 ypos) {
 	InputContext* input = __pInput;
+	MouseInput* mouse = &input->mouse;
 	
-	input->mouse.pos.x = xpos;
-	input->mouse.pos.y = ypos;
+	mouse->pos.x = xpos;
+	mouse->pos.y = ypos;
 }
 
 void Input_MouseClickCallback(GLFWwindow* window, s32 button, s32 action, s32 mods) {
 	InputContext* input = __pInput;
+	MouseInput* mouse = &input->mouse;
 	s32 pressed = action != GLFW_RELEASE;
 	s32 hold = action == GLFW_PRESS;
 	
 	switch (button) {
 	    case GLFW_MOUSE_BUTTON_RIGHT:
-		    input->mouse.clickR.hold = hold;
+		    mouse->clickR.hold = hold;
 		    break;
 		    
 	    case GLFW_MOUSE_BUTTON_LEFT:
-		    input->mouse.clickL.hold = hold;
+		    mouse->clickL.hold = hold;
 		    break;
 	    case GLFW_MOUSE_BUTTON_MIDDLE:
-		    input->mouse.clickMid.hold = hold;
+		    mouse->clickMid.hold = hold;
 	}
 }
 
@@ -79,5 +101,7 @@ void Input_ScrollCallback(GLFWwindow* window, f64 x, f64 y) {
 }
 
 void Input_End(InputContext* input) {
-	input->mouse.scrollY = 0;
+	MouseInput* mouse = &input->mouse;
+	
+	mouse->scrollY = 0;
 }

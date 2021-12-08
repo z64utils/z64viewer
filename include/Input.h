@@ -145,6 +145,8 @@ typedef struct {
 	InputType clickL;
 	InputType clickR;
 	InputType clickMid;
+	InputType click;
+	bool cursorAction;
 } MouseInput;
 
 typedef struct {
