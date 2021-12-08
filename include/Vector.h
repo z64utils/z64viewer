@@ -66,6 +66,21 @@ void Vec_AddVecSphToVec3f(Vec3f* dest, VecSph* sph);
 f32 Math_SmoothStepToF(f32* pValue, f32 target, f32 fraction, f32 step, f32 minStep);
 s16 Math_SmoothStepToS(s16* pValue, s16 target, s16 scale, s16 step, s16 minStep);
 
+void Vec_Substract(Vec3f* dest, Vec3f* a, Vec3f* b);
+void Vec_Add(Vec3f* dest, Vec3f* a, Vec3f* b);
+void Vec_Multiply(Vec3f* dest, Vec3f* a, Vec3f* b);
+void Vec_Divide(Vec3f* dest, Vec3f* a, Vec3f* b);
+void Vec_Vec2f_Substract(Vec2f* dest, Vec2f* a, Vec2f* b);
+void Vec_Vec2f_Add(Vec2f* dest, Vec2f* a, Vec2f* b);
+void Vec_Vec2f_Multiply(Vec2f* dest, Vec2f* a, Vec2f* b);
+void Vec_Vec2f_Divide(Vec2f* dest, Vec2f* a, Vec2f* b);
+void Vec_Vec2i_Substract(Vec2i* dest, Vec2i* a, Vec2i* b);
+void Vec_Vec2i_Add(Vec2i* dest, Vec2i* a, Vec2i* b);
+void Vec_Vec2i_Multiply(Vec2i* dest, Vec2i* a, Vec2i* b);
+void Vec_Vec2i_Divide(Vec2i* dest, Vec2i* a, Vec2i* b);
+
+s32 Vec_Vec2i_DistXZ(Vec2i* a, Vec2i* b);
+
 #define SQ(x)        (x * x)
 #define Math_SinS(x) sinf(BinToRad((s16)(x)))
 #define Math_CosS(x) cosf(BinToRad((s16)(x)))

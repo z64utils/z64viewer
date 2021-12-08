@@ -248,3 +248,65 @@ s16 Math_SmoothStepToS(s16* pValue, s16 target, s16 scale, s16 step, s16 minStep
 	
 	return diff;
 }
+
+void Vec_Substract(Vec3f* dest, Vec3f* a, Vec3f* b) {
+	dest->x = a->x - b->x;
+	dest->x = a->x - b->x;
+	dest->z = a->z - b->z;
+}
+void Vec_Add(Vec3f* dest, Vec3f* a, Vec3f* b) {
+	dest->x = a->x + b->x;
+	dest->y = a->y + b->y;
+	dest->z = a->z + b->z;
+}
+void Vec_Multiply(Vec3f* dest, Vec3f* a, Vec3f* b) {
+	dest->x = a->x * b->x;
+	dest->y = a->y * b->y;
+	dest->z = a->z * b->z;
+}
+void Vec_Divide(Vec3f* dest, Vec3f* a, Vec3f* b) {
+	dest->x = a->x / b->x;
+	dest->y = a->y / b->y;
+	dest->z = a->z / b->z;
+}
+
+void Vec_Vec2f_Substract(Vec2f* dest, Vec2f* a, Vec2f* b) {
+	dest->x = a->x - b->x;
+	dest->y = a->y - b->y;
+}
+void Vec_Vec2f_Add(Vec2f* dest, Vec2f* a, Vec2f* b) {
+	dest->x = a->x + b->x;
+	dest->y = a->y + b->y;
+}
+void Vec_Vec2f_Multiply(Vec2f* dest, Vec2f* a, Vec2f* b) {
+	dest->x = a->x * b->x;
+	dest->y = a->y * b->y;
+}
+void Vec_Vec2f_Divide(Vec2f* dest, Vec2f* a, Vec2f* b) {
+	dest->x = a->x / b->x;
+	dest->y = a->y / b->y;
+}
+
+void Vec_Vec2i_Substract(Vec2i* dest, Vec2i* a, Vec2i* b) {
+	dest->x = a->x - b->x;
+	dest->y = a->y - b->y;
+}
+void Vec_Vec2i_Add(Vec2i* dest, Vec2i* a, Vec2i* b) {
+	dest->x = a->x + b->x;
+	dest->y = a->y + b->y;
+}
+void Vec_Vec2i_Multiply(Vec2i* dest, Vec2i* a, Vec2i* b) {
+	dest->x = a->x * b->x;
+	dest->y = a->y * b->y;
+}
+void Vec_Vec2i_Divide(Vec2i* dest, Vec2i* a, Vec2i* b) {
+	dest->x = a->x / b->x;
+	dest->y = a->y / b->y;
+}
+
+s32 Vec_Vec2i_DistXZ(Vec2i* a, Vec2i* b) {
+	f32 dx = (f32)b->x - (f32)a->x;
+	f32 dz = (f32)b->y - (f32)a->y;
+	
+	return sqrtf(SQ(dx) + SQ(dz));
+}
