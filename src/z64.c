@@ -76,7 +76,7 @@ void z64_Init(
 	
 	Matrix_Init();
 	View_Init(viewCtx, inputCtx);
-	Input_SetInputPointer(inputCtx);
+	Input_Init(inputCtx);
 	glfwSetTime(2);
 	
 	viewCtx->cameraControl = true;

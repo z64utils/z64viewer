@@ -130,6 +130,15 @@ typedef enum {
 	KEY_MAX
 } KeyMap;
 
+typedef enum {
+	CURSOR_ARROW      = 0x00036001,
+	CURSOR_IBEAM      = 0x00036002,
+	CURSOR_CROSSHAIRR = 0x00036003,
+	CURSOR_HAND       = 0x00036004,
+	CURSOR_HRESIZE    = 0x00036005,
+	CURSOR_VRESIZE    = 0x00036006,
+} CursorIcon;
+
 typedef struct {
 	u8 press : 1;
 	u8 hold  : 1;
@@ -142,11 +151,12 @@ typedef struct {
 	Vec2i vel;
 	Vec2i jumpVelComp;
 	f64   scrollY;
-	InputType clickL;
-	InputType clickR;
-	InputType clickMid;
-	InputType click;
+	InputType  clickL;
+	InputType  clickR;
+	InputType  clickMid;
+	InputType  click;
 	bool cursorAction;
+	CursorIcon cursorIcon;
 } MouseInput;
 
 typedef struct {
@@ -159,7 +169,7 @@ void Input_CursorCallback(GLFWwindow* window, f64 xpos, f64 ypos);
 void Input_MouseClickCallback(GLFWwindow* window, s32 button, s32 action, s32 mods);
 void Input_ScrollCallback(GLFWwindow* window, f64 x, f64 y);
 
-void Input_SetInputPointer(InputContext* input);
+void Input_Init(InputContext* input);
 void Input_Update(InputContext* input, AppInfo* app);
 void Input_End(InputContext* input);
 

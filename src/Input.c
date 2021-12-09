@@ -2,12 +2,20 @@
 
 InputContext* __pInput;
 
-void Input_SetInputPointer(InputContext* input) {
+void Input_Init(InputContext* input) {
 	__pInput = input;
+	input->mouse.cursorIcon = CURSOR_ARROW;
 }
 
 void Input_Update(InputContext* input, AppInfo* app) {
 	MouseInput* mouse = &input->mouse;
+	static u32 lastSetCursor;
+	
+	if (mouse->cursorIcon != lastSetCursor) {
+		glfwSetCursor(app->mainWindow, glfwCreateStandardCursor(mouse->cursorIcon));
+		lastSetCursor = mouse->cursorIcon;
+	}
+	mouse->cursorIcon = CURSOR_ARROW;
 	
 	{
 		static double last = 0;
