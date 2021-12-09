@@ -15,6 +15,11 @@ typedef struct {
 } Vec2f;
 
 typedef struct {
+	f64 x;
+	f64 y;
+} Vec2d;
+
+typedef struct {
 	s16 x;
 	s16 y;
 	s16 z;
@@ -47,14 +52,22 @@ typedef struct {
 	f32 y;
 	f32 w;
 	f32 h;
-} Rectf;
+} Rectf32;
 
 typedef struct {
 	s32 x;
 	s32 y;
 	s32 w;
 	s32 h;
-} Recti;
+} Rect;
+
+// CoordinatesRect
+typedef struct {
+	s32 x1;
+	s32 y1;
+	s32 x2;
+	s32 y2;
+} CRect;
 
 s16 Math_Atan2S(f32 x, f32 y);
 f32 Vec_DistXZ(Vec3f* a, Vec3f* b);
@@ -74,12 +87,19 @@ void Vec_Vec2f_Substract(Vec2f* dest, Vec2f* a, Vec2f* b);
 void Vec_Vec2f_Add(Vec2f* dest, Vec2f* a, Vec2f* b);
 void Vec_Vec2f_Multiply(Vec2f* dest, Vec2f* a, Vec2f* b);
 void Vec_Vec2f_Divide(Vec2f* dest, Vec2f* a, Vec2f* b);
-void Vec_Vec2i_Substract(Vec2i* dest, Vec2i* a, Vec2i* b);
-void Vec_Vec2i_Add(Vec2i* dest, Vec2i* a, Vec2i* b);
-void Vec_Vec2i_Multiply(Vec2i* dest, Vec2i* a, Vec2i* b);
-void Vec_Vec2i_Divide(Vec2i* dest, Vec2i* a, Vec2i* b);
+void Vec_Vec2s_Substract(Vec2s* dest, Vec2s* a, Vec2s* b);
+void Vec_Vec2s_Add(Vec2s* dest, Vec2s* a, Vec2s* b);
+void Vec_Vec2s_Multiply(Vec2s* dest, Vec2s* a, Vec2s* b);
+void Vec_Vec2s_Divide(Vec2s* dest, Vec2s* a, Vec2s* b);
 
-s32 Vec_Vec2i_DistXZ(Vec2i* a, Vec2i* b);
+s32 Vec_Vec2s_DistXZ(Vec2s* a, Vec2s* b);
+
+void Rect_ToCRect(CRect* dst, Rect* src);
+void Rect_ToRect(Rect* dst, CRect* src);
+bool Rect_Check_PosIntersect(Rect* rect, Vec2s* pos);
+void Rect_Translate(Rect* rect, s32 x, s32 y);
+void Rect_Verify(Rect* rect);
+void Rect_Set(Rect* dest, s32 x, s32 w, s32 y, s32 h);
 
 #define SQ(x)        (x * x)
 #define Math_SinS(x) sinf(BinToRad((s16)(x)))
@@ -98,5 +118,13 @@ s32 Vec_Vec2i_DistXZ(Vec2i* a, Vec2i* b);
 #define BinSub(a, b)       ((s16)(a - b))
 #define BinToDeg(binang)   ((f32)binang * (360.0001525f / 65535.0f))
 #define BinToRad(binang)   (((f32)binang / 32768.0f) * M_PI)
+
+#define SWAP(type, a, b) \
+	{ \
+		type swap; \
+		swap = (a); \
+		(a) = (b); \
+		(b) = swap; \
+	}
 
 #endif

@@ -28,7 +28,7 @@ typedef struct {
 	Camera* currentCamera;
 	Camera  camera[4];
 	bool    cameraControl;
-	Vec2i   projectDim;
+	Vec2s   projectDim;
 } ViewContext;
 
 void View_Camera_FlyMode(ViewContext* viewCtx, InputContext* inputCtx);
@@ -37,6 +37,6 @@ void View_Camera_OrbitMode(ViewContext* viewCtx, InputContext* inputCtx);
 void View_Init(ViewContext* view, InputContext* input);
 void View_Update(ViewContext* viewCtx, InputContext* inputCtx);
 
-void View_SetProjectionDimensions(ViewContext* viewCtx, Vec2i* dim);
+void View_SetProjectionDimensions(ViewContext* viewCtx, Vec2s* dim);
 
 #endif

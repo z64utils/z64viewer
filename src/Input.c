@@ -57,9 +57,9 @@ void Input_Update(InputContext* input, AppInfo* app) {
 	if (glfwGetKey(app->mainWindow, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(app->mainWindow, true);
 	
-	Vec2i* mPos = &mouse->pos;
-	Vec2i* mVel = &mouse->vel;
-	Vec2i* mPrev = &mouse->prevPos;
+	Vec2s* mPos = &mouse->pos;
+	Vec2s* mVel = &mouse->vel;
+	Vec2s* mPrev = &mouse->prevPos;
 	
 	mVel->x = mPos->x - mPrev->x + mouse->jumpVelComp.x;
 	mVel->y = mPos->y - mPrev->y + mouse->jumpVelComp.y;

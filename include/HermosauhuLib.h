@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <assert.h>
 
 typedef signed char s8;
 typedef unsigned char u8;
@@ -47,6 +48,11 @@ typedef union {
 	f32*  f32;
 	f64*  f64;
 } PointerCast;
+
+typedef struct Node {
+	struct Node* prev;
+	struct Node* next;
+} Node;
 
 typedef struct {
 	union {
@@ -107,6 +113,39 @@ void String_GetPath(char* dst, char* src);
 void String_GetBasename(char* dst, char* src);
 void String_GetFilename(char* dst, char* src);
 
+/* 👺 NODE 👺 */
+#define Node_Add(type_t, head, node) {     \
+		OsAssert(node != NULL)             \
+		type_t* lastNode = head;           \
+		s32 __nodePos = 0;                 \
+		if (lastNode == NULL) {            \
+			head = node;                   \
+			OsPrintfEx( # type_t " Node to HEAD");    \
+		} else {                           \
+			while (lastNode->next) {       \
+				lastNode = lastNode->next; \
+				__nodePos++;               \
+			}                              \
+			lastNode->next = node;         \
+			node->prev = lastNode;         \
+			OsPrintfEx( # type_t " Node to %d", __nodePos); \
+		}                                  \
+}
+
+#define Node_Kill(head, node) {            \
+		OsAssert(node != NULL)             \
+		if (node->next) {                  \
+			node->next->prev = node->prev; \
+		}                                  \
+		if (node->prev) {                  \
+			node->prev->next = node->next; \
+		} else {                           \
+			head = node->next;             \
+		}                                  \
+		free(node);                        \
+		node = NULL;                       \
+}
+
 extern PrintfSuppressLevel gPrintfSuppress;
 
 #define PRNT_DGRY "\e[90;2m"
@@ -122,6 +161,16 @@ extern PrintfSuppressLevel gPrintfSuppress;
 
 #define OsPrintf   printf_debug
 #define OsPrintfEx printf_debugExt
+
+#ifndef NDEBUG
+#define OsAssert(exp) if (!(exp)) {    \
+		printf(PRNT_DGRY "[%s]: " PRNT_REDD "%s: " PRNT_GRAY "[%d]\n"PRNT_RSET, __FILE__, __FUNCTION__, __LINE__); \
+		printf_debug(PRNT_YELW "OsAssert(\a " PRNT_RSET # exp PRNT_YELW " );"); \
+		exit(EXIT_FAILURE); \
+}
+#else
+#define OsAssert(exp) if (0) {}
+#endif
 
 #define MAX(a, b)            ((a) > (b) ? (a) : (b))
 #define MIN(a, b)            ((a) < (b) ? (a) : (b))

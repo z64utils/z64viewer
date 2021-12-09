@@ -131,12 +131,12 @@ typedef enum {
 } KeyMap;
 
 typedef enum {
-	CURSOR_ARROW      = 0x00036001,
-	CURSOR_IBEAM      = 0x00036002,
-	CURSOR_CROSSHAIRR = 0x00036003,
-	CURSOR_HAND       = 0x00036004,
-	CURSOR_HRESIZE    = 0x00036005,
-	CURSOR_VRESIZE    = 0x00036006,
+	CURSOR_ARROW     = 0x00036001,
+	CURSOR_IBEAM     = 0x00036002,
+	CURSOR_CROSSHAIR = 0x00036003,
+	CURSOR_HAND      = 0x00036004,
+	CURSOR_HRESIZE   = 0x00036005,
+	CURSOR_VRESIZE   = 0x00036006,
 } CursorIcon;
 
 typedef struct {
@@ -146,10 +146,10 @@ typedef struct {
 } InputType;
 
 typedef struct {
-	Vec2i pos;
-	Vec2i prevPos;
-	Vec2i vel;
-	Vec2i jumpVelComp;
+	Vec2s pos;
+	Vec2s prevPos;
+	Vec2s vel;
+	Vec2s jumpVelComp;
 	f64   scrollY;
 	InputType  clickL;
 	InputType  clickR;

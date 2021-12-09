@@ -14,8 +14,8 @@ typedef struct {
 	CallbackFunc updateCall;
 	CallbackFunc drawCall;
 	void* context;
-	Vec2i winDim;
-	Vec2i prevWinDim;
+	Vec2s winDim;
+	Vec2s prevWinDim;
 	bool  isResizeCallback;
 } AppInfo;
 

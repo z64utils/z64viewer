@@ -151,6 +151,6 @@ void View_Update(ViewContext* viewCtx, InputContext* inputCtx) {
 	n64_setMatrix_projection(&sMtxProj);
 }
 
-void View_SetProjectionDimensions(ViewContext* viewCtx, Vec2i* dim) {
+void View_SetProjectionDimensions(ViewContext* viewCtx, Vec2s* dim) {
 	viewCtx->projectDim = *dim;
 }

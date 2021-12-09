@@ -287,26 +287,77 @@ void Vec_Vec2f_Divide(Vec2f* dest, Vec2f* a, Vec2f* b) {
 	dest->y = a->y / b->y;
 }
 
-void Vec_Vec2i_Substract(Vec2i* dest, Vec2i* a, Vec2i* b) {
+void Vec_Vec2s_Substract(Vec2s* dest, Vec2s* a, Vec2s* b) {
 	dest->x = a->x - b->x;
 	dest->y = a->y - b->y;
 }
-void Vec_Vec2i_Add(Vec2i* dest, Vec2i* a, Vec2i* b) {
+void Vec_Vec2s_Add(Vec2s* dest, Vec2s* a, Vec2s* b) {
 	dest->x = a->x + b->x;
 	dest->y = a->y + b->y;
 }
-void Vec_Vec2i_Multiply(Vec2i* dest, Vec2i* a, Vec2i* b) {
+void Vec_Vec2s_Multiply(Vec2s* dest, Vec2s* a, Vec2s* b) {
 	dest->x = a->x * b->x;
 	dest->y = a->y * b->y;
 }
-void Vec_Vec2i_Divide(Vec2i* dest, Vec2i* a, Vec2i* b) {
+void Vec_Vec2s_Divide(Vec2s* dest, Vec2s* a, Vec2s* b) {
 	dest->x = a->x / b->x;
 	dest->y = a->y / b->y;
 }
 
-s32 Vec_Vec2i_DistXZ(Vec2i* a, Vec2i* b) {
+s32 Vec_Vec2s_DistXZ(Vec2s* a, Vec2s* b) {
 	f32 dx = (f32)b->x - (f32)a->x;
 	f32 dz = (f32)b->y - (f32)a->y;
 	
 	return sqrtf(SQ(dx) + SQ(dz));
+}
+
+void Rect_ToCRect(CRect* dst, Rect* src) {
+	if (dst) {
+		dst->x1 = src->x;
+		dst->y1 = src->y;
+		dst->x2 = src->x + src->w;
+		dst->y2 = src->y + src->h;
+	}
+}
+
+void Rect_ToRect(Rect* dst, CRect* src) {
+	if (dst) {
+		dst->x = src->x1;
+		dst->y = src->y1;
+		dst->w = src->x2 + src->x1;
+		dst->h = src->y2 + src->y1;
+	}
+}
+
+bool Rect_Check_PosIntersect(Rect* rect, Vec2s* pos) {
+	return !(
+		pos->y < rect->y ||
+		pos->y > rect->h ||
+		pos->x < rect->x ||
+		pos->x > rect->w
+	);
+}
+
+void Rect_Translate(Rect* rect, s32 x, s32 y) {
+	rect->x += x;
+	rect->w += x;
+	rect->y += y;
+	rect->h += y;
+}
+
+void Rect_Verify(Rect* rect) {
+	if (rect->x > rect->w) {
+		SWAP(s32, rect->x, rect->w);
+	}
+	if (rect->y > rect->h) {
+		SWAP(s32, rect->y, rect->h);
+	}
+}
+
+void Rect_Set(Rect* dest, s32 x, s32 w, s32 y, s32 h) {
+	dest->x = x;
+	dest->w = w;
+	dest->y = y;
+	dest->h = h;
+	Rect_Verify(dest);
 }
