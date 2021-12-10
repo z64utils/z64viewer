@@ -146,6 +146,12 @@ void String_GetFilename(char* dst, char* src);
 		node = NULL;                       \
 }
 
+#define Lib_Swap(a, b) { \
+		void* _a = a;            \
+		a = b;                   \
+		b = _a;                  \
+}
+
 extern PrintfSuppressLevel gPrintfSuppress;
 
 #define PRNT_DGRY "\e[90;2m"
