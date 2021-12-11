@@ -172,8 +172,20 @@ extern PrintfSuppressLevel gPrintfSuppress;
 		printf_debug(PRNT_YELW "OsAssert(\a " PRNT_RSET # exp PRNT_YELW " );"); \
 		exit(EXIT_FAILURE); \
 }
+
+#ifndef __HERMO_C__
+
+#define Lib_Malloc(data, size) Lib_Malloc(data, size); \
+	OsPrintfEx("Lib_Malloc: size [0x%X]", size);
+
+#define Lib_Calloc(data, size) Lib_Calloc(data, size); \
+	OsPrintfEx("Lib_Calloc: size [0x%X]", size);
+
+#endif
+
 #else
 #define OsAssert(exp) if (0) {}
+
 #endif
 
 #define MAX(a, b)            ((a) > (b) ? (a) : (b))

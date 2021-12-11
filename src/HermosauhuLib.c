@@ -1,3 +1,4 @@
+#define __HERMO_C__
 #include "HermosauhuLib.h"
 
 /* 👺 PRINTF 👺 */
@@ -222,7 +223,7 @@ s32 Lib_ParseArguments(char* argv[], char* arg, u32* parArg) {
 s32 File_Load(void** dst, char* filepath) {
 	s32 size;
 	
-	FILE* file = fopen(filepath, "r");
+	FILE* file = fopen(filepath, "rb");
 	
 	if (file == NULL) {
 		printf_error("Could not open file [%s]", filepath);
