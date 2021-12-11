@@ -1,5 +1,12 @@
 #include <z64.h>
 
+static ViewContext* __viewCtx;
+static ObjectContext* __objCtx;
+static LightContext* __lightCtx;
+
+InputContext* __inputCtx;
+AppInfo* __appInfo;
+
 void z64_FramebufferCallback(GLFWwindow* window, s32 width, s32 height) {
 	// make sure the viewport matches the new window dimensions; note that width and
 	// height will be significantly larger than specified on retina displays.
