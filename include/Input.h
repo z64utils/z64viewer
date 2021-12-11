@@ -130,15 +130,6 @@ typedef enum {
 	KEY_MAX
 } KeyMap;
 
-typedef enum {
-	CURSOR_ARROW     = 0x00036001,
-	CURSOR_IBEAM     = 0x00036002,
-	CURSOR_CROSSHAIR = 0x00036003,
-	CURSOR_HAND      = 0x00036004,
-	CURSOR_HRESIZE   = 0x00036005,
-	CURSOR_VRESIZE   = 0x00036006,
-} CursorIcon;
-
 typedef struct {
 	u8 press : 1;
 	u8 hold  : 1;
@@ -156,7 +147,6 @@ typedef struct {
 	InputType  clickMid;
 	InputType  click;
 	bool cursorAction;
-	CursorIcon cursorIcon;
 } MouseInput;
 
 typedef struct {

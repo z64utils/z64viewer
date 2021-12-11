@@ -4,23 +4,10 @@ InputContext* __pInput;
 
 void Input_Init(InputContext* input) {
 	__pInput = input;
-	input->mouse.cursorIcon = CURSOR_ARROW;
 }
 
 void Input_Update(InputContext* input, AppInfo* app) {
 	MouseInput* mouse = &input->mouse;
-	static u32 lastSetCursor;
-	
-	if (mouse->cursorIcon != lastSetCursor) {
-		static GLFWcursor* arr[7] = {0};
-		int now = mouse->cursorIcon & 0xff;
-		assert(now < ARRAY_COUNT(arr));
-		if (!arr[now])
-			arr[now] = glfwCreateStandardCursor(mouse->cursorIcon);
-		glfwSetCursor(app->mainWindow, arr[now]);
-		lastSetCursor = mouse->cursorIcon;
-	}
-	mouse->cursorIcon = CURSOR_ARROW;
 	
 	{
 		static double last = 0;
