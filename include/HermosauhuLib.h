@@ -114,13 +114,12 @@ void String_GetBasename(char* dst, char* src);
 void String_GetFilename(char* dst, char* src);
 
 /* 👺 NODE 👺 */
-#define Node_Add(type_t, head, node) {     \
+#define Node_Add(head, node) {             \
 		OsAssert(node != NULL)             \
-		type_t* lastNode = head;           \
+		typeof(node) lastNode = head;      \
 		s32 __nodePos = 0;                 \
 		if (lastNode == NULL) {            \
 			head = node;                   \
-			OsPrintfEx( # type_t " Node to HEAD");    \
 		} else {                           \
 			while (lastNode->next) {       \
 				lastNode = lastNode->next; \
@@ -128,7 +127,6 @@ void String_GetFilename(char* dst, char* src);
 			}                              \
 			lastNode->next = node;         \
 			node->prev = lastNode;         \
-			OsPrintfEx( # type_t " Node to %d", __nodePos); \
 		}                                  \
 }
 
@@ -147,9 +145,9 @@ void String_GetFilename(char* dst, char* src);
 }
 
 #define Lib_Swap(a, b) { \
-		void* _a = a;            \
-		a = b;                   \
-		b = _a;                  \
+		typeof(a) y = a; \
+		a = b;           \
+		b = y;           \
 }
 
 extern PrintfSuppressLevel gPrintfSuppress;
