@@ -12,7 +12,12 @@ void Input_Update(InputContext* input, AppInfo* app) {
 	static u32 lastSetCursor;
 	
 	if (mouse->cursorIcon != lastSetCursor) {
-		glfwSetCursor(app->mainWindow, glfwCreateStandardCursor(mouse->cursorIcon));
+		static GLFWcursor* arr[7] = {0};
+		int now = mouse->cursorIcon & 0xff;
+		assert(now < ARRAY_COUNT(arr));
+		if (!arr[now])
+			arr[now] = glfwCreateStandardCursor(mouse->cursorIcon);
+		glfwSetCursor(app->mainWindow, arr[now]);
 		lastSetCursor = mouse->cursorIcon;
 	}
 	mouse->cursorIcon = CURSOR_ARROW;
