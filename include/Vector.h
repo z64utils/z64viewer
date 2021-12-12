@@ -124,6 +124,17 @@ void Rect_Set(Rect* dest, s32 x, s32 w, s32 y, s32 h);
 	(dest)->y = (a)->y + (b)->y; \
 	(dest)->z = (a)->z + (b)->z
 
+#define Vec2_Equal(a, b) ( \
+		(a)->x == (b)->x && \
+		(a)->y == (b)->y \
+)
+
+#define Vec3_Equal(a, b) ( \
+		(a)->x == (b)->x && \
+		(a)->y == (b)->y && \
+		(a)->z == (b)->z \
+)
+
 #define SQ(x)        (x * x)
 #define Math_SinS(x) sinf(BinToRad((s16)(x)))
 #define Math_CosS(x) cosf(BinToRad((s16)(x)))
