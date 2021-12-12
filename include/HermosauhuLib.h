@@ -150,6 +150,15 @@ void String_GetFilename(char* dst, char* src);
 		b = y;           \
 }
 
+#define Lib_Wrap(x, min, max) ({ \
+		typeof(x) r = (x); \
+		typeof(x) range = (max) - (min) + 1; \
+		if (r < (min)) { \
+			r += range * (((min) - r) / range + 1); \
+		} \
+		(min) + (r - (min)) % range; \
+	})
+
 extern PrintfSuppressLevel gPrintfSuppress;
 
 #define PRNT_DGRY "\e[90;2m"

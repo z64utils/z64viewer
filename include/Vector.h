@@ -79,7 +79,7 @@ void Vec_AddVecSphToVec3f(Vec3f* dest, VecSph* sph);
 f32 Math_SmoothStepToF(f32* pValue, f32 target, f32 fraction, f32 step, f32 minStep);
 s16 Math_SmoothStepToS(s16* pValue, s16 target, s16 scale, s16 step, s16 minStep);
 
-void Vec_Substract(Vec3f* dest, Vec3f* a, Vec3f* b);
+// void Vec_Substract(Vec3f* dest, Vec3f* a, Vec3f* b);
 void Vec_Add(Vec3f* dest, Vec3f* a, Vec3f* b);
 void Vec_Multiply(Vec3f* dest, Vec3f* a, Vec3f* b);
 void Vec_Divide(Vec3f* dest, Vec3f* a, Vec3f* b);
@@ -100,6 +100,24 @@ bool Rect_Check_PosIntersect(Rect* rect, Vec2s* pos);
 void Rect_Translate(Rect* rect, s32 x, s32 y);
 void Rect_Verify(Rect* rect);
 void Rect_Set(Rect* dest, s32 x, s32 w, s32 y, s32 h);
+
+#define Vec2_Substract(dest, a, b) \
+	(dest)->x = (a)->x - (b)->x; \
+	(dest)->y = (a)->y - (b)->y
+
+#define Vec3_Substract(dest, a, b) \
+	(dest)->x = (a)->x - (b)->x; \
+	(dest)->y = (a)->y - (b)->y; \
+	(dest)->z = (a)->z - (b)->z
+
+#define Vec2_Add(dest, a, b) \
+	(dest)->x = (a)->x + (b)->x; \
+	(dest)->y = (a)->y + (b)->y
+
+#define Vec3_Add(dest, a, b) \
+	(dest)->x = (a)->x + (b)->x; \
+	(dest)->y = (a)->y + (b)->y; \
+	(dest)->z = (a)->z + (b)->z
 
 #define SQ(x)        (x * x)
 #define Math_SinS(x) sinf(BinToRad((s16)(x)))

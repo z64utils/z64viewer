@@ -249,11 +249,11 @@ s16 Math_SmoothStepToS(s16* pValue, s16 target, s16 scale, s16 step, s16 minStep
 	return diff;
 }
 
-void Vec_Substract(Vec3f* dest, Vec3f* a, Vec3f* b) {
-	dest->x = a->x - b->x;
-	dest->x = a->x - b->x;
-	dest->z = a->z - b->z;
-}
+// void Vec_Substract(Vec3f* dest, Vec3f* a, Vec3f* b) {
+// 	dest->x = a->x - b->x;
+// 	dest->x = a->x - b->x;
+// 	dest->z = a->z - b->z;
+// }
 void Vec_Add(Vec3f* dest, Vec3f* a, Vec3f* b) {
 	dest->x = a->x + b->x;
 	dest->y = a->y + b->y;
