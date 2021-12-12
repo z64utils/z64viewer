@@ -159,6 +159,8 @@ void String_GetFilename(char* dst, char* src);
 		(min) + (r - (min)) % range; \
 	})
 
+#define Decr(x) (x -= (x > 0) ? 1 : 0)
+
 extern PrintfSuppressLevel gPrintfSuppress;
 
 #define PRNT_DGRY "\e[90;2m"
