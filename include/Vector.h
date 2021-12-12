@@ -15,8 +15,13 @@ typedef struct {
 } Vec2f;
 
 typedef struct {
-	f64 x;
-	f64 y;
+	union {
+		struct {
+			f64 x;
+			f64 y;
+		};
+		f64 s[2];
+	};
 } Vec2d;
 
 typedef struct {
