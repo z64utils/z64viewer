@@ -33,8 +33,10 @@ void z64_Init(
 	CallbackFunc updateCall,
 	CallbackFunc drawCall
 ) {
+	#ifndef NDEBUG
 	printf_SetPrefix("");
 	printf_SetSuppressLevel(PSL_DEBUG);
+	#endif
 	
 	__appInfo = appInfo;
 	__inputCtx = inputCtx;
