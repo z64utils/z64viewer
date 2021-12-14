@@ -139,8 +139,16 @@ void View_Update(ViewContext* viewCtx, InputContext* inputCtx) {
 	);
 	
 	if (viewCtx->cameraControl) {
-		View_Camera_OrbitMode(viewCtx, inputCtx);
-		View_Camera_FlyMode(viewCtx, inputCtx);
+		if (inputCtx->mouse.click.press || inputCtx->mouse.scrollY) {
+			viewCtx->setCamMove = 1;
+		}
+		if (inputCtx->mouse.cursorAction == 0) {
+			viewCtx->setCamMove = 0;
+		}
+		if (viewCtx->setCamMove) {
+			View_Camera_OrbitMode(viewCtx, inputCtx);
+			View_Camera_FlyMode(viewCtx, inputCtx);
+		}
 	}
 	yaw = Vec_Yaw(&cam->eye, &cam->at);
 	pitch = Vec_Pitch(&cam->eye, &cam->at);

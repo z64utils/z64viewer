@@ -53,8 +53,8 @@ void Input_Update(InputContext* input, AppInfo* app) {
 	Vec2s* mVel = &mouse->vel;
 	Vec2s* mPrev = &mouse->prevPos;
 	
-	mVel->x = mPos->x - mPrev->x + mouse->jumpVelComp.x;
-	mVel->y = mPos->y - mPrev->y + mouse->jumpVelComp.y;
+	mVel->x = (mPos->x - mPrev->x) + mouse->jumpVelComp.x;
+	mVel->y = (mPos->y - mPrev->y) + mouse->jumpVelComp.y;
 	*mPrev = *mPos;
 	
 	mouse->jumpVelComp.x = 0;

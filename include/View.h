@@ -28,6 +28,7 @@ typedef struct {
 	Camera* currentCamera;
 	Camera  camera[4];
 	bool    cameraControl;
+	bool    setCamMove;
 	Vec2s   projectDim;
 } ViewContext;
 
