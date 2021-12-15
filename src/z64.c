@@ -29,13 +29,10 @@ void z64_Init(
 	LightContext* lightCtx,
 	void* context,
 	CallbackFunc updateCall,
-	CallbackFunc drawCall
+	CallbackFunc drawCall,
+	u32 x,
+	u32 y
 ) {
-	#ifndef NDEBUG
-	printf_SetPrefix("");
-	printf_SetSuppressLevel(PSL_DEBUG);
-	#endif
-	
 	__appInfo = appInfo;
 	__inputCtx = inputCtx;
 	__objCtx = objCtx;
@@ -44,8 +41,8 @@ void z64_Init(
 	appInfo->context = context;
 	appInfo->updateCall = updateCall;
 	appInfo->drawCall = drawCall;
-	appInfo->winDim.x = 1400;
-	appInfo->winDim.y = 700;
+	appInfo->winDim.x = x;
+	appInfo->winDim.y = y;
 	
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
