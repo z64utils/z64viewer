@@ -53,10 +53,10 @@ typedef struct {
 } VecSph;
 
 typedef struct {
-	f32 x;
-	f32 y;
-	f32 w;
-	f32 h;
+	f64 x;
+	f64 y;
+	f64 w;
+	f64 h;
 } Rectf32;
 
 typedef struct {
