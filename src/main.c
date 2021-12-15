@@ -11,7 +11,6 @@ int main(void) {
 		"z64viewer",
 		&viewerCtx->appInfo,
 		&viewerCtx->inputCtx,
-		&viewerCtx->viewCtx,
 		&viewerCtx->objCtx,
 		&viewerCtx->lightCtx,
 		viewerCtx,
@@ -21,7 +20,7 @@ int main(void) {
 	
 	MemFile_LoadFile(&viewerCtx->objCtx.scene, "scene.zscene");
 	MemFile_LoadFile(&viewerCtx->objCtx.room[0], "room_0.zmap");
-	
+	Viewer_Init(viewerCtx);
 	z64_Update();
 	glfwTerminate();
 }

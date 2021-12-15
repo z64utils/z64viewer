@@ -23,7 +23,6 @@ void z64_Init(
 	const char* title,
 	AppInfo* appInfo,
 	InputContext* inputCtx,
-	ViewContext* viewCtx,
 	ObjectContext* objCtx,
 	LightContext* lightCtx,
 	void* context,

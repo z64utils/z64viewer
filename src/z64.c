@@ -1,6 +1,5 @@
 #include <z64.h>
 
-static ViewContext* __viewCtx;
 static ObjectContext* __objCtx;
 static LightContext* __lightCtx;
 
@@ -26,7 +25,6 @@ void z64_Init(
 	const char* title,
 	AppInfo* appInfo,
 	InputContext* inputCtx,
-	ViewContext* viewCtx,
 	ObjectContext* objCtx,
 	LightContext* lightCtx,
 	void* context,
@@ -40,7 +38,6 @@ void z64_Init(
 	
 	__appInfo = appInfo;
 	__inputCtx = inputCtx;
-	__viewCtx = viewCtx;
 	__objCtx = objCtx;
 	__lightCtx = lightCtx;
 	
@@ -84,18 +81,13 @@ void z64_Init(
 	}
 	
 	Matrix_Init();
-	View_Init(viewCtx, inputCtx);
 	Input_Init(inputCtx);
 	glfwSetTime(2);
-	
-	viewCtx->cameraControl = true;
 }
 
 void z64_Draw() {
 	Input_Update(__inputCtx, __appInfo);
 	__appInfo->updateCall(__appInfo->context);
-	View_Update(__viewCtx, __inputCtx);
-	Input_End(__inputCtx);
 	
 	glClearColor(
 		__lightCtx->ambient.r,
@@ -109,6 +101,7 @@ void z64_Draw() {
 		__appInfo->drawCall(__appInfo->context);
 	}
 	__appInfo->isResizeCallback = false;
+	Input_End(__inputCtx);
 	glfwSwapBuffers(__appInfo->mainWindow);
 }
 

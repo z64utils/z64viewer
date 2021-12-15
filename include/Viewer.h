@@ -10,6 +10,7 @@ typedef struct ViewerContext {
 	ObjectContext objCtx;
 } ViewerContext;
 
+void Viewer_Init(ViewerContext* viewerCtx);
 void Viewer_Update(ViewerContext* viewerCtx);
 void Viewer_Draw(ViewerContext* viewerCtx);
 

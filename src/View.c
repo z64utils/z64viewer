@@ -1,8 +1,5 @@
 #include <z64.h>
 
-MtxF sMtxView;
-MtxF sMtxProj;
-
 void View_Camera_FlyMode(ViewContext* viewCtx, InputContext* inputCtx) {
 	Camera* cam = viewCtx->currentCamera;
 	Vec3f vel = { 0 };
@@ -116,7 +113,7 @@ void View_Init(ViewContext* viewCtx, InputContext* inputCtx) {
 	s16 yaw = Vec_Yaw(&cam->eye, &cam->at);
 	s16 pitch = Vec_Pitch(&cam->eye, &cam->at);
 	
-	Matrix_LookAt(&sMtxView, cam->eye, cam->at, cam->roll);
+	Matrix_LookAt(&viewCtx->mtxView, cam->eye, cam->at, cam->roll);
 }
 
 void View_Update(ViewContext* viewCtx, InputContext* inputCtx) {
@@ -126,11 +123,8 @@ void View_Update(ViewContext* viewCtx, InputContext* inputCtx) {
 	s16 yaw;
 	s16 pitch;
 	
-	viewCtx->mtxProj = &sMtxProj;
-	viewCtx->mtxView = &sMtxView;
-	
 	Matrix_Projection(
-		&sMtxProj,
+		&viewCtx->mtxProj,
 		50,
 		(f32)viewCtx->projectDim.x / (f32)viewCtx->projectDim.y,
 		0.1,
@@ -152,11 +146,11 @@ void View_Update(ViewContext* viewCtx, InputContext* inputCtx) {
 	}
 	yaw = Vec_Yaw(&cam->eye, &cam->at);
 	pitch = Vec_Pitch(&cam->eye, &cam->at);
-	Matrix_LookAt(&sMtxView, cam->eye, cam->at, cam->roll);
+	Matrix_LookAt(&viewCtx->mtxView, cam->eye, cam->at, cam->roll);
 	
 	n64_setMatrix_model(&model);
-	n64_setMatrix_view(&sMtxView);
-	n64_setMatrix_projection(&sMtxProj);
+	n64_setMatrix_view(&viewCtx->mtxView);
+	n64_setMatrix_projection(&viewCtx->mtxProj);
 }
 
 void View_SetProjectionDimensions(ViewContext* viewCtx, Vec2s* dim) {
