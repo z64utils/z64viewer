@@ -114,6 +114,11 @@ void View_Init(ViewContext* viewCtx, InputContext* inputCtx) {
 	s16 pitch = Vec_Pitch(&cam->eye, &cam->at);
 	
 	Matrix_LookAt(&viewCtx->mtxView, cam->eye, cam->at, cam->roll);
+	
+	viewCtx->fovy = 65;
+	viewCtx->near = 1.0;
+	viewCtx->far = 5000.0;
+	viewCtx->scale = 0.01;
 }
 
 void View_Update(ViewContext* viewCtx, InputContext* inputCtx) {
@@ -125,11 +130,11 @@ void View_Update(ViewContext* viewCtx, InputContext* inputCtx) {
 	
 	Matrix_Projection(
 		&viewCtx->mtxProj,
-		50,
+		viewCtx->fovy,
 		(f32)viewCtx->projectDim.x / (f32)viewCtx->projectDim.y,
-		0.1,
-		5000,
-		0.01f
+		viewCtx->near,
+		viewCtx->far,
+		viewCtx->scale
 	);
 	
 	if (viewCtx->cameraControl) {
