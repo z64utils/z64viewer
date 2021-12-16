@@ -13,6 +13,7 @@
 #include <Vector.h>
 #include <Light.h>
 #include <Object.h>
+#include <SkelAnime.h>
 
 extern InputContext* __inputCtx;
 extern AppInfo* __appInfo;

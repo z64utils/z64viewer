@@ -48,9 +48,16 @@ void Matrix_RotateY(f32 y, MtxMode mode);
 void Matrix_RotateZ(f32 z, MtxMode mode);
 
 void Matrix_MtxFCopy(MtxF* dest, MtxF* src);
+void Matrix_ToMtxF(MtxF* mtx);
 void Matrix_MtxFMtxFMult(MtxF* mfA, MtxF* mfB, MtxF* dest);
 void Matrix_Projection(MtxF* mtx, f32 fovy, f32 aspect, f32 near, f32 far, f32 scale);
 void Matrix_LookAt(MtxF* mf, Vec3f eye, Vec3f at, s16 roll);
+
+void Matrix_TranslateRotateZYX(Vec3f* translation, Vec3s* rotation);
+
+#define gSPMatrix(mtx)        n64_setMatrix_model(mtx)
+#define gSPDisplayList(dl)    n64_draw(n64_virt2phys(dl))
+#define gSPSegment(sed, data) n64_set_segment(sed, data)
 
 #define Matrix_RotateX_s(x, mode) Matrix_RotateX(BinToRad(x), mode)
 #define Matrix_RotateY_s(x, mode) Matrix_RotateY(BinToRad(x), mode)

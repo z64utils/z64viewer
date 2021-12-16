@@ -135,6 +135,16 @@ void Rect_Set(Rect* dest, s32 x, s32 w, s32 y, s32 h);
 		(a)->z == (b)->z \
 )
 
+#define Vec2_Copy(dest, src) \
+	(dest)->x = (src)->x; \
+	(dest)->y = (src)->y; \
+	(dest)->z = (src)->z
+
+#define Vec3_Copy(dest, src) \
+	(dest)->x = (src)->x; \
+	(dest)->y = (src)->y; \
+	(dest)->z = (src)->z
+
 #define SQ(x)        (x * x)
 #define Math_SinS(x) sinf(BinToRad((s16)(x)))
 #define Math_CosS(x) cosf(BinToRad((s16)(x)))

@@ -5,6 +5,7 @@
 typedef struct {
 	MemFile scene;
 	MemFile room[64];
+	MemFile zobj;
 } ObjectContext;
 
 #endif

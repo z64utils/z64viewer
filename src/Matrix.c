@@ -369,6 +369,10 @@ void Matrix_MtxFCopy(MtxF* dest, MtxF* src) {
 	dest->ww = src->ww;
 }
 
+void Matrix_ToMtxF(MtxF* mtx) {
+	Matrix_MtxFCopy(mtx, gCurrentMatrix);
+}
+
 void Matrix_MtxFMtxFMult(MtxF* mfA, MtxF* mfB, MtxF* dest) {
 	f32 cx;
 	f32 cy;
@@ -591,4 +595,86 @@ void Matrix_LookAt(MtxF* mf, Vec3f eye, Vec3f at, s16 roll) {
 	mf->wx *= 100.0f;
 	mf->wy *= 100.0f;
 	mf->wz *= 100.0f;
+}
+
+void Matrix_TranslateRotateZYX(Vec3f* translation, Vec3s* rotation) {
+	MtxF* cmf = gCurrentMatrix;
+	f32 sin = Math_SinS(rotation->z);
+	f32 cos = Math_CosS(rotation->z);
+	f32 temp1;
+	f32 temp2;
+	
+	temp1 = cmf->xx;
+	temp2 = cmf->xy;
+	cmf->xw += temp1 * translation->x + temp2 * translation->y + cmf->xz * translation->z;
+	cmf->xx = temp1 * cos + temp2 * sin;
+	cmf->xy = temp2 * cos - temp1 * sin;
+	
+	temp1 = cmf->yx;
+	temp2 = cmf->yy;
+	cmf->yw += temp1 * translation->x + temp2 * translation->y + cmf->yz * translation->z;
+	cmf->yx = temp1 * cos + temp2 * sin;
+	cmf->yy = temp2 * cos - temp1 * sin;
+	
+	temp1 = cmf->zx;
+	temp2 = cmf->zy;
+	cmf->zw += temp1 * translation->x + temp2 * translation->y + cmf->zz * translation->z;
+	cmf->zx = temp1 * cos + temp2 * sin;
+	cmf->zy = temp2 * cos - temp1 * sin;
+	
+	temp1 = cmf->wx;
+	temp2 = cmf->wy;
+	cmf->ww += temp1 * translation->x + temp2 * translation->y + cmf->wz * translation->z;
+	cmf->wx = temp1 * cos + temp2 * sin;
+	cmf->wy = temp2 * cos - temp1 * sin;
+	
+	if (rotation->y != 0) {
+		sin = Math_SinS(rotation->y);
+		cos = Math_CosS(rotation->y);
+		
+		temp1 = cmf->xx;
+		temp2 = cmf->xz;
+		cmf->xx = temp1 * cos - temp2 * sin;
+		cmf->xz = temp1 * sin + temp2 * cos;
+		
+		temp1 = cmf->yx;
+		temp2 = cmf->yz;
+		cmf->yx = temp1 * cos - temp2 * sin;
+		cmf->yz = temp1 * sin + temp2 * cos;
+		
+		temp1 = cmf->zx;
+		temp2 = cmf->zz;
+		cmf->zx = temp1 * cos - temp2 * sin;
+		cmf->zz = temp1 * sin + temp2 * cos;
+		
+		temp1 = cmf->wx;
+		temp2 = cmf->wz;
+		cmf->wx = temp1 * cos - temp2 * sin;
+		cmf->wz = temp1 * sin + temp2 * cos;
+	}
+	
+	if (rotation->x != 0) {
+		sin = Math_SinS(rotation->x);
+		cos = Math_CosS(rotation->x);
+		
+		temp1 = cmf->xy;
+		temp2 = cmf->xz;
+		cmf->xy = temp1 * cos + temp2 * sin;
+		cmf->xz = temp2 * cos - temp1 * sin;
+		
+		temp1 = cmf->yy;
+		temp2 = cmf->yz;
+		cmf->yy = temp1 * cos + temp2 * sin;
+		cmf->yz = temp2 * cos - temp1 * sin;
+		
+		temp1 = cmf->zy;
+		temp2 = cmf->zz;
+		cmf->zy = temp1 * cos + temp2 * sin;
+		cmf->zz = temp2 * cos - temp1 * sin;
+		
+		temp1 = cmf->wy;
+		temp2 = cmf->wz;
+		cmf->wy = temp1 * cos + temp2 * sin;
+		cmf->wz = temp2 * cos - temp1 * sin;
+	}
 }
