@@ -99,7 +99,7 @@ void SkelAnime_Draw(MemFile* zobj, u32 skeleton, MtxF* mtx) {
 	dlist = limb->dList;
 	Lib_ByteSwap(&dlist, SWAP_U32);
 	if (dlist) {
-		gSPMatrix(gCurrentMatrix);
+		gSPMatrix(mtx);
 		gSPDisplayList(dlist);
 	}
 	
