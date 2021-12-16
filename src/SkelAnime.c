@@ -62,14 +62,8 @@ void SkelAnime_Limb(u32 skelSeg, u8 limbId, MtxF* mtx) {
 
 void SkelAnime_Draw(MemFile* zobj, u32 skeleton, MtxF* mtx) {
 	StandardLimb* limb;
-	u32* limbList;
-	u32 limbListSeg;
 	u32* skel;
 	u32 skelSeg;
-	Vec3s rot = { 0 };
-	Vec3s pos;
-	Vec3f rpos;
-	u32 dlist;
 	
 	n64_set_onlyGeoLayer(GEOLAYER_OPAQUE);
 	
@@ -80,33 +74,7 @@ void SkelAnime_Draw(MemFile* zobj, u32 skeleton, MtxF* mtx) {
 	skelSeg = *skel;
 	Lib_ByteSwap(&skelSeg, SWAP_U32);
 	
-	limbList = n64_virt2phys(skelSeg);
-	limbListSeg = limbList[0];
-	Lib_ByteSwap(&limbListSeg, SWAP_U32);
-	limb = n64_virt2phys(limbListSeg);
-	
-	Vec3_Copy(&pos, &limb->jointPos);
-	Lib_ByteSwap(&pos.x, SWAP_U16);
-	Lib_ByteSwap(&pos.y, SWAP_U16);
-	Lib_ByteSwap(&pos.z, SWAP_U16);
-	Vec3_Copy(&rpos, &pos);
-	Vec3_Mult(&rpos, 0.001f);
-	if (gS == 0)
-		OsPrintfEx("%f %f %f", rpos.x, rpos.y, rpos.z);
-	
-	Matrix_TranslateRotateZYX(&rpos, &rot);
-	Matrix_ToMtxF(mtx);
-	dlist = limb->dList;
-	Lib_ByteSwap(&dlist, SWAP_U32);
-	if (dlist) {
-		gSPMatrix(mtx);
-		gSPDisplayList(dlist);
-	}
-	
-	mtx++;
-	
-	if (limb->child != 0xFF)
-		SkelAnime_Limb(skelSeg, limb->child, mtx);
+	SkelAnime_Limb(skelSeg, 0, mtx);
 	
 	Matrix_Pop();
 	
