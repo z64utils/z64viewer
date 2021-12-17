@@ -32,6 +32,7 @@
 #include <stdarg.h>
 #include <math.h>
 
+#define MATRIX_STACK_MAX 16
 #define SEGMENT_MAX 16
 #define VBUF_MAX    32
 
@@ -57,9 +58,11 @@ static enum n64_zmode gOnlyThisZmode;
 static enum n64_zmode gCurrentZmode;
 
 static struct {
-	float model[16];
+	//float model[16];
 	float view[16];
 	float projection[16];
+	MtxF modelStack[MATRIX_STACK_MAX];
+	MtxF *modelNow;
 } gMatrix;
 
 static float gLights[16];
@@ -766,7 +769,7 @@ static void gbiFunc_vtx(void* cmd) {
 		v->pos.x = s16r(vaddr + 0) * scale;
 		v->pos.y = s16r(vaddr + 2) * scale;
 		v->pos.z = s16r(vaddr + 4) * scale;
-		v->pos = vec3_mul_mat44f(&v->pos, gMatrix.model);
+		v->pos = vec3_mul_mat44f(&v->pos, gMatrix.modelNow);
 		v->texcoord0.u = s16r(vaddr + 8) * (1.0 / 1024) * (32.0 / gMatState.texWidth);
 		v->texcoord0.v = s16r(vaddr + 10) * (1.0 / 1024) * (32.0 / gMatState.texHeight);
 		v->texcoord1.u = v->texcoord0.u;
@@ -1034,23 +1037,39 @@ static void gbiFunc_mtx(void* cmd) {
 #define G_MTX_MODELVIEW   0x00
 #define G_MTX_PROJECTION  0x04
 	uint8_t* b = cmd;
-	uint8_t params = b[3];
+	uint8_t params = b[3] ^ G_MTX_PUSH;
 	uint32_t mtxaddr = u32r(b + 4);
 	Mtx *mtx = n64_virt2phys(mtxaddr);
 	MtxF mtxF;
 	
+	if (!mtx)
+		return;
+	
 	Matrix_MtxToMtxF(mtx, &mtxF);
 	
-	switch (params)
-	{
-		case G_MTX_LOAD | G_MTX_PUSH: // TODO hacky; please implement stack
-			n64_setMatrix_model(&mtxF);
-			break;
+	/* push matrix on stack */
+	if (params & G_MTX_PUSH) {
+		gMatrix.modelNow += 1;
+	
+		assert(gMatrix.modelNow - gMatrix.modelStack < MATRIX_STACK_MAX && "matrix stack overflow");
+		
+		*gMatrix.modelNow = *(gMatrix.modelNow - 1);
+	}
+	
+	if (params & G_MTX_LOAD) {
+		*gMatrix.modelNow = mtxF;
+	}
+	else {
+		MtxF copy = *gMatrix.modelNow;
+		Matrix_MtxFMtxFMult(&copy, &mtxF, gMatrix.modelNow);
 	}
 }
 
 static void gbiFunc_popmtx(void* cmd) {
-	// TODO
+	uint8_t* b = cmd;
+	int num = u32r(b + 4) / 0x40;
+	gMatrix.modelNow -= num;
+	assert(gMatrix.modelNow >= gMatrix.modelStack && "matrix stack underflow");
 }
 
 static void gbiFunc_dl(void* cmd) {
@@ -1237,7 +1256,9 @@ void n64_draw(void* dlist) {
 }
 
 void n64_setMatrix_model(void* data) {
-	memcpy(gMatrix.model, data, sizeof(gMatrix.model));
+	//memcpy(gMatrix.model, data, sizeof(gMatrix.model));
+	gMatrix.modelNow = gMatrix.modelStack;
+	memcpy(gMatrix.modelStack, data, sizeof(*gMatrix.modelStack));
 	//if (gShader)
 	//	Shader_setMat4(gShader, "model", gMatrix.model);
 }
