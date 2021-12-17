@@ -9,14 +9,13 @@ typedef enum {
 	MTXMODE_APPLY
 } MtxMode;
 
-typedef long int Mtx_t[4][4];
+typedef s32 Mtx_t[4][4];
 typedef union {
 	Mtx_t m;
 	struct {
 		u16 intPart[4][4];
 		u16 fracPart[4][4];
 	};
-	long long int forc_structure_alignment;
 } Mtx;
 
 typedef float MtxF_t[4][4];
@@ -49,6 +48,8 @@ void Matrix_RotateZ(f32 z, MtxMode mode);
 
 void Matrix_MtxFCopy(MtxF* dest, MtxF* src);
 void Matrix_ToMtxF(MtxF* mtx);
+Mtx* Matrix_ToMtx(Mtx* dest, char* file, s32 line);
+void Matrix_MtxToMtxF(Mtx* src, MtxF* dest);
 void Matrix_MtxFMtxFMult(MtxF* mfA, MtxF* mfB, MtxF* dest);
 void Matrix_Projection(MtxF* mtx, f32 fovy, f32 aspect, f32 near, f32 far, f32 scale);
 void Matrix_LookAt(MtxF* mf, Vec3f eye, Vec3f at, s16 roll);

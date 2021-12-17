@@ -1,5 +1,8 @@
 #include <Viewer.h>
 
+#define    FTOFIX32(x)    (long)((x) * (float)0x00010000)
+#define    FIX32TOF(x)    ((float)(x) * (1.0f / (float)0x00010000))
+
 static MtxF* gMatrixStack;
 static MtxF* gCurrentMatrix;
 const MtxF gMtxFClear = {
@@ -373,6 +376,126 @@ void Matrix_ToMtxF(MtxF* mtx) {
 	Matrix_MtxFCopy(mtx, gCurrentMatrix);
 }
 
+MtxF* Matrix_CheckFloats(MtxF* mf, char* file, s32 line) {
+	s32 i, j;
+
+	for (i = 0; i < 4; i++) {
+		for (j = 0; j < 4; j++) {
+		#if 0
+			if (!(-32768.0f <= mf->mf[i][j]) || !(mf->mf[i][j] < 32768.0f)) {
+				osSyncPrintf("%s %d: [%s] =\n"
+							 "/ %12.6f %12.6f %12.6f %12.6f \\\n"
+							 "| %12.6f %12.6f %12.6f %12.6f |\n"
+							 "| %12.6f %12.6f %12.6f %12.6f |\n"
+							 "\\ %12.6f %12.6f %12.6f %12.6f /\n",
+							 file, line, "mf", mf->xx, mf->xy, mf->xz, mf->xw, mf->yx, mf->yy, mf->yz, mf->yw, mf->zx,
+							 mf->zy, mf->zz, mf->zw, mf->wx, mf->wy, mf->wz, mf->ww);
+				Fault_AddHungupAndCrash(file, line);
+			}
+		#endif
+		}
+	}
+
+	return mf;
+}
+
+void Matrix_MtxToMtxF(Mtx* src, MtxF* dest) {
+	u16* m1 = (void*)((u8*)src);
+	u16* m2 = (void*)((u8*)src + 0x20);
+
+	dest->xx = ((m1[0] << 0x10) | m2[0]) * (1 / 65536.0f);
+	dest->yx = ((m1[1] << 0x10) | m2[1]) * (1 / 65536.0f);
+	dest->zx = ((m1[2] << 0x10) | m2[2]) * (1 / 65536.0f);
+	dest->wx = ((m1[3] << 0x10) | m2[3]) * (1 / 65536.0f);
+	dest->xy = ((m1[4] << 0x10) | m2[4]) * (1 / 65536.0f);
+	dest->yy = ((m1[5] << 0x10) | m2[5]) * (1 / 65536.0f);
+	dest->zy = ((m1[6] << 0x10) | m2[6]) * (1 / 65536.0f);
+	dest->wy = ((m1[7] << 0x10) | m2[7]) * (1 / 65536.0f);
+	dest->xz = ((m1[8] << 0x10) | m2[8]) * (1 / 65536.0f);
+	dest->yz = ((m1[9] << 0x10) | m2[9]) * (1 / 65536.0f);
+	dest->zz = ((m1[10] << 0x10) | m2[10]) * (1 / 65536.0f);
+	dest->wz = ((m1[11] << 0x10) | m2[11]) * (1 / 65536.0f);
+	dest->xw = ((m1[12] << 0x10) | m2[12]) * (1 / 65536.0f);
+	dest->yw = ((m1[13] << 0x10) | m2[13]) * (1 / 65536.0f);
+	dest->zw = ((m1[14] << 0x10) | m2[14]) * (1 / 65536.0f);
+	dest->ww = ((m1[15] << 0x10) | m2[15]) * (1 / 65536.0f);
+}
+
+Mtx* Matrix_MtxFToMtx(MtxF* src, Mtx* dest) {
+	s32 temp;
+	u16* m1 = (void*)((u8*)dest);
+	u16* m2 = (void*)((u8*)dest + 0x20);
+
+	temp = src->xx * 0x10000;
+	m1[0] = (temp >> 0x10);
+	m1[16 + 0] = temp & 0xFFFF;
+
+	temp = src->yx * 0x10000;
+	m1[1] = (temp >> 0x10);
+	m1[16 + 1] = temp & 0xFFFF;
+
+	temp = src->zx * 0x10000;
+	m1[2] = (temp >> 0x10);
+	m1[16 + 2] = temp & 0xFFFF;
+
+	temp = src->wx * 0x10000;
+	m1[3] = (temp >> 0x10);
+	m1[16 + 3] = temp & 0xFFFF;
+
+	temp = src->xy * 0x10000;
+	m1[4] = (temp >> 0x10);
+	m1[16 + 4] = temp & 0xFFFF;
+
+	temp = src->yy * 0x10000;
+	m1[5] = (temp >> 0x10);
+	m1[16 + 5] = temp & 0xFFFF;
+
+	temp = src->zy * 0x10000;
+	m1[6] = (temp >> 0x10);
+	m1[16 + 6] = temp & 0xFFFF;
+
+	temp = src->wy * 0x10000;
+	m1[7] = (temp >> 0x10);
+	m1[16 + 7] = temp & 0xFFFF;
+
+	temp = src->xz * 0x10000;
+	m1[8] = (temp >> 0x10);
+	m1[16 + 8] = temp & 0xFFFF;
+
+	temp = src->yz * 0x10000;
+	m1[9] = (temp >> 0x10);
+	m2[9] = temp & 0xFFFF;
+
+	temp = src->zz * 0x10000;
+	m1[10] = (temp >> 0x10);
+	m2[10] = temp & 0xFFFF;
+
+	temp = src->wz * 0x10000;
+	m1[11] = (temp >> 0x10);
+	m2[11] = temp & 0xFFFF;
+
+	temp = src->xw * 0x10000;
+	m1[12] = (temp >> 0x10);
+	m2[12] = temp & 0xFFFF;
+
+	temp = src->yw * 0x10000;
+	m1[13] = (temp >> 0x10);
+	m2[13] = temp & 0xFFFF;
+
+	temp = src->zw * 0x10000;
+	m1[14] = (temp >> 0x10);
+	m2[14] = temp & 0xFFFF;
+
+	temp = src->ww * 0x10000;
+	m1[15] = (temp >> 0x10);
+	m2[15] = temp & 0xFFFF;
+	return dest;
+}
+
+Mtx* Matrix_ToMtx(Mtx* dest, char* file, s32 line) {
+	return Matrix_MtxFToMtx(Matrix_CheckFloats(gCurrentMatrix, file, line), dest);
+}
+
 void Matrix_MtxFMtxFMult(MtxF* mfA, MtxF* mfB, MtxF* dest) {
 	f32 cx;
 	f32 cy;
@@ -678,3 +801,5 @@ void Matrix_TranslateRotateZYX(Vec3f* translation, Vec3s* rotation) {
 		cmf->wz = temp2 * cos - temp1 * sin;
 	}
 }
+
+

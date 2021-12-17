@@ -22,6 +22,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <Matrix.h>
+#include <Vector.h>
 #include <HermosauhuLib.h>
 #include <assert.h>
 #include <stdint.h>
@@ -41,6 +43,8 @@ static GLuint gIndices[6];
 
 static uint32_t gRdpHalf1;
 static uint32_t gRdpHalf2;
+
+static Shader *gShader = 0;
 
 static bool gHideGeometry = false;
 static bool gVertexColors = false;
@@ -160,11 +164,12 @@ typedef struct Vtx {
 } Vtx;
 
 typedef struct VtxF {
-	struct {
+	/*struct {
 		GLfloat x;
 		GLfloat y;
 		GLfloat z;
-	} pos;
+	} pos;*/
+	Vec3f pos;
 	struct {
 		GLfloat u;
 		GLfloat v;
@@ -553,7 +558,7 @@ static void doMaterial(void) {
 			out float vFog;
 			out vec3 vLightColor;
 			
-			uniform mat4 model;
+			//uniform mat4 model;
 			uniform mat4 view;
 			uniform mat4 projection;
 			uniform vec2 uFog;
@@ -570,7 +575,8 @@ static void doMaterial(void) {
 			void main() {
 			float fogStart = uFog.x;
 			float fogEnd = uFog.y;
-			gl_Position = projection * view * model * vec4(aPos, 1.0);
+			//gl_Position = projection * view * model * vec4(aPos, 1.0);
+			gl_Position = projection * view * vec4(aPos, 1.0);
 			vColor = aColor;
 			TexCoord0 = vec2(aTexCoord0.x, aTexCoord0.y);
 			TexCoord1 = vec2(aTexCoord1.x, aTexCoord1.y);
@@ -585,7 +591,8 @@ static void doMaterial(void) {
 				vec3 dif1 = uLights[2].xyz;
 				vec3 lightVector0 = normalize(uLights[3].xyz);
 				vec3 lightVector1 = normalize(vec3(uLights[0][3], uLights[1][3], uLights[2][3]));
-				vec3 mvNormal = normalize(vec3(mul(model, aNorm)));
+				//vec3 mvNormal = normalize(vec3(mul(model, aNorm)));
+				vec3 mvNormal = normalize(aNorm);
 				float dif0mod = clamp(dot(mvNormal, lightVector0), 0.0, 1.0);
 				float dif1mod = clamp(dot(mvNormal, lightVector1), 0.0, 1.0);
 				vLightColor = amb + dif0 * dif0mod + dif1 * dif1mod;
@@ -683,13 +690,15 @@ static void doMaterial(void) {
 		if (!shader)
 			shader = Shader_new();
 		
+		gShader = shader;
+		
 		Shader_update(shader, vtx, frag);
 		
 		// render container
 		Shader_use(shader);
 		
 		// mvp matrix
-		Shader_setMat4(shader, "model", gMatrix.model);
+		//Shader_setMat4(shader, "model", gMatrix.model);
 		Shader_setMat4(shader, "view", gMatrix.view);
 		Shader_setMat4(shader, "projection", gMatrix.projection);
 		Shader_setMat4(shader, "uLights", gLights);
@@ -714,6 +723,22 @@ static float shift_to_multiplier(const int shift) {
 	
 	/* left shift; multiplication by 2 per bit */
 	return pow(2, 16 - shift);
+}
+
+static inline Vec3f vec3_mul_mat44f(void *v_, void *mat_)
+{
+	Vec3f *v = v_;
+	struct {
+		Vec4f x;
+		Vec4f y;
+		Vec4f z;
+		Vec4f w;
+	} *mat = mat_;
+	return (Vec3f) {
+		  .x = v->x * mat->x.x + v->y * mat->y.x + v->z * mat->z.x + 1 * mat->w.x
+		, .y = v->x * mat->x.y + v->y * mat->y.y + v->z * mat->z.y + 1 * mat->w.y
+		, .z = v->x * mat->x.z + v->y * mat->y.z + v->z * mat->z.z + 1 * mat->w.z
+	};
 }
 
 static void gbiFunc_vtx(void* cmd) {
@@ -741,6 +766,7 @@ static void gbiFunc_vtx(void* cmd) {
 		v->pos.x = s16r(vaddr + 0) * scale;
 		v->pos.y = s16r(vaddr + 2) * scale;
 		v->pos.z = s16r(vaddr + 4) * scale;
+		v->pos = vec3_mul_mat44f(&v->pos, gMatrix.model);
 		v->texcoord0.u = s16r(vaddr + 8) * (1.0 / 1024) * (32.0 / gMatState.texWidth);
 		v->texcoord0.v = s16r(vaddr + 10) * (1.0 / 1024) * (32.0 / gMatState.texHeight);
 		v->texcoord1.u = v->texcoord0.u;
@@ -1000,6 +1026,33 @@ static void gbiFunc_geometrymode(void* cmd) {
 	}
 }
 
+static void gbiFunc_mtx(void* cmd) {
+#define G_MTX_NOPUSH      0x00
+#define G_MTX_PUSH        0x01
+#define G_MTX_MUL         0x00
+#define G_MTX_LOAD        0x02
+#define G_MTX_MODELVIEW   0x00
+#define G_MTX_PROJECTION  0x04
+	uint8_t* b = cmd;
+	uint8_t params = b[3];
+	uint32_t mtxaddr = u32r(b + 4);
+	Mtx *mtx = n64_virt2phys(mtxaddr);
+	MtxF mtxF;
+	
+	Matrix_MtxToMtxF(mtx, &mtxF);
+	
+	switch (params)
+	{
+		case G_MTX_LOAD | G_MTX_PUSH: // TODO hacky; please implement stack
+			n64_setMatrix_model(&mtxF);
+			break;
+	}
+}
+
+static void gbiFunc_popmtx(void* cmd) {
+	// TODO
+}
+
 static void gbiFunc_dl(void* cmd) {
 	uint8_t* b = cmd;
 	uint32_t hi = u32r(b);
@@ -1050,6 +1103,8 @@ static gbiFunc gGbi[256] = {
 	[G_SETENVCOLOR] = gbiFunc_setenvcolor,
 	[G_SETCOMBINE] = gbiFunc_setcombine,
 	[G_GEOMETRYMODE] = gbiFunc_geometrymode,
+	[G_MTX] = gbiFunc_mtx,
+	[G_POPMTX] = gbiFunc_popmtx,
 	[G_DL] = gbiFunc_dl,
 	[G_BRANCH_Z] = gbiFunc_branch_z,
 	[G_RDPHALF_1] = gbiFunc_rdphalf_1,
@@ -1183,6 +1238,8 @@ void n64_draw(void* dlist) {
 
 void n64_setMatrix_model(void* data) {
 	memcpy(gMatrix.model, data, sizeof(gMatrix.model));
+	//if (gShader)
+	//	Shader_setMat4(gShader, "model", gMatrix.model);
 }
 
 void n64_setMatrix_view(void* data) {
