@@ -12,7 +12,7 @@ void Viewer_Update(ViewerContext* viewerCtx) {
 }
 
 void Viewer_Draw(ViewerContext* viewerCtx) {
-	static MtxF mtx[128];
+	static Mtx mtx[128];
 	z64_Draw_SetScene(&viewerCtx->objCtx.scene);
 	z64_Draw_Room(&viewerCtx->objCtx.room[0]);
 	Matrix_Translate(0, 0, 0, MTXMODE_NEW);
