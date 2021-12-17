@@ -15,15 +15,6 @@ void SkelAnime_Init(MemFile* memFile, SkelAnime* skelAnime, u32 skeleton, u32 an
 }
 
 void SkelAnime_Update(SkelAnime* skelAnime) {
-	static f64 prevTime;
-	f64 curTime;
-	
-	curTime = glfwGetTime();
-	
-	if (curTime - prevTime < 1.0 / 20.0)
-		return;
-	prevTime = curTime;
-	
 	gSPSegment(0x6, skelAnime->memFile->data);
 	
 	AnimationHeader animHeader = *((AnimationHeader*)SEGMENTED_TO_VIRTUAL(skelAnime->animation));
@@ -32,6 +23,9 @@ void SkelAnime_Update(SkelAnime* skelAnime) {
 	Lib_ByteSwap(&animHeader.frameData, SWAP_U32);
 	Lib_ByteSwap(&animHeader.common.frameCount, SWAP_U16);
 	Lib_ByteSwap(&animHeader.staticIndexMax, SWAP_U16);
+	
+	if (!z64_ExecuteIn20Fps())
+		return;
 	
 	skelAnime->endFrame = animHeader.common.frameCount - 1;
 	JointIndex* jointIndices = SEGMENTED_TO_VIRTUAL(animHeader.jointIndices);

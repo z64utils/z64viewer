@@ -14,6 +14,7 @@
 #include <Light.h>
 #include <Object.h>
 #include <SkelAnime.h>
+#include <Rand.h>
 
 extern InputContext* __inputCtx;
 extern AppInfo* __appInfo;
@@ -37,5 +38,7 @@ void z64_Update();
 
 void z64_Draw_SetScene(MemFile* zscene);
 void z64_Draw_Room(MemFile* zroom);
+
+bool z64_ExecuteIn20Fps();
 
 #endif

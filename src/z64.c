@@ -44,6 +44,7 @@ void z64_Init(
 	appInfo->winDim.x = x;
 	appInfo->winDim.y = y;
 	
+	Rand_Seed(0xDEADBEEF);
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -102,10 +103,29 @@ void z64_Draw() {
 	glfwSwapBuffers(__appInfo->mainWindow);
 }
 
+static f64 prevTime = 0;
+static f64 curTime = 0;
+
+bool z64_ExecuteIn20Fps() {
+	curTime = glfwGetTime();
+	
+	if (curTime - prevTime < 1.0 / 20.0)
+		return 0;
+	
+	return 1;
+}
+
+void z64_20fpsUpdate() {
+	if (curTime - prevTime < 1.0 / 20.0)
+		return;
+	prevTime = curTime;
+}
+
 void z64_Update() {
 	while (!glfwWindowShouldClose(__appInfo->mainWindow)) {
 		glfwPollEvents();
 		z64_Draw();
+		z64_20fpsUpdate();
 	}
 }
 
