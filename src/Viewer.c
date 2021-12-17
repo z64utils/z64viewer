@@ -15,7 +15,7 @@ void Viewer_Draw(ViewerContext* viewerCtx) {
 	static Mtx mtx[128];
 	z64_Draw_SetScene(&viewerCtx->objCtx.scene);
 	z64_Draw_Room(&viewerCtx->objCtx.room[0]);
-	Matrix_Translate(0, 0, 0, MTXMODE_NEW);
-	Matrix_Scale(0.1, 0.1, 0.1, MTXMODE_APPLY);
-	SkelAnime_Draw(&viewerCtx->objCtx.zobj, 0x0600E988, mtx);
+	// Matrix_Translate(0, 0, 0, MTXMODE_NEW);
+	// Matrix_Scale(0.1, 0.1, 0.1, MTXMODE_APPLY);
+	// SkelAnime_Draw(&viewerCtx->objCtx.zobj, 0x0600E988, mtx, NULL);
 }
