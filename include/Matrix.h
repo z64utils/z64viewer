@@ -56,11 +56,6 @@ void Matrix_LookAt(MtxF* mf, Vec3f eye, Vec3f at, s16 roll);
 
 void Matrix_TranslateRotateZYX(Vec3f* translation, Vec3s* rotation);
 
-#define gSPMatrix(mtx)            n64_setMatrix_model(mtx)
-#define gSPDisplayList(dl)        n64_draw(n64_virt2phys(dl))
-#define gSPSegment(sed, data)     n64_set_segment(sed, data)
-#define SEGMENTED_TO_VIRTUAL(seg) n64_virt2phys(seg)
-
 #define Matrix_RotateX_s(x, mode) Matrix_RotateX(BinToRad(x), mode)
 #define Matrix_RotateY_s(x, mode) Matrix_RotateY(BinToRad(x), mode)
 #define Matrix_RotateZ_s(x, mode) Matrix_RotateZ(BinToRad(x), mode)
