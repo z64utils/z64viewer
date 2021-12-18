@@ -159,7 +159,7 @@ void String_GetFilename(char* dst, char* src);
 		(min) + (r - (min)) % range;                \
 	})
 
-#define GetByteSwap(in) ({                    \
+#define ReadBE(in) ({                         \
 		s32 tst = 1;                          \
 		u8* tstP = (u8*)&tst;                 \
 		if (tstP[0] != 0) {                   \
