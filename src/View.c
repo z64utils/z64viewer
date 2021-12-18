@@ -11,7 +11,7 @@ void View_Camera_FlyMode(ViewContext* viewCtx, InputContext* inputCtx) {
 	if (inputCtx->key[KEY_LEFT_SHIFT].hold) {
 		Math_SmoothStepToF(&speed, 4.0f, 0.25f, 1.00f, 0.00001f);
 	} else {
-		Math_SmoothStepToF(&speed, 1.0f, 0.25f, 1.00f, 0.00001f);
+		Math_SmoothStepToF(&speed, 0.5f, 0.25f, 1.00f, 0.00001f);
 	}
 	
 	vel.x += inputCtx->key[KEY_A].hold ? speed : 0.0f;
@@ -92,7 +92,7 @@ void View_Camera_OrbitMode(ViewContext* viewCtx, InputContext* inputCtx) {
 		}
 	}
 	
-	orbitSph.r = CLAMP_MIN(orbitSph.r - (distMult * (inputCtx->mouse.scrollY * 1.5f)), 2.0f);
+	orbitSph.r = CLAMP_MIN(orbitSph.r - (distMult * (inputCtx->mouse.scrollY)), 0.00001f);
 	cam->eye = cam->at;
 	
 	Vec_AddVecSphToVec3f(&cam->eye, &orbitSph);
@@ -145,8 +145,11 @@ void View_Update(ViewContext* viewCtx, InputContext* inputCtx) {
 			viewCtx->setCamMove = 0;
 		}
 		if (viewCtx->setCamMove) {
-			View_Camera_OrbitMode(viewCtx, inputCtx);
-			View_Camera_FlyMode(viewCtx, inputCtx);
+			if (inputCtx->mouse.clickMid.hold || inputCtx->mouse.scrollY) {
+				View_Camera_OrbitMode(viewCtx, inputCtx);
+			} else {
+				View_Camera_FlyMode(viewCtx, inputCtx);
+			}
 		}
 	}
 	yaw = Vec_Yaw(&cam->eye, &cam->at);
