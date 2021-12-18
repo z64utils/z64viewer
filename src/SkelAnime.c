@@ -19,10 +19,10 @@ void SkelAnime_Update(SkelAnime* skelAnime) {
 	
 	AnimationHeader animHeader = *((AnimationHeader*)SEGMENTED_TO_VIRTUAL(skelAnime->animation));
 	
-	Lib_ByteSwap(&animHeader.jointIndices, SWAP_U32);
-	Lib_ByteSwap(&animHeader.frameData, SWAP_U32);
-	Lib_ByteSwap(&animHeader.common.frameCount, SWAP_U16);
-	Lib_ByteSwap(&animHeader.staticIndexMax, SWAP_U16);
+	ByteSwap(&animHeader.jointIndices);
+	ByteSwap(&animHeader.frameData);
+	ByteSwap(&animHeader.common.frameCount);
+	ByteSwap(&animHeader.staticIndexMax);
 	
 	if (!z64_ExecuteIn20Fps())
 		return;
@@ -42,9 +42,9 @@ void SkelAnime_Update(SkelAnime* skelAnime) {
 			jointIndices->y,
 			jointIndices->z
 		};
-		Lib_ByteSwap(&swapInd.x, SWAP_U16);
-		Lib_ByteSwap(&swapInd.y, SWAP_U16);
-		Lib_ByteSwap(&swapInd.z, SWAP_U16);
+		ByteSwap(&swapInd.x);
+		ByteSwap(&swapInd.y);
+		ByteSwap(&swapInd.z);
 		frameTable->x =
 		    (swapInd.x >= staticIndexMax) ? dynamicData[swapInd.x] : staticData[swapInd.x];
 		frameTable->y =
@@ -52,9 +52,9 @@ void SkelAnime_Update(SkelAnime* skelAnime) {
 		frameTable->z =
 		    (swapInd.z >= staticIndexMax) ? dynamicData[swapInd.z] : staticData[swapInd.z];
 		
-		Lib_ByteSwap(&frameTable->x, SWAP_U16);
-		Lib_ByteSwap(&frameTable->y, SWAP_U16);
-		Lib_ByteSwap(&frameTable->z, SWAP_U16);
+		ByteSwap(&frameTable->x);
+		ByteSwap(&frameTable->y);
+		ByteSwap(&frameTable->z);
 	}
 	
 	if (skelAnime->curFrame < skelAnime->endFrame) {
@@ -76,11 +76,11 @@ void SkelAnime_Limb(u32 skelSeg, u8 limbId, Mtx** mtx, Vec3s* jointTable) {
 	
 	limbList = SEGMENTED_TO_VIRTUAL(skelSeg);
 	limbListSeg = *limbList;
-	Lib_ByteSwap(&limbListSeg, SWAP_U32);
+	ByteSwap(&limbListSeg);
 	limb = SEGMENTED_TO_VIRTUAL(limbListSeg);
 	
 	limbListSeg = limbList[limbId];
-	Lib_ByteSwap(&limbListSeg, SWAP_U32);
+	ByteSwap(&limbListSeg);
 	limb = SEGMENTED_TO_VIRTUAL(limbListSeg);
 	
 	Matrix_Push();
@@ -93,9 +93,9 @@ void SkelAnime_Limb(u32 skelSeg, u8 limbId, Mtx** mtx, Vec3s* jointTable) {
 		limbId++;
 		Vec3_Copy(&rot, &jointTable[limbId]);
 		
-		Lib_ByteSwap(&pos.x, SWAP_U16);
-		Lib_ByteSwap(&pos.y, SWAP_U16);
-		Lib_ByteSwap(&pos.z, SWAP_U16);
+		ByteSwap(&pos.x);
+		ByteSwap(&pos.y);
+		ByteSwap(&pos.z);
 	}
 	
 	Vec3_Copy(&rpos, &pos);
@@ -105,7 +105,7 @@ void SkelAnime_Limb(u32 skelSeg, u8 limbId, Mtx** mtx, Vec3s* jointTable) {
 	
 	Matrix_TranslateRotateZYX(&rpos, &rot);
 	dlist = limb->dList;
-	Lib_ByteSwap(&dlist, SWAP_U32);
+	ByteSwap(&dlist);
 	
 	if (dlist) {
 		Matrix_ToMtxF(&mtxF);
@@ -145,7 +145,7 @@ void SkelAnime_Draw(SkelAnime* skelAnime, Mtx* mtx, Vec3s* jointTable) {
 		gSPSegment(0xD, mtx);
 	skel = SEGMENTED_TO_VIRTUAL(skelAnime->skeleton);
 	skelSeg = *skel;
-	Lib_ByteSwap(&skelSeg, SWAP_U32);
+	ByteSwap(&skelSeg);
 	
 	SkelAnime_Limb(skelSeg, 0, &mtx, jointTable);
 	

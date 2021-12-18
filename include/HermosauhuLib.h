@@ -186,6 +186,37 @@ extern PrintfSuppressLevel gPrintfSuppress;
 
 #ifndef __HERMO_C__
 
+#define GetByteSwap(in) ({            \
+		s32 tst = 1; \
+		u8* tstP = (u8*)&tst; \
+		if (tstP[0] != 0) { \
+			typeof(in) out;                  \
+			s32 size = sizeof(in);           \
+			u8* ptrS = (u8*)&in;             \
+			u8* ptrD = (u8*)&out;            \
+			for (s32 i = 0; i < size; i++) { \
+				ptrD[size - i - 1] = ptrS[i];   \
+			}                                \
+			out;                             \
+		} else { in; } \
+	} \
+)
+
+#define ByteSwap(in) {            \
+		s32 tst = 1; \
+		u8* tstP = (u8*)&tst; \
+		if (tstP[0] != 0) { \
+			typeof(*(in)) out;                  \
+			s32 size = sizeof(*(in));           \
+			u8* ptrS = (u8*)in;             \
+			u8* ptrD = (u8*)&out;            \
+			for (s32 i = 0; i < size; i++) { \
+				ptrD[size - i - 1] = ptrS[i];   \
+			}                                \
+			*in = out;                             \
+		} \
+}
+
 #define Lib_Malloc(data, size) Lib_Malloc(data, size); \
 	OsPrintfEx("Lib_Malloc: size [0x%X]", size);
 
