@@ -150,16 +150,48 @@ void String_GetFilename(char* dst, char* src);
 		b = y;           \
 }
 
-#define Lib_Wrap(x, min, max) ({ \
-		typeof(x) r = (x); \
-		typeof(x) range = (max) - (min) + 1; \
-		if (r < (min)) { \
+#define Lib_Wrap(x, min, max) ({                    \
+		typeof(x) r = (x);                          \
+		typeof(x) range = (max) - (min) + 1;        \
+		if (r < (min)) {                            \
 			r += range * (((min) - r) / range + 1); \
-		} \
-		(min) + (r - (min)) % range; \
+		}                                           \
+		(min) + (r - (min)) % range;                \
 	})
 
+#define GetByteSwap(in) ({                    \
+		s32 tst = 1;                          \
+		u8* tstP = (u8*)&tst;                 \
+		if (tstP[0] != 0) {                   \
+			typeof(in) out;                   \
+			s32 size = sizeof(in);            \
+			u8* ptrS = (u8*)&in;              \
+			u8* ptrD = (u8*)&out;             \
+			for (s32 i = 0; i < size; i++) {  \
+				ptrD[size - i - 1] = ptrS[i]; \
+			}                                 \
+			out;                              \
+		} else { in; }                        \
+	}                                         \
+)
+
+#define ByteSwap(in) {                        \
+		s32 tst = 1;                          \
+		u8* tstP = (u8*)&tst;                 \
+		if (tstP[0] != 0) {                   \
+			typeof(*(in)) out;                \
+			s32 size = sizeof(*(in));         \
+			u8* ptrS = (u8*)in;               \
+			u8* ptrD = (u8*)&out;             \
+			for (s32 i = 0; i < size; i++) {  \
+				ptrD[size - i - 1] = ptrS[i]; \
+			}                                 \
+			*in = out;                        \
+		}                                     \
+}
+
 #define Decr(x) (x -= (x > 0) ? 1 : 0)
+#define Incr(x) (x += (x < 0) ? 1 : 0)
 
 extern PrintfSuppressLevel gPrintfSuppress;
 
@@ -185,37 +217,6 @@ extern PrintfSuppressLevel gPrintfSuppress;
 }
 
 #ifndef __HERMO_C__
-
-#define GetByteSwap(in) ({            \
-		s32 tst = 1; \
-		u8* tstP = (u8*)&tst; \
-		if (tstP[0] != 0) { \
-			typeof(in) out;                  \
-			s32 size = sizeof(in);           \
-			u8* ptrS = (u8*)&in;             \
-			u8* ptrD = (u8*)&out;            \
-			for (s32 i = 0; i < size; i++) { \
-				ptrD[size - i - 1] = ptrS[i];   \
-			}                                \
-			out;                             \
-		} else { in; } \
-	} \
-)
-
-#define ByteSwap(in) {            \
-		s32 tst = 1; \
-		u8* tstP = (u8*)&tst; \
-		if (tstP[0] != 0) { \
-			typeof(*(in)) out;                  \
-			s32 size = sizeof(*(in));           \
-			u8* ptrS = (u8*)in;             \
-			u8* ptrD = (u8*)&out;            \
-			for (s32 i = 0; i < size; i++) { \
-				ptrD[size - i - 1] = ptrS[i];   \
-			}                                \
-			*in = out;                             \
-		} \
-}
 
 #define Lib_Malloc(data, size) Lib_Malloc(data, size); \
 	OsPrintfEx("Lib_Malloc: size [0x%X]", size);
