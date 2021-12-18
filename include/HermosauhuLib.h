@@ -156,7 +156,7 @@ void String_GetFilename(char* dst, char* src);
 		if (r < (min)) {                            \
 			r += range * (((min) - r) / range + 1); \
 		}                                           \
-		(min) + (r - (min)) % range;                \
+		fmod((min) + (r - (min)), range);           \
 	})
 
 #define ReadBE(in) ({                         \

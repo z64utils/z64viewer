@@ -30,8 +30,11 @@ typedef struct {
 } AnimationHeader;
 
 typedef struct SkelAnime {
-	u32      skeleton;
 	u8       limbCount;
+	u8       mode;
+	u8       dListCount;
+	s8       taper;
+	u32      skeleton;
 	u32      animation;
 	f32      startFrame;
 	f32      endFrame;
@@ -39,9 +42,19 @@ typedef struct SkelAnime {
 	f32      curFrame;
 	f32      playSpeed;
 	Vec3s*   jointTable;
+	Vec3s*   morphTable;
+	f32      morphWeight;
+	f32      morphRate;
+	s32 (* update)();
+	s8       initFlags;
+	u8       moveFlags;
+	s16      prevRot;
+	Vec3s    prevTransl;
+	Vec3s    baseTransl;
+	f32      prevFrame;
 	MemFile* memFile;
 } SkelAnime;
 
-void SkelAnime_Init(MemFile* memFile, SkelAnime* skelAnime, u32 skeleton, u32 animation, Vec3s* jointTable);
+void SkelAnime_Init(MemFile* memFile, SkelAnime* skelAnime, u32 skeleton, u32 animation, Vec3s* jointTable, Vec3s* morphTable);
 void SkelAnime_Update(SkelAnime* skelAnime);
 void SkelAnime_Draw(SkelAnime* skelAnime, Mtx* mtx, Vec3s* jointTable);

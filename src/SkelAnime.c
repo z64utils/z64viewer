@@ -2,7 +2,7 @@
 
 static u32 gS;
 
-void SkelAnime_Init(MemFile* memFile, SkelAnime* skelAnime, u32 skeleton, u32 animation, Vec3s* jointTable) {
+void SkelAnime_Init(MemFile* memFile, SkelAnime* skelAnime, u32 skeleton, u32 animation, Vec3s* jointTable, Vec3s* morphTable) {
 	skelAnime->memFile = memFile;
 	
 	gSPSegment(0x6, memFile->data);
@@ -10,33 +10,27 @@ void SkelAnime_Init(MemFile* memFile, SkelAnime* skelAnime, u32 skeleton, u32 an
 	
 	skelAnime->skeleton = skeleton;
 	skelAnime->jointTable = jointTable;
+	skelAnime->morphTable = morphTable;
 	skelAnime->animation = animation;
 	skelAnime->limbCount = skel->limbCount + 1;
 }
 
-void SkelAnime_Update(SkelAnime* skelAnime) {
-	gSPSegment(0x6, skelAnime->memFile->data);
-	
-	AnimationHeader animHeader = *((AnimationHeader*)SEGMENTED_TO_VIRTUAL(skelAnime->animation));
+void SkelAnime_GetFrameData(u32 animation, s32 frame, s32 limbCount, Vec3s* frameTable) {
+	AnimationHeader animHeader = *((AnimationHeader*)SEGMENTED_TO_VIRTUAL(animation));
 	
 	ByteSwap(&animHeader.jointIndices);
 	ByteSwap(&animHeader.frameData);
 	ByteSwap(&animHeader.common.frameCount);
 	ByteSwap(&animHeader.staticIndexMax);
 	
-	if (!z64_ExecuteIn20Fps())
-		return;
-	
-	skelAnime->endFrame = animHeader.common.frameCount - 1;
 	JointIndex* jointIndices = SEGMENTED_TO_VIRTUAL(animHeader.jointIndices);
 	s16* frameData = SEGMENTED_TO_VIRTUAL(animHeader.frameData);
 	s16* staticData = &frameData[0];
-	s16* dynamicData = &frameData[(s32)skelAnime->curFrame];
+	s16* dynamicData = &frameData[frame];
 	u16 staticIndexMax = animHeader.staticIndexMax;
-	Vec3s* frameTable = skelAnime->jointTable;
 	s32 i;
 	
-	for (i = 0; i < skelAnime->limbCount; i++, frameTable++, jointIndices++) {
+	for (i = 0; i < limbCount; i++, frameTable++, jointIndices++) {
 		Vec3s swapInd = {
 			jointIndices->x,
 			jointIndices->y,
@@ -56,12 +50,65 @@ void SkelAnime_Update(SkelAnime* skelAnime) {
 		ByteSwap(&frameTable->y);
 		ByteSwap(&frameTable->z);
 	}
+}
+
+void SkelAnime_InterpFrameTable(s32 limbCount, Vec3s* dst, Vec3s* start, Vec3s* target, f32 weight) {
+	s32 i;
+	s16 diff;
+	s16 base;
+	
+	if (weight < 1.0f) {
+		for (i = 0; i < limbCount; i++, dst++, start++, target++) {
+			base = start->x;
+			diff = target->x - base;
+			dst->x = (s16)(diff * weight) + base;
+			base = start->y;
+			diff = target->y - base;
+			dst->y = (s16)(diff * weight) + base;
+			base = start->z;
+			diff = target->z - base;
+			dst->z = (s16)(diff * weight) + base;
+		}
+	} else {
+		for (i = 0; i < limbCount; i++, dst++, target++) {
+			dst->x = target->x;
+			dst->y = target->y;
+			dst->z = target->z;
+		}
+	}
+}
+
+void SkelAnime_Update(SkelAnime* skelAnime) {
+	gSPSegment(0x6, skelAnime->memFile->data);
+	
+	if (!z64_ExecuteIn20Fps())
+		return;
+	
+	AnimationHeader animHeader = *((AnimationHeader*)SEGMENTED_TO_VIRTUAL(skelAnime->animation));
+	
+	ByteSwap(&animHeader.jointIndices);
+	ByteSwap(&animHeader.frameData);
+	ByteSwap(&animHeader.common.frameCount);
+	ByteSwap(&animHeader.staticIndexMax);
+	
+	skelAnime->endFrame = animHeader.common.frameCount - 1;
+	SkelAnime_GetFrameData(skelAnime->animation, floor(skelAnime->curFrame), skelAnime->limbCount, skelAnime->jointTable);
+	SkelAnime_GetFrameData(skelAnime->animation, Wrap(floor(skelAnime->curFrame) + 1, 0, skelAnime->endFrame), skelAnime->limbCount, skelAnime->morphTable);
+	
+	SkelAnime_InterpFrameTable(
+		skelAnime->limbCount,
+		skelAnime->jointTable,
+		skelAnime->jointTable,
+		skelAnime->morphTable,
+		fmod(skelAnime->curFrame, 1.0f)
+	);
 	
 	if (skelAnime->curFrame < skelAnime->endFrame) {
-		skelAnime->curFrame++;
+		skelAnime->curFrame += skelAnime->playSpeed;
 	} else {
 		skelAnime->curFrame = 0;
 	}
+	skelAnime->prevFrame = skelAnime->curFrame;
 }
 
 void SkelAnime_Limb(u32 skelSeg, u8 limbId, Mtx** mtx, Vec3s* jointTable) {
