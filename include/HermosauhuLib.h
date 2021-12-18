@@ -144,13 +144,13 @@ void String_GetFilename(char* dst, char* src);
 		node = NULL;                       \
 }
 
-#define Lib_Swap(a, b) { \
+#define Swap(a, b) {     \
 		typeof(a) y = a; \
 		a = b;           \
 		b = y;           \
 }
 
-#define Lib_Wrap(x, min, max) ({                    \
+#define Wrap(x, min, max) ({                        \
 		typeof(x) r = (x);                          \
 		typeof(x) range = (max) - (min) + 1;        \
 		if (r < (min)) {                            \
