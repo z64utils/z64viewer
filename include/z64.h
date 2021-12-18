@@ -31,7 +31,8 @@ void z64_Init(
 	CallbackFunc updateCall,
 	CallbackFunc drawCall,
 	u32 x,
-	u32 y
+	u32 y,
+	u32 samples
 );
 void z64_Draw();
 void z64_Update();

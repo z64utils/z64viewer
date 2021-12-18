@@ -17,7 +17,8 @@ int main(void) {
 		(CallbackFunc)Viewer_Update,
 		(CallbackFunc)Viewer_Draw,
 		1400,
-		700
+		700,
+		0
 	);
 	
 	MemFile_LoadFile(&viewerCtx->objCtx.scene, "scene.zscene");
