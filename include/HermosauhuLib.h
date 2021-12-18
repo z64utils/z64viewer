@@ -160,18 +160,21 @@ void String_GetFilename(char* dst, char* src);
 	})
 
 #define ReadBE(in) ({                         \
+		typeof(in) out;                       \
 		s32 tst = 1;                          \
 		u8* tstP = (u8*)&tst;                 \
 		if (tstP[0] != 0) {                   \
-			typeof(in) out;                   \
 			s32 size = sizeof(in);            \
 			u8* ptrS = (u8*)&in;              \
 			u8* ptrD = (u8*)&out;             \
 			for (s32 i = 0; i < size; i++) {  \
 				ptrD[size - i - 1] = ptrS[i]; \
 			}                                 \
-			out;                              \
-		} else { in; }                        \
+			out = out;                        \
+		} else {                              \
+			out = in;                         \
+		}                                     \
+		out;                                  \
 	}                                         \
 )
 

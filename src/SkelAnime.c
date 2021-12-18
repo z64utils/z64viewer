@@ -67,7 +67,6 @@ void SkelAnime_Update(SkelAnime* skelAnime) {
 void SkelAnime_Limb(u32 skelSeg, u8 limbId, Mtx** mtx, Vec3s* jointTable) {
 	StandardLimb* limb;
 	u32* limbList;
-	u32 limbListSeg;
 	Vec3s rot = { 0 };
 	Vec3s pos;
 	Vec3f rpos;
@@ -75,13 +74,7 @@ void SkelAnime_Limb(u32 skelSeg, u8 limbId, Mtx** mtx, Vec3s* jointTable) {
 	MtxF mtxF;
 	
 	limbList = SEGMENTED_TO_VIRTUAL(skelSeg);
-	limbListSeg = *limbList;
-	ByteSwap(&limbListSeg);
-	limb = SEGMENTED_TO_VIRTUAL(limbListSeg);
-	
-	limbListSeg = limbList[limbId];
-	ByteSwap(&limbListSeg);
-	limb = SEGMENTED_TO_VIRTUAL(limbListSeg);
+	limb = SEGMENTED_TO_VIRTUAL(ReadBE(limbList[limbId]));
 	
 	Matrix_Push();
 	
@@ -89,35 +82,23 @@ void SkelAnime_Limb(u32 skelSeg, u8 limbId, Mtx** mtx, Vec3s* jointTable) {
 		Vec3_Copy(&pos, &jointTable[0]);
 		Vec3_Copy(&rot, &jointTable[1]);
 	} else {
-		Vec3_Copy(&pos, &limb->jointPos);
+		Vec3_CopyBE(&pos, &limb->jointPos);
 		limbId++;
 		Vec3_Copy(&rot, &jointTable[limbId]);
-		
-		ByteSwap(&pos.x);
-		ByteSwap(&pos.y);
-		ByteSwap(&pos.z);
 	}
 	
 	Vec3_Copy(&rpos, &pos);
 	Vec3_Mult(&rpos, 0.001f);
-	if (gS == 0)
-		OsPrintfEx("%f %f %f", rpos.x, rpos.y, rpos.z);
 	
 	Matrix_TranslateRotateZYX(&rpos, &rot);
-	dlist = limb->dList;
-	ByteSwap(&dlist);
 	
-	if (dlist) {
+	if (limb->dList) {
 		Matrix_ToMtxF(&mtxF);
 		if (*mtx) {
 			Matrix_ToMtx((*mtx)++);
-			if (gS == 0)
-				OsPrintf("mtx");
 		}
 		gSPMatrix(&mtxF);
-		gSPDisplayList(dlist);
-		if (gS == 0)
-			OsPrintf("dl");
+		gSPDisplayList(ReadBE(limb->dList));
 	}
 	
 	limbList++;
@@ -133,8 +114,7 @@ void SkelAnime_Limb(u32 skelSeg, u8 limbId, Mtx** mtx, Vec3s* jointTable) {
 
 void SkelAnime_Draw(SkelAnime* skelAnime, Mtx* mtx, Vec3s* jointTable) {
 	StandardLimb* limb;
-	u32* skel;
-	u32 skelSeg;
+	SkeletonHeader* skel;
 	
 	n64_set_onlyGeoLayer(GEOLAYER_ALL);
 	
@@ -144,10 +124,8 @@ void SkelAnime_Draw(SkelAnime* skelAnime, Mtx* mtx, Vec3s* jointTable) {
 	if (mtx)
 		gSPSegment(0xD, mtx);
 	skel = SEGMENTED_TO_VIRTUAL(skelAnime->skeleton);
-	skelSeg = *skel;
-	ByteSwap(&skelSeg);
 	
-	SkelAnime_Limb(skelSeg, 0, &mtx, jointTable);
+	SkelAnime_Limb(ReadBE(skel->segment), 0, &mtx, jointTable);
 	
 	Matrix_Pop();
 	

@@ -152,6 +152,11 @@ void Rect_Set(Rect* dest, s32 x, s32 w, s32 y, s32 h);
 	(dest)->y = (src)->y; \
 	(dest)->z = (src)->z
 
+#define Vec3_CopyBE(dest, src) \
+	(dest)->x = ReadBE((src)->x); \
+	(dest)->y = ReadBE((src)->y); \
+	(dest)->z = ReadBE((src)->z)
+
 #define Vec2_Mult(dest, src) \
 	(dest)->x *= src; \
 	(dest)->y *= src; \
