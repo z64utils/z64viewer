@@ -33,8 +33,8 @@
 #include <math.h>
 
 #define MATRIX_STACK_MAX 16
-#define SEGMENT_MAX 16
-#define VBUF_MAX    32
+#define SEGMENT_MAX      16
+#define VBUF_MAX         32
 
 static GLuint gVAO;
 static GLuint gVBO;
@@ -45,7 +45,7 @@ static GLuint gIndices[6];
 static uint32_t gRdpHalf1;
 static uint32_t gRdpHalf2;
 
-static Shader *gShader = 0;
+static Shader* gShader = 0;
 
 static bool gHideGeometry = false;
 static bool gVertexColors = false;
@@ -61,8 +61,8 @@ static struct {
 	//float model[16];
 	float view[16];
 	float projection[16];
-	MtxF modelStack[MATRIX_STACK_MAX];
-	MtxF *modelNow;
+	MtxF  modelStack[MATRIX_STACK_MAX];
+	MtxF* modelNow;
 } gMatrix;
 
 static float gLights[16];
@@ -168,10 +168,10 @@ typedef struct Vtx {
 
 typedef struct VtxF {
 	/*struct {
-		GLfloat x;
-		GLfloat y;
-		GLfloat z;
-	} pos;*/
+	        GLfloat x;
+	        GLfloat y;
+	        GLfloat z;
+	   } pos;*/
 	Vec3f pos;
 	struct {
 		GLfloat u;
@@ -314,23 +314,21 @@ static void othermode(void) {
 	if (gOnlyThisZmode != ZMODE_ALL && gCurrentZmode != gOnlyThisZmode)
 		gHideGeometry = true;
 	
-	if (!gHideGeometry && gOnlyThisGeoLayer != GEOLAYER_ALL)
-	{
+	if (!gHideGeometry && gOnlyThisGeoLayer != GEOLAYER_ALL) {
 		int isOverlay = gForceBl || gCvgXalpha;
-		switch (gOnlyThisGeoLayer)
-		{
-			case GEOLAYER_OPAQUE:
-				if (isOverlay)
-					gHideGeometry = true;
-				break;
-			
-			case GEOLAYER_OVERLAY:
-				if (!isOverlay)
-					gHideGeometry = true;
-				break;
-			
-			case GEOLAYER_ALL:
-				break;
+		switch (gOnlyThisGeoLayer) {
+		    case GEOLAYER_OPAQUE:
+			    if (isOverlay)
+				    gHideGeometry = true;
+			    break;
+			    
+		    case GEOLAYER_OVERLAY:
+			    if (!isOverlay)
+				    gHideGeometry = true;
+			    break;
+			    
+		    case GEOLAYER_ALL:
+			    break;
 		}
 	}
 	
@@ -451,7 +449,6 @@ static const char* alphaValueString(int idx, int v) {
 }
 
 static void doMaterial(void) {
-	
 	int tile = 0; /* G_TX_RENDERTILE */
 	
 	/* update texture image associated with each tile */
@@ -644,8 +641,7 @@ static void doMaterial(void) {
 			ADD("shading = vColor;");
 			ADD("shading.rgb *= vLightColor;");
 			
-			if (gCvgXalpha || gForceBl)
-			{
+			if (gCvgXalpha || gForceBl) {
 				/* alpha cycle 0 */
 				ADDF("alpha = %s;", alphaValueString(0, (hi >> 12) & 0x7));
 				ADDF("alpha -= %s;", alphaValueString(1, (lo >> 12) & 0x7));
@@ -659,11 +655,10 @@ static void doMaterial(void) {
 				ADDF("alpha *= %s;", alphaValueString(2, (lo >> 18) & 0x7));
 				ADDF("alpha += %s;", alphaValueString(3, (lo >>  0) & 0x7));
 				ADD("FragColor.a = alpha;");
-			
-			/* TODO optimization: only include this bit if texture is sampled */
-			ADD("if (alpha == 0.0) discard;");
-			}
-			else
+				
+				/* TODO optimization: only include this bit if texture is sampled */
+				ADD("if (alpha == 0.0) discard;");
+			} else
 				ADD("FragColor.a = 1.0;");
 			
 			/* TODO optimization: detect when unnecessary and omit */
@@ -728,24 +723,24 @@ static float shift_to_multiplier(const int shift) {
 	return pow(2, 16 - shift);
 }
 
-static inline Vec3f vec3_mul_mat44f(void *v_, void *mat_)
-{
-	Vec3f *v = v_;
+static inline Vec3f vec3_mul_mat44f(void* v_, void* mat_) {
+	Vec3f* v = v_;
+	
 	struct {
 		Vec4f x;
 		Vec4f y;
 		Vec4f z;
 		Vec4f w;
-	} *mat = mat_;
+	}* mat = mat_;
+	
 	return (Vec3f) {
-		  .x = v->x * mat->x.x + v->y * mat->y.x + v->z * mat->z.x + 1 * mat->w.x
-		, .y = v->x * mat->x.y + v->y * mat->y.y + v->z * mat->z.y + 1 * mat->w.y
-		, .z = v->x * mat->x.z + v->y * mat->y.z + v->z * mat->z.z + 1 * mat->w.z
+		       .x = v->x * mat->x.x + v->y * mat->y.x + v->z * mat->z.x + 1 * mat->w.x,
+		       .y = v->x * mat->x.y + v->y * mat->y.y + v->z * mat->z.y + 1 * mat->w.y,
+		       .z = v->x * mat->x.z + v->y * mat->y.z + v->z * mat->z.z + 1 * mat->w.z
 	};
 }
 
 static void gbiFunc_vtx(void* cmd) {
-	
 	uint8_t* b = cmd;
 	
 	int numv = (b[1] << 4) | (b[2] >> 4);
@@ -1012,34 +1007,33 @@ static void gbiFunc_geometrymode(void* cmd) {
 	
 	/* backface/frontface culling */
 	glEnable(GL_CULL_FACE);
-	switch (gMatState.geometrymode & (G_CULL_FRONT | G_CULL_BACK))
-	{
-		case G_CULL_FRONT | G_CULL_BACK:
-			glCullFace(GL_FRONT_AND_BACK);
-			break;
-		case G_CULL_FRONT:
-			glCullFace(GL_FRONT);
-			break;
-		case G_CULL_BACK:
-			glCullFace(GL_BACK);
-			break;
-		default:
-			glDisable(GL_CULL_FACE);
-			break;
+	switch (gMatState.geometrymode & (G_CULL_FRONT | G_CULL_BACK)) {
+	    case G_CULL_FRONT | G_CULL_BACK:
+		    glCullFace(GL_FRONT_AND_BACK);
+		    break;
+	    case G_CULL_FRONT:
+		    glCullFace(GL_FRONT);
+		    break;
+	    case G_CULL_BACK:
+		    glCullFace(GL_BACK);
+		    break;
+	    default:
+		    glDisable(GL_CULL_FACE);
+		    break;
 	}
 }
 
 static void gbiFunc_mtx(void* cmd) {
-#define G_MTX_NOPUSH      0x00
-#define G_MTX_PUSH        0x01
-#define G_MTX_MUL         0x00
-#define G_MTX_LOAD        0x02
-#define G_MTX_MODELVIEW   0x00
-#define G_MTX_PROJECTION  0x04
+#define G_MTX_NOPUSH     0x00
+#define G_MTX_PUSH       0x01
+#define G_MTX_MUL        0x00
+#define G_MTX_LOAD       0x02
+#define G_MTX_MODELVIEW  0x00
+#define G_MTX_PROJECTION 0x04
 	uint8_t* b = cmd;
 	uint8_t params = b[3] ^ G_MTX_PUSH;
 	uint32_t mtxaddr = u32r(b + 4);
-	Mtx *mtx = n64_virt2phys(mtxaddr);
+	Mtx* mtx = n64_virt2phys(mtxaddr);
 	MtxF mtxF;
 	
 	if (!mtx)
@@ -1050,7 +1044,7 @@ static void gbiFunc_mtx(void* cmd) {
 	/* push matrix on stack */
 	if (params & G_MTX_PUSH) {
 		gMatrix.modelNow += 1;
-	
+		
 		assert(gMatrix.modelNow - gMatrix.modelStack < MATRIX_STACK_MAX && "matrix stack overflow");
 		
 		*gMatrix.modelNow = *(gMatrix.modelNow - 1);
@@ -1058,8 +1052,7 @@ static void gbiFunc_mtx(void* cmd) {
 	
 	if (params & G_MTX_LOAD) {
 		*gMatrix.modelNow = mtxF;
-	}
-	else {
+	} else {
 		MtxF copy = *gMatrix.modelNow;
 		Matrix_MtxFMtxFMult(&copy, &mtxF, gMatrix.modelNow);
 	}
@@ -1068,6 +1061,7 @@ static void gbiFunc_mtx(void* cmd) {
 static void gbiFunc_popmtx(void* cmd) {
 	uint8_t* b = cmd;
 	int num = u32r(b + 4) / 0x40;
+	
 	gMatrix.modelNow -= num;
 	assert(gMatrix.modelNow >= gMatrix.modelStack && "matrix stack underflow");
 }
@@ -1158,9 +1152,8 @@ void* n64_virt2phys(unsigned int segaddr) {
 	return b + (segaddr & 0xffffff);
 }
 
-unsigned int n64_phys2virt(void *cmd)
-{
-	uint8_t *b = cmd;
+unsigned int n64_phys2virt(void* cmd) {
+	uint8_t* b = cmd;
 	uint32_t dist = -1;
 	int smallest = -1;
 	int i;
@@ -1168,9 +1161,8 @@ unsigned int n64_phys2virt(void *cmd)
 	if (!b)
 		return 0;
 	
-	for (i = 0; i < SEGMENT_MAX; ++i)
-	{
-		uint8_t *this = gSegment[i];
+	for (i = 0; i < SEGMENT_MAX; ++i) {
+		uint8_t* this = gSegment[i];
 		
 		if (!this)
 			continue;
@@ -1178,8 +1170,7 @@ unsigned int n64_phys2virt(void *cmd)
 		if (b < this)
 			continue;
 		
-		if (b - this < dist)
-		{
+		if (b - this < dist) {
 			smallest = i;
 			dist = b - this;
 		}
@@ -1287,4 +1278,3 @@ void n64_set_onlyZmode(enum n64_zmode zmode) {
 void n64_set_onlyGeoLayer(enum n64_geoLayer geoLayer) {
 	gOnlyThisGeoLayer = geoLayer;
 }
-

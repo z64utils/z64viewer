@@ -168,6 +168,8 @@ void View_Update(ViewContext* viewCtx, InputContext* inputCtx) {
 	pitch = Vec_Pitch(&cam->eye, &cam->at);
 	Matrix_LookAt(&viewCtx->mtxView, cam->eye, cam->at, cam->roll);
 	
+	Matrix_Scale(1, 1, 1, MTXMODE_NEW);
+	Matrix_ToMtxF(&model);
 	n64_setMatrix_model(&model);
 	n64_setMatrix_view(&viewCtx->mtxView);
 	n64_setMatrix_projection(&viewCtx->mtxProj);
