@@ -10,6 +10,8 @@ void View_Camera_FlyMode(ViewContext* viewCtx, InputContext* inputCtx) {
 	
 	if (inputCtx->key[KEY_LEFT_SHIFT].hold) {
 		Math_SmoothStepToF(&speed, 4.0f, 0.25f, 1.00f, 0.00001f);
+	} else if (inputCtx->key[KEY_SPACE].hold) {
+		Math_SmoothStepToF(&speed, 16.0f, 0.25f, 1.00f, 0.00001f);
 	} else {
 		Math_SmoothStepToF(&speed, 0.5f, 0.25f, 1.00f, 0.00001f);
 	}
@@ -170,7 +172,7 @@ void View_Update(ViewContext* viewCtx, InputContext* inputCtx) {
 	pitch = Vec_Pitch(&cam->eye, &cam->at);
 	Matrix_LookAt(&viewCtx->viewMtx, cam->eye, cam->at, cam->roll);
 	
-	Matrix_Scale(.10, .10, .10, MTXMODE_NEW);
+	Matrix_Scale(1.0, 1.0, 1.0, MTXMODE_NEW);
 	Matrix_ToMtxF(&model);
 	n64_setMatrix_model(&model);
 	n64_setMatrix_view(&viewCtx->viewMtx);
@@ -179,10 +181,10 @@ void View_Update(ViewContext* viewCtx, InputContext* inputCtx) {
 	// Billboarding Matrices
 	Matrix_Push(); {
 		static Mtx mtx[2];
-		MtxF *vm = &viewCtx->viewMtx;
-		u16 *cyl = (void*)(mtx + 1); // cylinder matrix
+		MtxF* vm = &viewCtx->viewMtx;
+		u16* cyl = (void*)(mtx + 1); // cylinder matrix
 		
-		float scale = 0.01f; // TODO
+		float scale = 0.01f; // XXX magic scale value, why?
 		vm->xx *= scale;
 		vm->yx *= scale;
 		vm->zx *= scale;
@@ -200,7 +202,7 @@ void View_Update(ViewContext* viewCtx, InputContext* inputCtx) {
 		vm->mf[0][3] = vm->mf[1][3] = vm->mf[2][3] =
 		    vm->mf[3][0] = vm->mf[3][1] = vm->mf[3][2] = 0.0f;
 		Matrix_Transpose(vm);
-		Matrix_MtxFToMtx(vm, &mtx);
+		Matrix_MtxFToMtx(vm, &mtx[0]);
 		gSPSegment(0x1, mtx);
 		
 		/* cylinder = spherical, with up vector reverted to identity */
