@@ -758,13 +758,15 @@ static void gbiFunc_vtx(void* cmd) {
 		return;
 	
 	while (numv--) {
-		float scale = 0.001f;
+		float scale = 1;
 		const float div_1_255 = (1.0f / 255.0f);
 		const float div_1_127 = (1.0f / 127.0f);
 		v->pos.x = s16r(vaddr + 0) * scale;
 		v->pos.y = s16r(vaddr + 2) * scale;
 		v->pos.z = s16r(vaddr + 4) * scale;
-		v->pos = vec3_mul_mat44f(&v->pos, gMatrix.modelNow);
+		Vec3f temp = v->pos;
+		Matrix_MultVec3fExt(&temp, &v->pos, gMatrix.modelNow);
+		// v->pos = vec3_mul_mat44f(&v->pos, gMatrix.modelNow);
 		v->texcoord0.u = s16r(vaddr + 8) * (1.0 / 1024) * (32.0 / gMatState.texWidth);
 		v->texcoord0.v = s16r(vaddr + 10) * (1.0 / 1024) * (32.0 / gMatState.texHeight);
 		v->texcoord1.u = v->texcoord0.u;

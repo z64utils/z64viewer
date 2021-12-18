@@ -22,8 +22,8 @@ typedef struct {
 	f32     far;
 	f32     scale;
 	f32     aspect;
-	MtxF    mtxView;
-	MtxF    mtxProj;
+	MtxF    viewMtx;
+	MtxF    projMtx;
 	CamSettings settings;
 	Camera* currentCamera;
 	Camera  camera[4];

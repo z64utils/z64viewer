@@ -63,12 +63,34 @@ void Matrix_Mult(MtxF* mf, MtxMode mode) {
 	}
 }
 
+void Matrix_MultVec3fExt(Vec3f* src, Vec3f* dest, MtxF* mf) {
+    dest->x = mf->xw + (mf->xx * src->x + mf->xy * src->y + mf->xz * src->z);
+    dest->y = mf->yw + (mf->yx * src->x + mf->yy * src->y + mf->yz * src->z);
+    dest->z = mf->zw + (mf->zx * src->x + mf->zy * src->y + mf->zz * src->z);
+}
+
 void Matrix_MultVec3f(Vec3f* src, Vec3f* dest) {
 	MtxF* cmf = gCurrentMatrix;
 	
 	dest->x = cmf->xw + (cmf->xx * src->x + cmf->xy * src->y + cmf->xz * src->z);
 	dest->y = cmf->yw + (cmf->yx * src->x + cmf->yy * src->y + cmf->yz * src->z);
 	dest->z = cmf->zw + (cmf->zx * src->x + cmf->zy * src->y + cmf->zz * src->z);
+}
+
+void Matrix_Transpose(MtxF* mf) {
+    f32 temp;
+
+    temp = mf->yx;
+    mf->yx = mf->xy;
+    mf->xy = temp;
+
+    temp = mf->zx;
+    mf->zx = mf->xz;
+    mf->xz = temp;
+
+    temp = mf->zy;
+    mf->zy = mf->yz;
+    mf->yz = temp;
 }
 
 void Matrix_Translate(f32 x, f32 y, f32 z, MtxMode mode) {

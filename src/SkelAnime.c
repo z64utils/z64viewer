@@ -88,7 +88,7 @@ void SkelAnime_Limb(u32 skelSeg, u8 limbId, Mtx** mtx, Vec3s* jointTable) {
 	}
 	
 	Vec3_Copy(&rpos, &pos);
-	Vec3_Mult(&rpos, 0.001f);
+	// Vec3_Mult(&rpos, 0.001f);
 	
 	Matrix_TranslateRotateZYX(&rpos, &rot);
 	

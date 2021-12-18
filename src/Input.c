@@ -57,6 +57,10 @@ void Input_Update(InputContext* input, AppInfo* app) {
 	mVel->y = (mPos->y - mPrev->y) + mouse->jumpVelComp.y;
 	*mPrev = *mPos;
 	
+	if (mouse->click.press) {
+		mVel->x = mVel->y = 0;
+	}
+	
 	mouse->jumpVelComp.x = 0;
 	mouse->jumpVelComp.y = 0;
 }

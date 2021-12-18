@@ -54,7 +54,7 @@ void View_Camera_FlyMode(ViewContext* viewCtx, InputContext* inputCtx) {
 	
 	if (vel.z || vel.x) {
 		VecSph velSph = {
-			.r = vel.z,
+			.r = vel.z * 1000,
 			.yaw = Vec_Yaw(at, eye),
 			.pitch = Vec_Pitch(at, eye)
 		};
@@ -63,7 +63,7 @@ void View_Camera_FlyMode(ViewContext* viewCtx, InputContext* inputCtx) {
 		Vec_AddVecSphToVec3f(at, &velSph);
 		
 		velSph = (VecSph) {
-			.r = vel.x,
+			.r = vel.x * 1000,
 			.yaw = Vec_Yaw(at, eye) + 0x3FFF,
 			.pitch = 0
 		};
@@ -121,21 +121,23 @@ void View_Init(ViewContext* viewCtx, InputContext* inputCtx) {
 	viewCtx->currentCamera = &viewCtx->camera[0];
 	cam = viewCtx->currentCamera;
 	
-	cam->eye = (Vec3f) { 0.0f, 8.0f, 0 };
+	cam->eye = (Vec3f) { -50.0f * 100, 50.0f * 100, 50.0f * 100 };
+	cam->at = (Vec3f) { 0, 0, 0 };
 	
-	cam->at = (Vec3f) { 0, 0, -50.0f };
+	cam->eye = (Vec3f) { 0, 0, 50.0f * 100 };
+	cam->at = (Vec3f) { 0, 0, 0 };
 	cam->roll = 0;
 	
 	Vec3f up;
 	s16 yaw = Vec_Yaw(&cam->eye, &cam->at);
 	s16 pitch = Vec_Pitch(&cam->eye, &cam->at);
 	
-	Matrix_LookAt(&viewCtx->mtxView, cam->eye, cam->at, cam->roll);
+	Matrix_LookAt(&viewCtx->viewMtx, cam->eye, cam->at, cam->roll);
 	
 	viewCtx->fovy = 65;
-	viewCtx->near = 0.1;
-	viewCtx->far = 5000.0;
-	viewCtx->scale = 0.01;
+	viewCtx->near = 0.1 * 100;
+	viewCtx->far = 5000.0 * 100;
+	viewCtx->scale = 0.01 * 0.001;
 }
 
 void View_Update(ViewContext* viewCtx, InputContext* inputCtx) {
@@ -146,7 +148,7 @@ void View_Update(ViewContext* viewCtx, InputContext* inputCtx) {
 	s16 pitch;
 	
 	Matrix_Projection(
-		&viewCtx->mtxProj,
+		&viewCtx->projMtx,
 		viewCtx->fovy,
 		(f32)viewCtx->projectDim.x / (f32)viewCtx->projectDim.y,
 		viewCtx->near,
@@ -166,13 +168,28 @@ void View_Update(ViewContext* viewCtx, InputContext* inputCtx) {
 	}
 	yaw = Vec_Yaw(&cam->eye, &cam->at);
 	pitch = Vec_Pitch(&cam->eye, &cam->at);
-	Matrix_LookAt(&viewCtx->mtxView, cam->eye, cam->at, cam->roll);
+	Matrix_LookAt(&viewCtx->viewMtx, cam->eye, cam->at, cam->roll);
 	
-	Matrix_Scale(1, 1, 1, MTXMODE_NEW);
+	Matrix_Scale(1.0, 1.0, 1.0, MTXMODE_NEW);
 	Matrix_ToMtxF(&model);
 	n64_setMatrix_model(&model);
-	n64_setMatrix_view(&viewCtx->mtxView);
-	n64_setMatrix_projection(&viewCtx->mtxProj);
+	n64_setMatrix_view(&viewCtx->viewMtx);
+	n64_setMatrix_projection(&viewCtx->projMtx);
+	
+	// Billboarding Matrix
+	#if 0
+	Matrix_Push(); {
+		static Mtx mtx;
+		Matrix_Mult(&viewCtx->projMtx, MTXMODE_NEW);
+		Matrix_Mult(&viewCtx->viewMtx, MTXMODE_APPLY);
+		Matrix_Get(&viewCtx->projMtx);
+		viewCtx->viewMtx.mf[0][3] = viewCtx->viewMtx.mf[1][3] = viewCtx->viewMtx.mf[2][3] =
+		    viewCtx->viewMtx.mf[3][0] = viewCtx->viewMtx.mf[3][1] = viewCtx->viewMtx.mf[3][2] = 0.0f;
+		Matrix_Transpose(&viewCtx->viewMtx);
+		Matrix_MtxFToMtx(&viewCtx->viewMtx, &mtx);
+		gSPSegment(0x1, &mtx);
+	} Matrix_Pop();
+	#endif
 }
 
 void View_SetProjectionDimensions(ViewContext* viewCtx, Vec2s* dim) {
