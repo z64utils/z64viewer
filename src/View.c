@@ -170,26 +170,49 @@ void View_Update(ViewContext* viewCtx, InputContext* inputCtx) {
 	pitch = Vec_Pitch(&cam->eye, &cam->at);
 	Matrix_LookAt(&viewCtx->viewMtx, cam->eye, cam->at, cam->roll);
 	
-	Matrix_Scale(1.0, 1.0, 1.0, MTXMODE_NEW);
+	Matrix_Scale(.10, .10, .10, MTXMODE_NEW);
 	Matrix_ToMtxF(&model);
 	n64_setMatrix_model(&model);
 	n64_setMatrix_view(&viewCtx->viewMtx);
 	n64_setMatrix_projection(&viewCtx->projMtx);
 	
-	// Billboarding Matrix
-	#if 0
+	// Billboarding Matrices
 	Matrix_Push(); {
-		static Mtx mtx;
-		Matrix_Mult(&viewCtx->projMtx, MTXMODE_NEW);
-		Matrix_Mult(&viewCtx->viewMtx, MTXMODE_APPLY);
-		Matrix_Get(&viewCtx->projMtx);
-		viewCtx->viewMtx.mf[0][3] = viewCtx->viewMtx.mf[1][3] = viewCtx->viewMtx.mf[2][3] =
-		    viewCtx->viewMtx.mf[3][0] = viewCtx->viewMtx.mf[3][1] = viewCtx->viewMtx.mf[3][2] = 0.0f;
-		Matrix_Transpose(&viewCtx->viewMtx);
-		Matrix_MtxFToMtx(&viewCtx->viewMtx, &mtx);
-		gSPSegment(0x1, &mtx);
+		static Mtx mtx[2];
+		MtxF *vm = &viewCtx->viewMtx;
+		u16 *cyl = (void*)(mtx + 1); // cylinder matrix
+		
+		float scale = 0.01f; // TODO
+		vm->xx *= scale;
+		vm->yx *= scale;
+		vm->zx *= scale;
+		vm->xy *= scale;
+		vm->yy *= scale;
+		vm->zy *= scale;
+		vm->xz *= scale;
+		vm->yz *= scale;
+		vm->zz *= scale;
+		vm->wx *= scale;
+		vm->wy *= scale;
+		vm->wz *= scale;
+		
+		/* create spherical matrix, upload to segment 0x01 */
+		vm->mf[0][3] = vm->mf[1][3] = vm->mf[2][3] =
+		    vm->mf[3][0] = vm->mf[3][1] = vm->mf[3][2] = 0.0f;
+		Matrix_Transpose(vm);
+		Matrix_MtxFToMtx(vm, &mtx);
+		gSPSegment(0x1, mtx);
+		
+		/* cylinder = spherical, with up vector reverted to identity */
+		memcpy(cyl, mtx, sizeof(*mtx));
+		cyl[0x08 / 2] = 0; /* x */
+		cyl[0x0A / 2] = 1; /* y */
+		cyl[0x0C / 2] = 0; /* z */
+		
+		cyl[0x28 / 2] = 0; /* x */
+		cyl[0x2A / 2] = 0; /* y */
+		cyl[0x2C / 2] = 0; /* z */
 	} Matrix_Pop();
-	#endif
 }
 
 void View_SetProjectionDimensions(ViewContext* viewCtx, Vec2s* dim) {
