@@ -1,7 +1,7 @@
 #include <Viewer.h>
 
-#define    FTOFIX32(x)    (long)((x) * (float)0x00010000)
-#define    FIX32TOF(x)    ((float)(x) * (1.0f / (float)0x00010000))
+#define    FTOFIX32(x) (long)((x) * (float)0x00010000)
+#define    FIX32TOF(x) ((float)(x) * (1.0f / (float)0x00010000))
 
 static MtxF* gMatrixStack;
 static MtxF* gCurrentMatrix;
@@ -64,9 +64,9 @@ void Matrix_Mult(MtxF* mf, MtxMode mode) {
 }
 
 void Matrix_MultVec3fExt(Vec3f* src, Vec3f* dest, MtxF* mf) {
-    dest->x = mf->xw + (mf->xx * src->x + mf->xy * src->y + mf->xz * src->z);
-    dest->y = mf->yw + (mf->yx * src->x + mf->yy * src->y + mf->yz * src->z);
-    dest->z = mf->zw + (mf->zx * src->x + mf->zy * src->y + mf->zz * src->z);
+	dest->x = mf->xw + (mf->xx * src->x + mf->xy * src->y + mf->xz * src->z);
+	dest->y = mf->yw + (mf->yx * src->x + mf->yy * src->y + mf->yz * src->z);
+	dest->z = mf->zw + (mf->zx * src->x + mf->zy * src->y + mf->zz * src->z);
 }
 
 void Matrix_MultVec3f(Vec3f* src, Vec3f* dest) {
@@ -78,19 +78,19 @@ void Matrix_MultVec3f(Vec3f* src, Vec3f* dest) {
 }
 
 void Matrix_Transpose(MtxF* mf) {
-    f32 temp;
-
-    temp = mf->yx;
-    mf->yx = mf->xy;
-    mf->xy = temp;
-
-    temp = mf->zx;
-    mf->zx = mf->xz;
-    mf->xz = temp;
-
-    temp = mf->zy;
-    mf->zy = mf->yz;
-    mf->yz = temp;
+	f32 temp;
+	
+	temp = mf->yx;
+	mf->yx = mf->xy;
+	mf->xy = temp;
+	
+	temp = mf->zx;
+	mf->zx = mf->xz;
+	mf->xz = temp;
+	
+	temp = mf->zy;
+	mf->zy = mf->yz;
+	mf->yz = temp;
 }
 
 void Matrix_Translate(f32 x, f32 y, f32 z, MtxMode mode) {
@@ -401,7 +401,7 @@ void Matrix_ToMtxF(MtxF* mtx) {
 void Matrix_MtxToMtxF(Mtx* src, MtxF* dest) {
 	u16* m1 = (void*)((u8*)src);
 	u16* m2 = (void*)((u8*)src + 0x20);
-
+	
 	dest->xx = ((m1[0] << 0x10) | m2[0]) * (1 / 65536.0f);
 	dest->yx = ((m1[1] << 0x10) | m2[1]) * (1 / 65536.0f);
 	dest->zx = ((m1[2] << 0x10) | m2[2]) * (1 / 65536.0f);
@@ -424,70 +424,71 @@ Mtx* Matrix_MtxFToMtx(MtxF* src, Mtx* dest) {
 	s32 temp;
 	u16* m1 = (void*)((u8*)dest);
 	u16* m2 = (void*)((u8*)dest + 0x20);
-
+	
 	temp = src->xx * 0x10000;
 	m1[0] = (temp >> 0x10);
 	m1[16 + 0] = temp & 0xFFFF;
-
+	
 	temp = src->yx * 0x10000;
 	m1[1] = (temp >> 0x10);
 	m1[16 + 1] = temp & 0xFFFF;
-
+	
 	temp = src->zx * 0x10000;
 	m1[2] = (temp >> 0x10);
 	m1[16 + 2] = temp & 0xFFFF;
-
+	
 	temp = src->wx * 0x10000;
 	m1[3] = (temp >> 0x10);
 	m1[16 + 3] = temp & 0xFFFF;
-
+	
 	temp = src->xy * 0x10000;
 	m1[4] = (temp >> 0x10);
 	m1[16 + 4] = temp & 0xFFFF;
-
+	
 	temp = src->yy * 0x10000;
 	m1[5] = (temp >> 0x10);
 	m1[16 + 5] = temp & 0xFFFF;
-
+	
 	temp = src->zy * 0x10000;
 	m1[6] = (temp >> 0x10);
 	m1[16 + 6] = temp & 0xFFFF;
-
+	
 	temp = src->wy * 0x10000;
 	m1[7] = (temp >> 0x10);
 	m1[16 + 7] = temp & 0xFFFF;
-
+	
 	temp = src->xz * 0x10000;
 	m1[8] = (temp >> 0x10);
 	m1[16 + 8] = temp & 0xFFFF;
-
+	
 	temp = src->yz * 0x10000;
 	m1[9] = (temp >> 0x10);
 	m2[9] = temp & 0xFFFF;
-
+	
 	temp = src->zz * 0x10000;
 	m1[10] = (temp >> 0x10);
 	m2[10] = temp & 0xFFFF;
-
+	
 	temp = src->wz * 0x10000;
 	m1[11] = (temp >> 0x10);
 	m2[11] = temp & 0xFFFF;
-
+	
 	temp = src->xw * 0x10000;
 	m1[12] = (temp >> 0x10);
 	m2[12] = temp & 0xFFFF;
-
+	
 	temp = src->yw * 0x10000;
 	m1[13] = (temp >> 0x10);
 	m2[13] = temp & 0xFFFF;
-
+	
 	temp = src->zw * 0x10000;
 	m1[14] = (temp >> 0x10);
 	m2[14] = temp & 0xFFFF;
-
+	
 	temp = src->ww * 0x10000;
 	m1[15] = (temp >> 0x10);
 	m2[15] = temp & 0xFFFF;
+	
 	return dest;
 }
 
@@ -650,14 +651,12 @@ void Matrix_LookAt(MtxF* mf, Vec3f eye, Vec3f at, s16 roll) {
 	f32 length;
 	Vec3f look;
 	Vec3f right;
-	Vec3f multUp = { 0, 0.0f, 0 };
+	Vec3f multUp = { 0.0f, 1.0f, 0.0f };
 	Vec3f up;
+	VecSph vecSph;
 	
-	Matrix_Translate(0.0f, 1.0f, 0.0f, MTXMODE_NEW);
-	Matrix_RotateX_s(Vec_Pitch(&eye, &at), MTXMODE_APPLY);
-	Matrix_RotateY_s(Vec_Yaw(&eye, &at), MTXMODE_APPLY);
-	Matrix_RotateZ_s(roll, MTXMODE_APPLY);
-	Matrix_MultVec3f(&multUp, &up);
+	Vec_Vec3fDiffToVecSphGeo(&vecSph, &eye, &at);
+	Vec_CalcUpFromPitchYawRoll(&up, vecSph.pitch, vecSph.yaw, roll);
 	
 	Matrix_Clear(mf);
 	
@@ -800,5 +799,3 @@ void Matrix_TranslateRotateZYX(Vec3f* translation, Vec3s* rotation) {
 		cmf->wz = temp2 * cos - temp1 * sin;
 	}
 }
-
-

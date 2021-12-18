@@ -171,6 +171,112 @@ void Vec_AddVecSphToVec3f(Vec3f* dest, VecSph* sph) {
 	dest->z += sph->r * Math_SinS(sph->pitch - DegToBin(90)) * Math_CosS(sph->yaw);
 }
 
+
+
+VecSph* Vec_Vec3fToVecSph(VecSph* dest, Vec3f* vec) {
+	VecSph sph;
+	
+	f32 distSquared = SQ(vec->x) + SQ(vec->z);
+	f32 dist = sqrtf(distSquared);
+	
+	if ((dist == 0.0f) && (vec->y == 0.0f)) {
+		sph.pitch = 0;
+	} else {
+		sph.pitch = DegToBin(RadToDeg(atan2(dist, vec->y)));
+	}
+	
+	sph.r = sqrtf(SQ(vec->y) + distSquared);
+	if ((vec->x == 0.0f) && (vec->z == 0.0f)) {
+		sph.yaw = 0;
+	} else {
+		sph.yaw = DegToBin(RadToDeg(atan2(vec->x, vec->z)));
+	}
+	
+	*dest = sph;
+	
+	return dest;
+}
+
+VecSph* Vec_Vec3fToVecSphGeo(VecSph* dest, Vec3f* vec) {
+	VecSph sph;
+	
+	Vec_Vec3fToVecSph(&sph, vec);
+	sph.pitch = 0x3FFF - sph.pitch;
+	
+	*dest = sph;
+	
+	return dest;
+}
+
+VecSph* Vec_Vec3fDiffToVecSphGeo(VecSph* dest, Vec3f* a, Vec3f* b) {
+	Vec3f sph;
+	
+	sph.x = b->x - a->x;
+	sph.y = b->y - a->y;
+	sph.z = b->z - a->z;
+	
+	return Vec_Vec3fToVecSphGeo(dest, &sph);
+}
+
+Vec3f* Vec_CalcUpFromPitchYawRoll(Vec3f* dest, s16 pitch, s16 yaw, s16 roll) {
+	f32 sinPitch;
+	f32 cosPitch;
+	f32 sinYaw;
+	f32 cosYaw;
+	f32 sinNegRoll;
+	f32 cosNegRoll;
+	Vec3f spA4;
+	f32 pad;
+	f32 sp54;
+	f32 sp4C;
+	f32 cosPitchCosYawSinRoll;
+	f32 negSinPitch;
+	f32 temp_f10_2;
+	f32 cosPitchcosYaw;
+	f32 temp_f14;
+	f32 negSinPitchSinYaw;
+	f32 negSinPitchCosYaw;
+	f32 cosPitchSinYaw;
+	f32 temp_f4_2;
+	f32 temp_f6;
+	f32 temp_f8;
+	f32 temp_f8_2;
+	f32 temp_f8_3;
+	
+	sinPitch = Math_SinS(pitch);
+	cosPitch = Math_CosS(pitch);
+	sinYaw = Math_SinS(yaw);
+	cosYaw = Math_CosS(yaw);
+	negSinPitch = -sinPitch;
+	sinNegRoll = Math_SinS(-roll);
+	cosNegRoll = Math_CosS(-roll);
+	negSinPitchSinYaw = negSinPitch * sinYaw;
+	temp_f14 = 1.0f - cosNegRoll;
+	cosPitchSinYaw = cosPitch * sinYaw;
+	sp54 = SQ(cosPitchSinYaw);
+	sp4C = (cosPitchSinYaw * sinPitch) * temp_f14;
+	cosPitchcosYaw = cosPitch * cosYaw;
+	temp_f4_2 = ((1.0f - sp54) * cosNegRoll) + sp54;
+	cosPitchCosYawSinRoll = cosPitchcosYaw * sinNegRoll;
+	negSinPitchCosYaw = negSinPitch * cosYaw;
+	temp_f6 = (cosPitchcosYaw * cosPitchSinYaw) * temp_f14;
+	temp_f10_2 = sinPitch * sinNegRoll;
+	spA4.x = ((negSinPitchSinYaw * temp_f4_2) + (cosPitch * (sp4C - cosPitchCosYawSinRoll))) +
+	    (negSinPitchCosYaw * (temp_f6 + temp_f10_2));
+	sp54 = SQ(sinPitch);
+	temp_f4_2 = (sinPitch * cosPitchcosYaw) * temp_f14;
+	temp_f8_3 = cosPitchSinYaw * sinNegRoll;
+	temp_f8 = sp4C + cosPitchCosYawSinRoll;
+	spA4.y = ((negSinPitchSinYaw * temp_f8) + (cosPitch * (((1.0f - sp54) * cosNegRoll) + sp54))) +
+	    (negSinPitchCosYaw * (temp_f4_2 - temp_f8_3));
+	temp_f8_2 = temp_f6 - temp_f10_2;
+	spA4.z = ((negSinPitchSinYaw * temp_f8_2) + (cosPitch * (temp_f4_2 + temp_f8_3))) +
+	    (negSinPitchCosYaw * (((1.0f - SQ(cosPitchcosYaw)) * cosNegRoll) + SQ(cosPitchcosYaw)));
+	*dest = spA4;
+	
+	return dest;
+}
+
 f32 Math_SmoothStepToF(f32* pValue, f32 target, f32 fraction, f32 step, f32 minStep) {
 	step = step * gDeltaTime;
 	minStep = minStep * gDeltaTime;
