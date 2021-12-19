@@ -17,6 +17,11 @@ typedef struct {
 } CamSettings;
 
 typedef struct {
+	Vec3f vel;
+	f32   speed;
+} CameraFlyMode;
+
+typedef struct {
 	f32     fovy;
 	f32     near;
 	f32     far;
@@ -30,6 +35,7 @@ typedef struct {
 	bool    cameraControl;
 	bool    setCamMove;
 	Vec2s   projectDim;
+	CameraFlyMode flyMode;
 } ViewContext;
 
 void View_Camera_FlyMode(ViewContext* viewCtx, InputContext* inputCtx);

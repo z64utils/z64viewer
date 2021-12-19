@@ -2,48 +2,46 @@
 
 void View_Camera_FlyMode(ViewContext* viewCtx, InputContext* inputCtx) {
 	Camera* cam = viewCtx->currentCamera;
-	static Vec3f vel = { 0 };
 	Vec3f zro = { 0 };
 	Vec3f thisPos = { 0 };
 	Vec3f nextPos = { 0 };
-	static f32 speed;
 	
 	if (viewCtx->cameraControl) {
 		if (inputCtx->key[KEY_LEFT_SHIFT].hold) {
-			Math_SmoothStepToF(&speed, 4.0f, 0.25f, 1.00f, 0.00001f);
+			Math_SmoothStepToF(&viewCtx->flyMode.speed, 4.0f, 0.25f, 1.00f, 0.00001f);
 		} else if (inputCtx->key[KEY_SPACE].hold) {
-			Math_SmoothStepToF(&speed, 16.0f, 0.25f, 1.00f, 0.00001f);
+			Math_SmoothStepToF(&viewCtx->flyMode.speed, 16.0f, 0.25f, 1.00f, 0.00001f);
 		} else {
-			Math_SmoothStepToF(&speed, 0.5f, 0.25f, 1.00f, 0.00001f);
+			Math_SmoothStepToF(&viewCtx->flyMode.speed, 0.5f, 0.25f, 1.00f, 0.00001f);
 		}
 		
 		if (inputCtx->key[KEY_A].hold || inputCtx->key[KEY_D].hold) {
 			if (inputCtx->key[KEY_A].hold)
-				Math_SmoothStepToF(&vel.x, speed, 0.25f, 1.00f, 0.00001f);
+				Math_SmoothStepToF(&viewCtx->flyMode.vel.x, viewCtx->flyMode.speed, 0.25f, 1.00f, 0.00001f);
 			if (inputCtx->key[KEY_D].hold)
-				Math_SmoothStepToF(&vel.x, -speed, 0.25f, 1.00f, 0.00001f);
+				Math_SmoothStepToF(&viewCtx->flyMode.vel.x, -viewCtx->flyMode.speed, 0.25f, 1.00f, 0.00001f);
 		} else {
-			Math_SmoothStepToF(&vel.x, 0, 0.25f, 1.00f, 0.00001f);
+			Math_SmoothStepToF(&viewCtx->flyMode.vel.x, 0, 0.25f, 1.00f, 0.00001f);
 		}
 		
 		if (inputCtx->key[KEY_W].hold || inputCtx->key[KEY_S].hold) {
 			if (inputCtx->key[KEY_W].hold)
-				Math_SmoothStepToF(&vel.z, speed, 0.25f, 1.00f, 0.00001f);
+				Math_SmoothStepToF(&viewCtx->flyMode.vel.z, viewCtx->flyMode.speed, 0.25f, 1.00f, 0.00001f);
 			if (inputCtx->key[KEY_S].hold)
-				Math_SmoothStepToF(&vel.z, -speed, 0.25f, 1.00f, 0.00001f);
+				Math_SmoothStepToF(&viewCtx->flyMode.vel.z, -viewCtx->flyMode.speed, 0.25f, 1.00f, 0.00001f);
 		} else {
-			Math_SmoothStepToF(&vel.z, 0, 0.25f, 1.00f, 0.00001f);
+			Math_SmoothStepToF(&viewCtx->flyMode.vel.z, 0, 0.25f, 1.00f, 0.00001f);
 		}
 	} else {
-		Math_SmoothStepToF(&speed, 0.5f, 0.25f, 1.00f, 0.00001f);
-		Math_SmoothStepToF(&vel.x, 0, 0.25f, 1.00f, 0.00001f);
-		Math_SmoothStepToF(&vel.z, 0, 0.25f, 1.00f, 0.00001f);
+		Math_SmoothStepToF(&viewCtx->flyMode.speed, 0.5f, 0.25f, 1.00f, 0.00001f);
+		Math_SmoothStepToF(&viewCtx->flyMode.vel.x, 0, 0.25f, 1.00f, 0.00001f);
+		Math_SmoothStepToF(&viewCtx->flyMode.vel.z, 0, 0.25f, 1.00f, 0.00001f);
 	}
 	
 	Vec3f* eye = &cam->eye;
 	Vec3f* at = &cam->at;
 	
-	if (vel.z || vel.x || (viewCtx->cameraControl && inputCtx->mouse.clickL.hold)) {
+	if (viewCtx->flyMode.vel.z || viewCtx->flyMode.vel.x || (viewCtx->cameraControl && inputCtx->mouse.clickL.hold)) {
 		VecSph camSph = {
 			.r = Vec_Vec3f_DistXYZ(eye, at),
 			.yaw = Vec_Yaw(at, eye),
@@ -60,9 +58,9 @@ void View_Camera_FlyMode(ViewContext* viewCtx, InputContext* inputCtx) {
 		Vec_AddVecSphToVec3f(at, &camSph);
 	}
 	
-	if (vel.z || vel.x) {
+	if (viewCtx->flyMode.vel.z || viewCtx->flyMode.vel.x) {
 		VecSph velSph = {
-			.r = vel.z * 1000,
+			.r = viewCtx->flyMode.vel.z * 1000,
 			.yaw = Vec_Yaw(at, eye),
 			.pitch = Vec_Pitch(at, eye)
 		};
@@ -71,7 +69,7 @@ void View_Camera_FlyMode(ViewContext* viewCtx, InputContext* inputCtx) {
 		Vec_AddVecSphToVec3f(at, &velSph);
 		
 		velSph = (VecSph) {
-			.r = vel.x * 1000,
+			.r = viewCtx->flyMode.vel.x * 1000,
 			.yaw = Vec_Yaw(at, eye) + 0x3FFF,
 			.pitch = 0
 		};
