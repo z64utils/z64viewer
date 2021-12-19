@@ -36,6 +36,8 @@ void n64_setMatrix_projection(void* data);
 void n64_set_fog(float fog[2], float color[3]);
 void n64_set_lights(float lights[16]);
 
+void n64_clearShaderCache(void);
+
 #define gSPMatrix(mtx)            n64_setMatrix_model(mtx)
 #define gSPDisplayList(dl)        n64_draw(n64_virt2phys(dl))
 #define gSPSegment(sed, data)     n64_set_segment(sed, data)

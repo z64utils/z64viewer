@@ -31,6 +31,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <math.h>
+#include <stdbool.h>
 
 #define MATRIX_STACK_MAX 16
 #define SEGMENT_MAX      16
@@ -56,6 +57,14 @@ static bool gCvgXalpha = false;
 static enum n64_geoLayer gOnlyThisGeoLayer;
 static enum n64_zmode gOnlyThisZmode;
 static enum n64_zmode gCurrentZmode;
+
+typedef struct ShaderList {
+	struct ShaderList* next;
+	Shader* shader;
+	void* addr;
+} ShaderList;
+
+static ShaderList* sShaderList = 0;
 
 static struct {
 	//float model[16];
@@ -302,6 +311,53 @@ static VtxF gVbuf[VBUF_MAX];
 #define G_SETZIMG         0xFE
 #define G_SETCIMG         0xFF
 
+static ShaderList* ShaderList_new(void* addr, void* next) {
+	ShaderList *l = calloc(1, sizeof(*l));
+	l->addr = addr;
+	l->next = next;
+	l->shader = Shader_new();
+	return l;
+}
+
+static Shader* ShaderList_add(void* addr, bool* isNew) {
+	ShaderList *l;
+	
+	assert(addr);
+	assert(isNew);
+	
+	if (!sShaderList)
+		sShaderList = ShaderList_new(0, 0);
+	
+	*isNew = false;
+	for (l = sShaderList; l; l = l->next) {
+		if (l->addr == addr)
+			return l->shader;
+	}
+	
+	*isNew = true;
+	l = ShaderList_new(addr, sShaderList);
+	sShaderList = l;
+	
+	return l->shader;
+}
+
+static void ShaderList_cleanup(void) {
+	ShaderList* l;
+	ShaderList* next = 0;
+	
+	if (!sShaderList)
+		return;
+	
+	for (l = sShaderList; l; l = next) {
+		if (l->shader)
+			Shader_delete(l->shader);
+		next = l->next;
+		free(l);
+	}
+	
+	sShaderList = 0;
+}
+
 static void othermode(void) {
 	uint32_t lo = gMatState.othermode_low;
 	uint32_t indep = (lo & 0b1111111111111000) >> 3;
@@ -448,7 +504,7 @@ static const char* alphaValueString(int idx, int v) {
 	return "0.0";
 }
 
-static void doMaterial(void) {
+static void doMaterial(void* addr) {
 	int tile = 0; /* G_TX_RENDERTILE */
 	
 	/* update texture image associated with each tile */
@@ -535,6 +591,7 @@ static void doMaterial(void) {
 #define SHADER_SOURCE(...) "#version 330 core\n" # __VA_ARGS__
 	/* TODO track state changes; if no states changed, don't compile new shader */
 	if (1) {
+		bool isNew = false;
 		gMatState.prim.r = ((gMatState.prim.lo >> 24) & 0xff) / 255.0f;
 		gMatState.prim.g = ((gMatState.prim.lo >> 16) & 0xff) / 255.0f;
 		gMatState.prim.b = ((gMatState.prim.lo >> 8) & 0xff) / 255.0f;
@@ -544,153 +601,152 @@ static void doMaterial(void) {
 		gMatState.env.g = ((gMatState.env.lo >> 16) & 0xff) / 255.0f;
 		gMatState.env.b = ((gMatState.env.lo >> 8) & 0xff) / 255.0f;
 		gMatState.env.alpha = (gMatState.env.lo & 0xff) / 255.0f;
-		static Shader* shader = 0;
-		const char* vtx = SHADER_SOURCE(
-			layout (location = 0) in vec3 aPos;
-			layout (location = 1) in vec4 aColor;
-			layout (location = 2) in vec2 aTexCoord0;
-			layout (location = 3) in vec2 aTexCoord1;
-			layout (location = 4) in vec3 aNorm;
-			
-			out vec4 vColor;
-			out vec2 TexCoord0;
-			out vec2 TexCoord1;
-			out float vFog;
-			out vec3 vLightColor;
-			
-			//uniform mat4 model;
-			uniform mat4 view;
-			uniform mat4 projection;
-			uniform vec2 uFog;
-			uniform mat4 uLights;
-			
-			float fog_linear(const float dist, const float start, const float end) {
-			return 1.0 - clamp((end - dist) / (end - start), 0.0, 1.0);
-		}
-			
-			vec3 mul(mat4 a, vec3 b) {
-			return (a * vec4(b, 1.0)).xyz;
-		}
-			
-			void main() {
-			float fogStart = uFog.x;
-			float fogEnd = uFog.y;
-			//gl_Position = projection * view * model * vec4(aPos, 1.0);
-			gl_Position = projection * view * vec4(aPos, 1.0);
-			vColor = aColor;
-			TexCoord0 = vec2(aTexCoord0.x, aTexCoord0.y);
-			TexCoord1 = vec2(aTexCoord1.x, aTexCoord1.y);
-			vFog = fog_linear(length(gl_Position.xyz), fogStart, fogEnd);
-			
-			/* when lighting is disabled for a vertex, its normal == 0 */
-			if (aNorm == vec3(0.0)) {
-				vLightColor = vec3(1.0);
-			} else {
-				vec3 amb = uLights[0].xyz;
-				vec3 dif0 = uLights[1].xyz;
-				vec3 dif1 = uLights[2].xyz;
-				vec3 lightVector0 = normalize(uLights[3].xyz);
-				vec3 lightVector1 = normalize(vec3(uLights[0][3], uLights[1][3], uLights[2][3]));
-				//vec3 mvNormal = normalize(vec3(mul(model, aNorm)));
-				vec3 mvNormal = normalize(aNorm);
-				float dif0mod = clamp(dot(mvNormal, lightVector0), 0.0, 1.0);
-				float dif1mod = clamp(dot(mvNormal, lightVector1), 0.0, 1.0);
-				vLightColor = amb + dif0 * dif0mod + dif1 * dif1mod;
-			}
-		}
-		);
-		char frag[4096] = SHADER_SOURCE(
-			out vec4 FragColor;
-			
-			in vec4 vColor;
-			in vec2 TexCoord0;
-			in vec2 TexCoord1;
-			in float vFog;
-			in vec3 vLightColor;
-			
-			// texture sampler
-			uniform sampler2D texture0;
-			uniform sampler2D texture1;
-			uniform vec3 uFogColor;
-			
-			/*void main() // simple default for testing...
-			   {
-			        vec4 s = texture(texture0, TexCoord0);
-			        if (s.a < 0.5)
-			                discard;
-			        FragColor = s * vColor;
-
-			        FragColor.rgb = mix(FragColor.rgb * vLightColor, uFogColor, vFog);
-			   }*/
-		);
+		Shader* shader = ShaderList_add(addr, &isNew);
 		
-		/* construct fragment shader */
+		if (isNew)
 		{
-			char* f = frag + strlen(frag);
-			uint32_t hi = gMatState.setcombine.hi;
-			uint32_t lo = gMatState.setcombine.lo;
-			
-#define ADD(X)    f = strcatt(f, X)
-#define ADDF(...) f = strcattf(f, __VA_ARGS__)
-			
-			ADD("void main(){");
-			
-			ADD("vec3 final;");
-			ADD("vec4 shading;");
-			ADD("float alpha = 1.0;");
-			ADD("shading = vColor;");
-			ADD("shading.rgb *= vLightColor;");
-			
-			if (gCvgXalpha || gForceBl) {
-				/* alpha cycle 0 */
-				ADDF("alpha = %s;", alphaValueString(0, (hi >> 12) & 0x7));
-				ADDF("alpha -= %s;", alphaValueString(1, (lo >> 12) & 0x7));
-				ADDF("alpha *= %s;", alphaValueString(2, (hi >>  9) & 0x7));
-				ADDF("alpha += %s;", alphaValueString(3, (lo >>  9) & 0x7));
-				ADD("FragColor.a = alpha;");
+			const char* vtx = SHADER_SOURCE(
+				layout (location = 0) in vec3 aPos;
+				layout (location = 1) in vec4 aColor;
+				layout (location = 2) in vec2 aTexCoord0;
+				layout (location = 3) in vec2 aTexCoord1;
+				layout (location = 4) in vec3 aNorm;
 				
-				/* alpha cycle 1 */
-				ADDF("alpha = %s;", alphaValueString(0, (lo >> 21) & 0x7));
-				ADDF("alpha -= %s;", alphaValueString(1, (lo >> 3) & 0x7));
-				ADDF("alpha *= %s;", alphaValueString(2, (lo >> 18) & 0x7));
-				ADDF("alpha += %s;", alphaValueString(3, (lo >>  0) & 0x7));
-				ADD("FragColor.a = alpha;");
+				out vec4 vColor;
+				out vec2 TexCoord0;
+				out vec2 TexCoord1;
+				out float vFog;
+				out vec3 vLightColor;
 				
-				/* TODO optimization: only include this bit if texture is sampled */
-				ADD("if (alpha == 0.0) discard;");
-			} else
-				ADD("FragColor.a = 1.0;");
+				//uniform mat4 model;
+				uniform mat4 view;
+				uniform mat4 projection;
+				uniform vec2 uFog;
+				uniform mat4 uLights;
+				
+				float fog_linear(const float dist, const float start, const float end) {
+				return 1.0 - clamp((end - dist) / (end - start), 0.0, 1.0);
+			}
+				
+				vec3 mul(mat4 a, vec3 b) {
+				return (a * vec4(b, 1.0)).xyz;
+			}
+				
+				void main() {
+				float fogStart = uFog.x;
+				float fogEnd = uFog.y;
+				//gl_Position = projection * view * model * vec4(aPos, 1.0);
+				gl_Position = projection * view * vec4(aPos, 1.0);
+				vColor = aColor;
+				TexCoord0 = vec2(aTexCoord0.x, aTexCoord0.y);
+				TexCoord1 = vec2(aTexCoord1.x, aTexCoord1.y);
+				vFog = fog_linear(length(gl_Position.xyz), fogStart, fogEnd);
+				
+				/* when lighting is disabled for a vertex, its normal == 0 */
+				if (aNorm == vec3(0.0)) {
+					vLightColor = vec3(1.0);
+				} else {
+					vec3 amb = uLights[0].xyz;
+					vec3 dif0 = uLights[1].xyz;
+					vec3 dif1 = uLights[2].xyz;
+					vec3 lightVector0 = normalize(uLights[3].xyz);
+					vec3 lightVector1 = normalize(vec3(uLights[0][3], uLights[1][3], uLights[2][3]));
+					//vec3 mvNormal = normalize(vec3(mul(model, aNorm)));
+					vec3 mvNormal = normalize(aNorm);
+					float dif0mod = clamp(dot(mvNormal, lightVector0), 0.0, 1.0);
+					float dif1mod = clamp(dot(mvNormal, lightVector1), 0.0, 1.0);
+					vLightColor = amb + dif0 * dif0mod + dif1 * dif1mod;
+				}
+			}
+			);
+			char frag[4096] = SHADER_SOURCE(
+				out vec4 FragColor;
+				
+				in vec4 vColor;
+				in vec2 TexCoord0;
+				in vec2 TexCoord1;
+				in float vFog;
+				in vec3 vLightColor;
+				
+				// texture sampler
+				uniform sampler2D texture0;
+				uniform sampler2D texture1;
+				uniform vec3 uFogColor;
+				
+				/*void main() // simple default for testing...
+					{
+					     vec4 s = texture(texture0, TexCoord0);
+					     if (s.a < 0.5)
+					             discard;
+					     FragColor = s * vColor;
+
+					     FragColor.rgb = mix(FragColor.rgb * vLightColor, uFogColor, vFog);
+					}*/
+			);
 			
-			/* TODO optimization: detect when unnecessary and omit */
-			/* color cycle 0 */
-			ADDF("final = %s;", colorValueString(0, (hi >> 20) & 0xf));
-			ADDF("final -= %s;", colorValueString(1, (lo >> 28) & 0xf));
-			ADDF("final *= %s;", colorValueString(2, (hi >> 15) & 0x1f));
-			ADDF("final += %s;", colorValueString(3, (lo >> 15) & 0x7));
-			ADD("FragColor.rgb = final;");
+			/* construct fragment shader */
+			{
+				char* f = frag + strlen(frag);
+				uint32_t hi = gMatState.setcombine.hi;
+				uint32_t lo = gMatState.setcombine.lo;
+				
+	#define ADD(X)    f = strcatt(f, X)
+	#define ADDF(...) f = strcattf(f, __VA_ARGS__)
+				
+				ADD("void main(){");
+				
+				ADD("vec3 final;");
+				ADD("vec4 shading;");
+				ADD("float alpha = 1.0;");
+				ADD("shading = vColor;");
+				ADD("shading.rgb *= vLightColor;");
+				
+				if (gCvgXalpha || gForceBl) {
+					/* alpha cycle 0 */
+					ADDF("alpha = %s;", alphaValueString(0, (hi >> 12) & 0x7));
+					ADDF("alpha -= %s;", alphaValueString(1, (lo >> 12) & 0x7));
+					ADDF("alpha *= %s;", alphaValueString(2, (hi >>  9) & 0x7));
+					ADDF("alpha += %s;", alphaValueString(3, (lo >>  9) & 0x7));
+					ADD("FragColor.a = alpha;");
+					
+					/* alpha cycle 1 */
+					ADDF("alpha = %s;", alphaValueString(0, (lo >> 21) & 0x7));
+					ADDF("alpha -= %s;", alphaValueString(1, (lo >> 3) & 0x7));
+					ADDF("alpha *= %s;", alphaValueString(2, (lo >> 18) & 0x7));
+					ADDF("alpha += %s;", alphaValueString(3, (lo >>  0) & 0x7));
+					ADD("FragColor.a = alpha;");
+					
+					/* TODO optimization: only include this bit if texture is sampled */
+					ADD("if (alpha == 0.0) discard;");
+				} else
+					ADD("FragColor.a = 1.0;");
+				
+				/* TODO optimization: detect when unnecessary and omit */
+				/* color cycle 0 */
+				ADDF("final = %s;", colorValueString(0, (hi >> 20) & 0xf));
+				ADDF("final -= %s;", colorValueString(1, (lo >> 28) & 0xf));
+				ADDF("final *= %s;", colorValueString(2, (hi >> 15) & 0x1f));
+				ADDF("final += %s;", colorValueString(3, (lo >> 15) & 0x7));
+				ADD("FragColor.rgb = final;");
+				
+				/* color cycle 1 */
+				ADDF("final = %s;", colorValueString(0, (hi >> 5) & 0xf));
+				ADDF("final -= %s;", colorValueString(1, (lo >> 24) & 0xf));
+				ADDF("final *= %s;", colorValueString(2, (hi >> 0) & 0x1f));
+				ADDF("final += %s;", colorValueString(3, (lo >> 6) & 0x7));
+				ADD("FragColor.rgb = final;");
+				
+				if (gFogEnabled)
+					ADD("FragColor.rgb = mix(FragColor.rgb, uFogColor, vFog);");
+				
+				ADD("}");
+				
+	#undef ADD
+	#undef ADDF
+			}
 			
-			/* color cycle 1 */
-			ADDF("final = %s;", colorValueString(0, (hi >> 5) & 0xf));
-			ADDF("final -= %s;", colorValueString(1, (lo >> 24) & 0xf));
-			ADDF("final *= %s;", colorValueString(2, (hi >> 0) & 0x1f));
-			ADDF("final += %s;", colorValueString(3, (lo >> 6) & 0x7));
-			ADD("FragColor.rgb = final;");
-			
-			if (gFogEnabled)
-				ADD("FragColor.rgb = mix(FragColor.rgb, uFogColor, vFog);");
-			
-			ADD("}");
-			
-#undef ADD
-#undef ADDF
+			Shader_update(shader, vtx, frag);
 		}
-		
-		if (!shader)
-			shader = Shader_new();
-		
-		gShader = shader;
-		
-		Shader_update(shader, vtx, frag);
 		
 		// render container
 		Shader_use(shader);
@@ -750,7 +806,7 @@ static void gbiFunc_vtx(void* cmd) {
 	VtxF* v = gVbuf + vbidx;
 	
 	if (!gMatState.mtlReady) {
-		doMaterial();
+		doMaterial(cmd);
 		gMatState.mtlReady = 1;
 	}
 	
@@ -1261,8 +1317,6 @@ void n64_setMatrix_model(void* data) {
 	//memcpy(gMatrix.model, data, sizeof(gMatrix.model));
 	gMatrix.modelNow = gMatrix.modelStack;
 	memcpy(gMatrix.modelStack, data, sizeof(*gMatrix.modelStack));
-	//if (gShader)
-	//	Shader_setMat4(gShader, "model", gMatrix.model);
 }
 
 void n64_setMatrix_view(void* data) {
@@ -1288,4 +1342,12 @@ void n64_set_onlyZmode(enum n64_zmode zmode) {
 
 void n64_set_onlyGeoLayer(enum n64_geoLayer geoLayer) {
 	gOnlyThisGeoLayer = geoLayer;
+}
+
+/* you'll generally want to run this during scene change; any time
+ * heap memory gets freed and more heap memory gets allocated which
+ * might potentially occupy the same sets of addresses
+ */
+void n64_clearShaderCache(void) {
+	ShaderList_cleanup();
 }

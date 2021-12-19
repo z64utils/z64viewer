@@ -15,7 +15,7 @@ struct Shader {
 	GLuint id;
 };
 
-void cleanup(Shader* s) {
+static void cleanup(Shader* s) {
 	if (!s)
 		return;
 	
