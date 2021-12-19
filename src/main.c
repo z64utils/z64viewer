@@ -5,6 +5,8 @@
 static ViewerContext* viewerCtx;
 
 int main(void) {
+	printf_SetPrefix("");
+	printf_SetSuppressLevel(PSL_DEBUG);
 	viewerCtx = Lib_Malloc(0, sizeof(ViewerContext));
 	memset(viewerCtx, 0, sizeof(ViewerContext));
 	z64_Init(
