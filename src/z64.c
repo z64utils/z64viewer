@@ -108,7 +108,7 @@ void z64_Draw() {
 static f64 prevTime = 0;
 static f64 curTime = 0;
 
-bool z64_ExecuteIn20Fps() {
+bool Zelda64_20fpsLimiter() {
 	curTime = glfwGetTime();
 	
 	if (curTime - prevTime < 1.0 / 20.0)
@@ -155,4 +155,16 @@ void z64_Draw_Object() {
 }
 
 void z64_Draw_Skelanime() {
+}
+
+/* / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / */
+
+s8 Zelda64_EyeBlink(s16* frame) {
+	if ( *frame == 0 )
+		*frame = Rand_S16Offset(30, 30);
+	*frame -= 1;
+	if ( *frame > 1 )
+		return 0;
+	
+	return 2 - *frame;
 }

@@ -81,7 +81,7 @@ void SkelAnime_InterpFrameTable(s32 limbCount, Vec3s* dst, Vec3s* start, Vec3s* 
 void SkelAnime_Update(SkelAnime* skelAnime) {
 	gSPSegment(0x6, skelAnime->memFile->data);
 	
-	if (!z64_ExecuteIn20Fps())
+	if (!Zelda64_20fpsLimiter())
 		return;
 	
 	AnimationHeader animHeader = *((AnimationHeader*)SEGMENTED_TO_VIRTUAL(skelAnime->animation));

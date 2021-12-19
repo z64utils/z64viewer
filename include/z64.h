@@ -40,6 +40,7 @@ void z64_Update();
 void z64_Draw_SetScene(MemFile* zscene);
 void z64_Draw_Room(MemFile* zroom);
 
-bool z64_ExecuteIn20Fps();
+bool Zelda64_20fpsLimiter();
+s8 Zelda64_EyeBlink(s16* frame);
 
 #endif
