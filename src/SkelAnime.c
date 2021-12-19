@@ -93,7 +93,7 @@ void SkelAnime_Update(SkelAnime* skelAnime) {
 	
 	skelAnime->endFrame = animHeader.common.frameCount - 1;
 	SkelAnime_GetFrameData(skelAnime->animation, floor(skelAnime->curFrame), skelAnime->limbCount, skelAnime->jointTable);
-	SkelAnime_GetFrameData(skelAnime->animation, Wrap(floor(skelAnime->curFrame) + 1, 0, skelAnime->endFrame), skelAnime->limbCount, skelAnime->morphTable);
+	SkelAnime_GetFrameData(skelAnime->animation, WrapF(floor(skelAnime->curFrame) + 1, 0, skelAnime->endFrame), skelAnime->limbCount, skelAnime->morphTable);
 	
 	SkelAnime_InterpFrameTable(
 		skelAnime->limbCount,

@@ -150,13 +150,22 @@ void String_GetFilename(char* dst, char* src);
 		b = y;           \
 }
 
+#define WrapF(x, min, max) ({                       \
+		typeof(x) r = (x);                          \
+		typeof(x) range = (max) - (min) + 1;        \
+		if (r < (min)) {                            \
+			r += range * (((min) - r) / range + 1); \
+		}                                           \
+		(min) + fmod((r - (min)), range);           \
+	})
+
 #define Wrap(x, min, max) ({                        \
 		typeof(x) r = (x);                          \
 		typeof(x) range = (max) - (min) + 1;        \
 		if (r < (min)) {                            \
 			r += range * (((min) - r) / range + 1); \
 		}                                           \
-		fmod((min) + (r - (min)), range);           \
+		(min) + (r - (min)) % range;                \
 	})
 
 #define ReadBE(in) ({                         \

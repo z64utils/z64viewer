@@ -131,19 +131,48 @@ s16 Math_Atan2S(f32 x, f32 y) {
 	return ret;
 }
 
-f32 Vec_DistXZ(Vec3f* a, Vec3f* b) {
+f32 Vec_Vec3f_DistXZ(Vec3f* a, Vec3f* b) {
 	f32 dx = b->x - a->x;
 	f32 dz = b->z - a->z;
 	
 	return sqrtf(SQ(dx) + SQ(dz));
 }
 
-f32 Vec_DistXYZ(Vec3f* a, Vec3f* b) {
+f32 Vec_Vec3f_DistXYZ(Vec3f* a, Vec3f* b) {
 	f32 dx = b->x - a->x;
 	f32 dy = b->y - a->y;
 	f32 dz = b->z - a->z;
 	
 	return sqrtf(SQ(dx) + SQ(dy) + SQ(dz));
+}
+
+f32 Vec_Vec3s_DistXZ(Vec3s* a, Vec3s* b) {
+	f32 dx = b->x - a->x;
+	f32 dz = b->z - a->z;
+	
+	return sqrtf(SQ(dx) + SQ(dz));
+}
+
+f32 Vec_Vec3s_DistXYZ(Vec3s* a, Vec3s* b) {
+	f32 dx = b->x - a->x;
+	f32 dy = b->y - a->y;
+	f32 dz = b->z - a->z;
+	
+	return sqrtf(SQ(dx) + SQ(dy) + SQ(dz));
+}
+
+f32 Vec_Vec2f_DistXZ(Vec2f* a, Vec2f* b) {
+	f32 dx = b->x - a->x;
+	f32 dz = b->y - a->y;
+	
+	return sqrtf(SQ(dx) + SQ(dz));
+}
+
+f32 Vec_Vec2s_DistXZ(Vec2s* a, Vec2s* b) {
+	f32 dx = b->x - a->x;
+	f32 dz = b->y - a->y;
+	
+	return sqrtf(SQ(dx) + SQ(dz));
 }
 
 s16 Vec_Yaw(Vec3f* a, Vec3f* b) {
@@ -154,7 +183,7 @@ s16 Vec_Yaw(Vec3f* a, Vec3f* b) {
 }
 
 s16 Vec_Pitch(Vec3f* a, Vec3f* b) {
-	return Math_Atan2S(Vec_DistXZ(a, b), a->y - b->y);
+	return Math_Atan2S(Vec_Vec3f_DistXZ(a, b), a->y - b->y);
 }
 
 void Vec_VecSphToVec3f(Vec3f* dest, VecSph* sph) {
@@ -170,8 +199,6 @@ void Vec_AddVecSphToVec3f(Vec3f* dest, VecSph* sph) {
 	dest->y += sph->r * Math_CosS(sph->pitch - DegToBin(90));
 	dest->z += sph->r * Math_SinS(sph->pitch - DegToBin(90)) * Math_CosS(sph->yaw);
 }
-
-
 
 VecSph* Vec_Vec3fToVecSph(VecSph* dest, Vec3f* vec) {
 	VecSph sph;
@@ -408,13 +435,6 @@ void Vec_Vec2s_Multiply(Vec2s* dest, Vec2s* a, Vec2s* b) {
 void Vec_Vec2s_Divide(Vec2s* dest, Vec2s* a, Vec2s* b) {
 	dest->x = a->x / b->x;
 	dest->y = a->y / b->y;
-}
-
-s32 Vec_Vec2s_DistXZ(Vec2s* a, Vec2s* b) {
-	f32 dx = (f32)b->x - (f32)a->x;
-	f32 dz = (f32)b->y - (f32)a->y;
-	
-	return sqrtf(SQ(dx) + SQ(dz));
 }
 
 void Rect_ToCRect(CRect* dst, Rect* src) {
