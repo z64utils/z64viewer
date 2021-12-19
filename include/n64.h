@@ -43,4 +43,7 @@ void n64_clearShaderCache(void);
 #define gSPSegment(sed, data)     n64_set_segment(sed, data)
 #define SEGMENTED_TO_VIRTUAL(seg) n64_virt2phys(seg)
 
+#define n64_ClearSegments() for (int i = 0x8; i < 0x10; ++i) \
+	gSPSegment(i, 0)
+
 #endif

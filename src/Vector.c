@@ -473,10 +473,10 @@ void Rect_Translate(Rect* rect, s32 x, s32 y) {
 
 void Rect_Verify(Rect* rect) {
 	if (rect->x > rect->w) {
-		SWAP(s32, rect->x, rect->w);
+		Swap(rect->x, rect->w);
 	}
 	if (rect->y > rect->h) {
-		SWAP(s32, rect->y, rect->h);
+		Swap(rect->y, rect->h);
 	}
 }
 

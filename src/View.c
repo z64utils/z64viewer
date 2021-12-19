@@ -43,14 +43,14 @@ void View_Camera_FlyMode(ViewContext* viewCtx, InputContext* inputCtx) {
 	Vec3f* eye = &cam->eye;
 	Vec3f* at = &cam->at;
 	
-	if (vel.z || vel.x || inputCtx->mouse.clickL.hold) {
+	if (vel.z || vel.x || (viewCtx->cameraControl && inputCtx->mouse.clickL.hold)) {
 		VecSph camSph = {
 			.r = Vec_Vec3f_DistXYZ(eye, at),
 			.yaw = Vec_Yaw(at, eye),
 			.pitch = Vec_Pitch(at, eye)
 		};
 		
-		if (inputCtx->mouse.clickL.hold) {
+		if (viewCtx->cameraControl && inputCtx->mouse.clickL.hold) {
 			camSph.yaw -= inputCtx->mouse.vel.x * 65;
 			camSph.pitch -= inputCtx->mouse.vel.y * 65;
 		}

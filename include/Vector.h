@@ -163,6 +163,16 @@ void Rect_Set(Rect* dest, s32 x, s32 w, s32 y, s32 h);
 	(dest)->y = ReadBE((src)->y); \
 	(dest)->z = ReadBE((src)->z)
 
+#define Vec2_MultVec(dest, src) \
+	(dest)->x *= (src)->x; \
+	(dest)->y *= (src)->y; \
+	(dest)->z *= (src)->z
+
+#define Vec3_MultVec(dest, src) \
+	(dest)->x *= (src)->x; \
+	(dest)->y *= (src)->y; \
+	(dest)->z *= (src)->z
+
 #define Vec2_Mult(dest, src) \
 	(dest)->x *= src; \
 	(dest)->y *= src; \
@@ -190,13 +200,5 @@ void Rect_Set(Rect* dest, s32 x, s32 w, s32 y, s32 h);
 #define BinSub(a, b)       ((s16)(a - b))
 #define BinToDeg(binang)   ((f32)binang * (360.0001525f / 65535.0f))
 #define BinToRad(binang)   (((f32)binang / 32768.0f) * M_PI)
-
-#define SWAP(type, a, b) \
-	{ \
-		type swap; \
-		swap = (a); \
-		(a) = (b); \
-		(b) = swap; \
-	}
 
 #endif
