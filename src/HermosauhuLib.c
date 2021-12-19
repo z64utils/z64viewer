@@ -284,7 +284,7 @@ void MemFile_Malloc(MemFile* memFile, u32 size) {
 	memFile->data = malloc(size);
 	
 	if (memFile->data == NULL) {
-		printf_error("Failed to malloc [0x%X] bytes.", size);
+		printf_warning("Failed to malloc [0x%X] bytes.", size);
 	}
 	
 	memFile->memSize = size;
@@ -307,23 +307,29 @@ void MemFile_Rewind(MemFile* memFile) {
 	memFile->seekPoint = 0;
 }
 
-void MemFile_Write(MemFile* dest, void* src, u32 size) {
+s32 MemFile_Write(MemFile* dest, void* src, u32 size) {
 	if (dest->seekPoint + size > dest->memSize) {
-		printf_error("DataSize exceeded MemSize while writing to MemFile.\n\tDataSize: [0x%X]\n\tMemSize: [0x%X]", dest->dataSize, dest->memSize);
+		printf_warning("DataSize exceeded MemSize while writing to MemFile.\n\tDataSize: [0x%X]\n\tMemSize: [0x%X]", dest->dataSize, dest->memSize);
+		
+		return 1;
 	}
 	if (dest->seekPoint + size > dest->dataSize) {
 		dest->dataSize = dest->seekPoint + size;
 	}
 	memcpy(&dest->cast.u8[dest->seekPoint], src, size);
 	dest->seekPoint += size;
+	
+	return 0;
 }
 
-void MemFile_LoadFile(MemFile* memFile, char* filepath) {
+s32 MemFile_LoadFile(MemFile* memFile, char* filepath) {
 	u32 tempSize;
 	FILE* file = fopen(filepath, "rb");
 	
 	if (file == NULL) {
-		printf_error("Failed to fopen file [%s].", filepath);
+		printf_warning("Failed to fopen file [%s].", filepath);
+		
+		return 1;
 	}
 	
 	fseek(file, 0, SEEK_END);
@@ -333,7 +339,9 @@ void MemFile_LoadFile(MemFile* memFile, char* filepath) {
 		MemFile_Malloc(memFile, tempSize);
 		memFile->memSize = memFile->dataSize = tempSize;
 		if (memFile->data == NULL) {
-			printf_error("Failed to malloc MemFile.\n\tAttempted size is [0x%X] bytes to store data from [%s].", tempSize, filepath);
+			printf_warning("Failed to malloc MemFile.\n\tAttempted size is [0x%X] bytes to store data from [%s].", tempSize, filepath);
+			
+			return 1;
 		}
 	} else if (memFile->memSize < tempSize) {
 		MemFile_Realloc(memFile, tempSize);
@@ -347,36 +355,42 @@ void MemFile_LoadFile(MemFile* memFile, char* filepath) {
 	printf_debugExt("File: [%s]", filepath);
 	printf_debug("Ptr: %08X", memFile->data);
 	printf_debug("Size: %08X", memFile->dataSize);
+	
+	return 0;
 }
 
-void MemFile_SaveFile(MemFile* memFile, char* filepath) {
+s32 MemFile_SaveFile(MemFile* memFile, char* filepath) {
 	FILE* file = fopen(filepath, "w");
 	
 	if (file == NULL) {
-		printf_error("Failed to fopen file [%s] for writing.", filepath);
+		printf_warning("Failed to fopen file [%s] for writing.", filepath);
+		
+		return 1;
 	}
 	
 	fwrite(memFile, sizeof(u8), memFile->dataSize, file);
 	fclose(file);
+	
+	return 0;
 }
 
-void MemFile_LoadFile_ReqExt(MemFile* memFile, char* filepath, const char* ext) {
+s32 MemFile_LoadFile_ReqExt(MemFile* memFile, char* filepath, const char* ext) {
 	if (Lib_MemMem(filepath, strlen(filepath), ext, strlen(ext))) {
-		MemFile_LoadFile(memFile, filepath);
-		
-		return;
+		return MemFile_LoadFile(memFile, filepath);
 	}
-	printf_error("[%s] does not match extension [%s]", filepath, ext);
+	printf_warning("[%s] does not match extension [%s]", filepath, ext);
+	
+	return 1;
 }
 
-void MemFile_SaveFile_ReqExt(MemFile* memFile, char* filepath, s32 size, const char* ext) {
+s32 MemFile_SaveFile_ReqExt(MemFile* memFile, char* filepath, s32 size, const char* ext) {
 	if (Lib_MemMem(filepath, strlen(filepath), ext, strlen(ext))) {
-		MemFile_SaveFile(memFile, filepath);
-		
-		return;
+		return MemFile_SaveFile(memFile, filepath);
 	}
 	
-	printf_error("[%s] does not match extension [%s]", filepath, ext);
+	printf_warning("[%s] does not match extension [%s]", filepath, ext);
+	
+	return 1;
 }
 
 void MemFile_Free(MemFile* memFile) {

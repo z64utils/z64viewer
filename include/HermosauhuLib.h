@@ -93,11 +93,11 @@ MemFile MemFile_Initialize();
 void MemFile_Malloc(MemFile* memFile, u32 size);
 void MemFile_Realloc(MemFile* memFile, u32 size);
 void MemFile_Rewind(MemFile* memFile);
-void MemFile_Write(MemFile* dest, void* src, u32 size);
-void MemFile_LoadFile(MemFile* memFile, char* filepath);
-void MemFile_SaveFile(MemFile* memFile, char* filepath);
-void MemFile_LoadFile_ReqExt(MemFile* memFile, char* filepath, const char* ext);
-void MemFile_SaveFile_ReqExt(MemFile* memFile, char* filepath, s32 size, const char* ext);
+s32 MemFile_Write(MemFile* dest, void* src, u32 size);
+s32 MemFile_LoadFile(MemFile* memFile, char* filepath);
+s32 MemFile_SaveFile(MemFile* memFile, char* filepath);
+s32 MemFile_LoadFile_ReqExt(MemFile* memFile, char* filepath, const char* ext);
+s32 MemFile_SaveFile_ReqExt(MemFile* memFile, char* filepath, s32 size, const char* ext);
 void MemFile_Free(MemFile* memFile);
 
 /* 👺 STRING 👺 */
