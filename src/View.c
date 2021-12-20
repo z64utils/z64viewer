@@ -145,7 +145,7 @@ void View_Init(ViewContext* viewCtx, InputContext* inputCtx) {
 	viewCtx->fovy = 65;
 	viewCtx->near = 0.1 * 100;
 	viewCtx->far = 10000.0 * 100;
-	viewCtx->scale = 0.03;
+	viewCtx->scale = 0.01;
 }
 
 void View_Update(ViewContext* viewCtx, InputContext* inputCtx) {

@@ -24,11 +24,14 @@ void Light_BindLights(Scene* scene) {
 	f32 fogNear = (ReadBE(envLight->fogNear) & 0x3FF);
 	f32 fogFar = ReadBE(envLight->fogFar);
 	
-	fogNear = CLAMP_MAX(fogNear, 996);
-	fogFar = CLAMP_MAX(fogFar, 12800);
+	fogFar *= 4;
+	fogNear *= 0.75;
 	
-	fogParam[1] = fogFar * 1.25;
-	fogParam[0] = fogNear * 0.75;
+	fogFar = CLAMP_MAX(fogFar, 12800);
+	fogNear = CLAMP_MAX(fogNear, 996);
+	
+	fogParam[1] = fogFar;
+	fogParam[0] = fogNear;
 	
 	for (s32 i = 0; i < 3; i++) {
 		fogColor[i] = (f32)envLight->fogColor.c[i] / 255.0;
