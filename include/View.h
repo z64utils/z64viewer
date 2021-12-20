@@ -23,6 +23,7 @@ typedef struct {
 
 typedef struct {
 	f32     fovy;
+	f32     fovyTarget;
 	f32     near;
 	f32     far;
 	f32     scale;

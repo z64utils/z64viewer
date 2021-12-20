@@ -626,7 +626,6 @@ static void doMaterial(void* addr) {
 				
 				float fog_linear(const float dist, const float start, const float end) {
 					float s = clamp((end - dist) / (end - start), 0.0, 1.0);
-					s = (s * s * s * s * s * s * s);
 				return 1.0 - s;
 			}
 				
@@ -637,12 +636,14 @@ static void doMaterial(void* addr) {
 				void main() {
 				float fogStart = uFog.x;
 				float fogEnd = uFog.y;
+				vec4 posRelToCam = view * vec4(aPos, 1.0);
+				float vtxDistToCam = length(posRelToCam.xyz) / 12;
 				// gl_Position = projection * view * model * vec4(aPos, 1.0);
 				gl_Position = projection * view * vec4(aPos, 1.0);
 				vColor = aColor;
 				TexCoord0 = vec2(aTexCoord0.x, aTexCoord0.y);
 				TexCoord1 = vec2(aTexCoord1.x, aTexCoord1.y);
-				vFog = fog_linear(length(gl_Position.xyz), fogStart, fogEnd);
+				vFog = fog_linear(vtxDistToCam, fogStart, fogEnd);
 				
 				/* when lighting is disabled for a vertex, its normal == 0 */
 				if (aNorm == vec3(0.0)) {

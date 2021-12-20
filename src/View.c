@@ -114,10 +114,14 @@ void View_Camera_OrbitMode(ViewContext* viewCtx, InputContext* inputCtx) {
 					orbitSph.pitch += inputCtx->mouse.vel.y * 67;
 				}
 			}
-			orbitSph.r = CLAMP_MIN(orbitSph.r - (distMult * (inputCtx->mouse.scrollY)), 0.00001f);
-			cam->eye = cam->at;
-			
-			Vec_AddVecSphToVec3f(&cam->eye, &orbitSph);
+			if (inputCtx->key[KEY_LEFT_CONTROL].hold) {
+				viewCtx->fovyTarget = CLAMP(viewCtx->fovyTarget * (1.0 + (inputCtx->mouse.scrollY / 20)), 20, 170);
+			} else {
+				orbitSph.r = CLAMP_MIN(orbitSph.r - (distMult * (inputCtx->mouse.scrollY)), 0.00001f);
+				cam->eye = cam->at;
+				
+				Vec_AddVecSphToVec3f(&cam->eye, &orbitSph);
+			}
 		}
 	}
 	
@@ -142,9 +146,9 @@ void View_Init(ViewContext* viewCtx, InputContext* inputCtx) {
 	
 	Matrix_LookAt(&viewCtx->viewMtx, cam->eye, cam->at, cam->roll);
 	
-	viewCtx->fovy = 65;
-	viewCtx->near = 0.1 * 100;
-	viewCtx->far = 10000.0 * 100;
+	viewCtx->fovyTarget = viewCtx->fovy = 65;
+	viewCtx->near = 0.1 * 1000;
+	viewCtx->far = 1000.0 * 1000;
 	viewCtx->scale = 0.01;
 }
 
@@ -154,6 +158,8 @@ void View_Update(ViewContext* viewCtx, InputContext* inputCtx) {
 	Vec3f up;
 	s16 yaw;
 	s16 pitch;
+	
+	Math_SmoothStepToF(&viewCtx->fovy, viewCtx->fovyTarget, 0.25, 5.25f, 0.00001);
 	
 	Matrix_Projection(
 		&viewCtx->projMtx,
