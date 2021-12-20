@@ -17,33 +17,33 @@ typedef struct {
 } SCmdBase;
 
 typedef struct {
-	/* 0x00 */ u8    code;
-	/* 0x01 */ u8    data1;
-	/* 0x04 */ void* segment;
+	/* 0x00 */ u8  code;
+	/* 0x01 */ u8  data1;
+	/* 0x04 */ u32 segment;
 } SCmdSpawnList;
 
 typedef struct {
-	/* 0x00 */ u8    code;
-	/* 0x01 */ u8    num;
-	/* 0x04 */ void* segment;
+	/* 0x00 */ u8  code;
+	/* 0x01 */ u8  num;
+	/* 0x04 */ u32 segment;
 } SCmdActorList;
 
 typedef struct {
-	/* 0x00 */ u8    code;
-	/* 0x01 */ u8    data1;
-	/* 0x04 */ void* segment;
+	/* 0x00 */ u8  code;
+	/* 0x01 */ u8  data1;
+	/* 0x04 */ u32 segment;
 } SCmdUnused02;
 
 typedef struct {
-	/* 0x00 */ u8    code;
-	/* 0x01 */ u8    data1;
-	/* 0x04 */ void* segment;
+	/* 0x00 */ u8  code;
+	/* 0x01 */ u8  data1;
+	/* 0x04 */ u32 segment;
 } SCmdColHeader;
 
 typedef struct {
-	/* 0x00 */ u8    code;
-	/* 0x01 */ u8    num;
-	/* 0x04 */ void* segment;
+	/* 0x00 */ u8  code;
+	/* 0x01 */ u8  num;
+	/* 0x04 */ u32 segment;
 } SCmdRoomList;
 
 typedef struct {
@@ -57,9 +57,9 @@ typedef struct {
 } SCmdWindSettings;
 
 typedef struct {
-	/* 0x00 */ u8    code;
-	/* 0x01 */ u8    data1;
-	/* 0x04 */ void* segment;
+	/* 0x00 */ u8  code;
+	/* 0x01 */ u8  data1;
+	/* 0x04 */ u32 segment;
 } SCmdEntranceList;
 
 typedef struct {
@@ -143,9 +143,9 @@ typedef struct {
 } SCmdEndMarker;
 
 typedef struct {
-	/* 0x00 */ u8    code;
-	/* 0x01 */ u8    data1;
-	/* 0x04 */ void* segment;
+	/* 0x00 */ u8  code;
+	/* 0x01 */ u8  data1;
+	/* 0x04 */ u32 segment;
 } SCmdExitList;
 
 typedef struct {
@@ -164,15 +164,15 @@ typedef struct {
 } SCmdEchoSettings;
 
 typedef struct {
-	/* 0x00 */ u8    code;
-	/* 0x01 */ u8    data1;
-	/* 0x04 */ void* segment;
+	/* 0x00 */ u8  code;
+	/* 0x01 */ u8  data1;
+	/* 0x04 */ u32 segment;
 } SCmdCutsceneData;
 
 typedef struct {
-	/* 0x00 */ u8    code;
-	/* 0x01 */ u8    data1;
-	/* 0x04 */ void* segment;
+	/* 0x00 */ u8  code;
+	/* 0x01 */ u8  data1;
+	/* 0x04 */ u32 segment;
 } SCmdAltHeaders;
 
 typedef struct {
@@ -223,8 +223,8 @@ typedef struct {
 } LightSettings; // size = 0x16
 
 typedef struct {
-	/* 0x00 */ u8 count; // number of points in the path
-	/* 0x04 */ Vec3s* points; // Segment Address to the array of points
+	/* 0x00 */ u8  count; // number of points in the path
+	/* 0x04 */ u32 points; // Segment Address to the array of points
 } Path; // size = 0x8
 
 typedef union {
