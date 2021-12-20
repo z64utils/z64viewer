@@ -7,7 +7,8 @@ typedef struct ViewerContext {
 	ViewContext   viewCtx;
 	InputContext  inputCtx;
 	LightContext  lightCtx;
-	ObjectContext objCtx;
+	Scene scene;
+	Room room[32];
 } ViewerContext;
 
 void Viewer_Init(ViewerContext* viewerCtx);

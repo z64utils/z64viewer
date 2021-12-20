@@ -618,14 +618,16 @@ static void doMaterial(void* addr) {
 				out float vFog;
 				out vec3 vLightColor;
 				
-				//uniform mat4 model;
+				// uniform mat4 model;
 				uniform mat4 view;
 				uniform mat4 projection;
 				uniform vec2 uFog;
 				uniform mat4 uLights;
 				
 				float fog_linear(const float dist, const float start, const float end) {
-				return 1.0 - clamp((end - dist) / (end - start), 0.0, 1.0);
+					float s = clamp((end - dist) / (end - start), 0.0, 1.0);
+					s = (s * s * s * s * s * s * s);
+				return 1.0 - s;
 			}
 				
 				vec3 mul(mat4 a, vec3 b) {
@@ -635,7 +637,7 @@ static void doMaterial(void* addr) {
 				void main() {
 				float fogStart = uFog.x;
 				float fogEnd = uFog.y;
-				//gl_Position = projection * view * model * vec4(aPos, 1.0);
+				// gl_Position = projection * view * model * vec4(aPos, 1.0);
 				gl_Position = projection * view * vec4(aPos, 1.0);
 				vColor = aColor;
 				TexCoord0 = vec2(aTexCoord0.x, aTexCoord0.y);
@@ -757,7 +759,7 @@ static void doMaterial(void* addr) {
 		Shader_setMat4(shader, "projection", gMatrix.projection);
 		Shader_setMat4(shader, "uLights", gLights);
 		Shader_setVec3(shader, "uFogColor", gFog.color[0], gFog.color[1], gFog.color[2]);
-		Shader_setVec2(shader, "uFog", gFog.fog[0], gFog.fog[1] - gFog.fog[0]);
+		Shader_setVec2(shader, "uFog", gFog.fog[0], gFog.fog[1]);
 		Shader_setInt(shader, "texture0", 0);
 		Shader_setInt(shader, "texture1", 1);
 	}

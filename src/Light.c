@@ -3,62 +3,37 @@
 #define HU8(HX) (0.00392156862745f * (HX))
 #define HS8(HX) ((char)(HX))
 
-static void* __GetLights(void* zscene) {
-	u8* b;
+void Light_BindLights(Scene* scene) {
+	LightContext* lightCtx = &scene->lightCtx;
 	
-	for (b = zscene; *b != 0x14; b += 8) {
-		if (*b == 0x0f)
-			break;
+	OsAssert(lightCtx->envLight != NULL);
+	EnvLight* envLight = &lightCtx->envLight[Wrap(lightCtx->curLightId, 0, lightCtx->lightListNum)];
+	f32 fogParam[2];
+	f32 fogColor[3];
+	f32 light[16] = {
+		HU8(envLight->ambient.r), HU8(envLight->ambient.g), HU8(envLight->ambient.b),
+		HS8(envLight->dirB.x),
+		HU8(envLight->colorA.r), HU8(envLight->colorA.g), HU8(envLight->colorA.b),
+		HS8(envLight->dirB.y),
+		HU8(envLight->colorB.r), HU8(envLight->colorB.g), HU8(envLight->colorB.b),
+		HS8(envLight->dirB.z),
+		HS8(envLight->dirA.x), HS8(envLight->dirA.y), HS8(envLight->dirA.z),
+		0,
+	};
+	
+	f32 fogNear = (ReadBE(envLight->fogNear) & 0x3FF);
+	f32 fogFar = ReadBE(envLight->fogFar);
+	
+	fogNear = CLAMP_MAX(fogNear, 996);
+	fogFar = CLAMP_MAX(fogFar, 12800);
+	
+	fogParam[1] = fogFar * 1.25;
+	fogParam[0] = fogNear * 0.75;
+	
+	for (s32 i = 0; i < 3; i++) {
+		fogColor[i] = (f32)envLight->fogColor.c[i] / 255.0;
 	}
 	
-	if (*b != 0x0f)
-		return 0;
-	
-	return n64_virt2phys(u32r(b + 4));
-}
-
-void Light_Scene_SetLights(MemFile* zScene, LightContext* lightCtx) {
-	u8* lighting;
-	
-	lighting = __GetLights(zScene->data);
-	
-	if (lighting) {
-		lighting += 22 * 1; /* jump to next lighting list */
-		f32 scale = 0.001f;
-		f32 fog[2];
-		f32 color[3] = { lighting[15], lighting[16], lighting[17] };
-		
-		color[0] /= 255;
-		color[1] /= 255;
-		color[2] /= 255;
-		memcpy(&lightCtx->ambient, color, sizeof(color));
-		
-		fog[0] = scale * (u16r(lighting + 18) & 0x3FF);
-		fog[1] = scale * u16r(lighting + 20);
-		f32 scenelights[16] = {
-			// m[0]
-			// amb XYZ
-			HU8(lighting[0]), HU8(lighting[1]), HU8(lighting[2]),
-			// dir1 X
-			HS8(lighting[9]),
-			// m[1]
-			// dif0
-			HU8(lighting[6]), HU8(lighting[7]), HU8(lighting[8]),
-			// dir1 Y
-			HS8(lighting[10]),
-			// m[2]
-			// dif1
-			HU8(lighting[12]), HU8(lighting[13]), HU8(lighting[14]),
-			// dir1 Z
-			HS8(lighting[11]),
-			// m[3]
-			// dir0
-			HS8(lighting[3]), HS8(lighting[4]), HS8(lighting[5]),
-			// unused
-			0,
-		};
-		
-		n64_set_fog(fog, color);
-		n64_set_lights(scenelights);
-	}
+	n64_set_fog(fogParam, fogColor);
+	n64_set_lights(light);
 }

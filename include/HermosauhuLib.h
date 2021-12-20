@@ -20,6 +20,55 @@ typedef unsigned long long int u64;
 typedef float f32;
 typedef double f64;
 
+typedef struct {
+	u8 hue;
+	u8 saturation;
+	u8 luminance;
+} HLS8;
+
+typedef struct {
+	u8 hue;
+	u8 saturation;
+	u8 luminance;
+	u8 alpha;
+} HLSA8;
+
+typedef struct {
+	union {
+		struct {
+			u8 r;
+			u8 g;
+			u8 b;
+		};
+		u8 c[3];
+	};
+} RGB8;
+
+typedef struct {
+	union {
+		struct {
+			u8 r;
+			u8 g;
+			u8 b;
+			u8 a;
+		};
+		u8 c[4];
+	};
+} RGBA8;
+
+typedef struct {
+	f32 r;
+	f32 g;
+	f32 b;
+} RGB32;
+
+typedef struct {
+	f32 r;
+	f32 g;
+	f32 b;
+	f32 a;
+} RGBA32;
+
 typedef enum {
 	PSL_DEBUG = -1,
 	PSL_NONE,

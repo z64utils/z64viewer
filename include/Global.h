@@ -6,6 +6,7 @@
 #include <Vector.h>
 
 struct ViewerContext;
+struct Scene;
 
 typedef void (* CallbackFunc)(void*);
 

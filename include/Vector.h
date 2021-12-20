@@ -43,6 +43,17 @@ typedef struct {
 } Vec2s;
 
 typedef struct {
+	s8 x;
+	s8 y;
+	s8 z;
+} Vec3c;
+
+typedef struct {
+	s8 x;
+	s8 y;
+} Vec2c;
+
+typedef struct {
 	s32 x;
 	s32 y;
 	s32 z;

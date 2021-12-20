@@ -1,14 +1,6 @@
-#include <zroom.h>
+#include <z_room.h>
 #include <bigendian.h>
-#include <n64.h>
 
-#include <stdint.h>
-
-/*
- *
- * private
- *
- */
 static void doMeshHeader0(void* header, int layer) {
 	uint8_t* h8 = header;
 	uint8_t num = h8[1];
@@ -71,12 +63,7 @@ static void doMeshHeader(void* header, int layer) {
 	}
 }
 
-/*
- *
- * public
- *
- */
-void zroom_draw(void* room) {
+void Room_Draw(void* room) {
 	uint8_t* room8;
 	
 	/* rooms go in segment 0x03 */

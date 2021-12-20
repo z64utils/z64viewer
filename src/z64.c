@@ -1,8 +1,5 @@
 #include <z64.h>
 
-static ObjectContext* __objCtx;
-static LightContext* __lightCtx;
-
 InputContext* __inputCtx;
 AppInfo* __appInfo;
 
@@ -25,8 +22,6 @@ void z64_Init(
 	const char* title,
 	AppInfo* appInfo,
 	InputContext* inputCtx,
-	ObjectContext* objCtx,
-	LightContext* lightCtx,
 	void* context,
 	CallbackFunc updateCall,
 	CallbackFunc drawCall,
@@ -36,8 +31,6 @@ void z64_Init(
 ) {
 	__appInfo = appInfo;
 	__inputCtx = inputCtx;
-	__objCtx = objCtx;
-	__lightCtx = lightCtx;
 	
 	appInfo->context = context;
 	appInfo->updateCall = updateCall;
@@ -90,9 +83,9 @@ void z64_Draw() {
 	__appInfo->updateCall(__appInfo->context);
 	
 	glClearColor(
-		__lightCtx->ambient.r,
-		__lightCtx->ambient.g,
-		__lightCtx->ambient.b,
+		0.0f,
+		0.0f,
+		0.0f,
 		1.0f
 	);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -135,7 +128,7 @@ void z64_Update() {
 
 void z64_Draw_SetScene(MemFile* zscene) {
 	n64_set_segment(0x02, zscene->data);
-	Light_Scene_SetLights(zscene, __lightCtx);
+	// Light_Scene_SetLights(zscene, __lightCtx);
 }
 
 void z64_Draw_Room(MemFile* zroom) {
@@ -146,9 +139,9 @@ void z64_Draw_Room(MemFile* zroom) {
 	
 	n64_draw(setup);
 	n64_set_onlyGeoLayer(GEOLAYER_OPAQUE);
-	zroom_draw(zroom->data);
+	Room_Draw(zroom->data);
 	n64_set_onlyGeoLayer(GEOLAYER_OVERLAY);
-	zroom_draw(zroom->data);
+	Room_Draw(zroom->data);
 }
 
 void z64_Draw_Object() {
