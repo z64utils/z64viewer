@@ -126,15 +126,15 @@ void SkelAnime_Limb(u32 skelSeg, u8 limbId, Mtx** mtx, Vec3s* jointTable) {
 	Matrix_Push();
 	
 	if (limbId == 0) {
-		Vec3_Copy(&pos, &jointTable[0]);
-		Vec3_Copy(&rot, &jointTable[1]);
+		Vec3_Copy(pos, jointTable[0]);
+		Vec3_Copy(rot, jointTable[1]);
 	} else {
-		Vec3_CopyBE(&pos, &limb->jointPos);
+		Vec3_CopyBE(pos, limb->jointPos);
 		limbId++;
-		Vec3_Copy(&rot, &jointTable[limbId]);
+		Vec3_Copy(rot, jointTable[limbId]);
 	}
 	
-	Vec3_Copy(&rpos, &pos);
+	Vec3_Copy(rpos, pos);
 	// Vec3_Mult(&rpos, 0.001f);
 	
 	Matrix_TranslateRotateZYX(&rpos, &rot);

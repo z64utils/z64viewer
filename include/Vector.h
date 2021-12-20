@@ -131,68 +131,127 @@ void Rect_Verify(Rect* rect);
 void Rect_Set(Rect* dest, s32 x, s32 w, s32 y, s32 h);
 
 #define Vec2_Substract(dest, a, b) \
-	(dest)->x = (a)->x - (b)->x; \
-	(dest)->y = (a)->y - (b)->y
+	dest.x = a.x - b.x; \
+	dest.y = a.y - b.y
 
 #define Vec3_Substract(dest, a, b) \
-	(dest)->x = (a)->x - (b)->x; \
-	(dest)->y = (a)->y - (b)->y; \
-	(dest)->z = (a)->z - (b)->z
+	dest.x = a.x - b.x; \
+	dest.y = a.y - b.y; \
+	dest.z = a.z - b.z
 
 #define Vec2_Add(dest, a, b) \
-	(dest)->x = (a)->x + (b)->x; \
-	(dest)->y = (a)->y + (b)->y
+	dest.x = a.x + b.x; \
+	dest.y = a.y + b.y
 
 #define Vec3_Add(dest, a, b) \
-	(dest)->x = (a)->x + (b)->x; \
-	(dest)->y = (a)->y + (b)->y; \
-	(dest)->z = (a)->z + (b)->z
+	dest.x = a.x + b.x; \
+	dest.y = a.y + b.y; \
+	dest.z = a.z + b.z
 
 #define Vec2_Equal(a, b) ( \
-		(a)->x == (b)->x && \
-		(a)->y == (b)->y \
+		a.x == b.x && \
+		a.y == b.y \
 )
 
 #define Vec3_Equal(a, b) ( \
-		(a)->x == (b)->x && \
-		(a)->y == (b)->y && \
-		(a)->z == (b)->z \
+		a.x == b.x && \
+		a.y == b.y && \
+		a.z == b.z \
 )
 
 #define Vec2_Copy(dest, src) \
-	(dest)->x = (src)->x; \
-	(dest)->y = (src)->y; \
-	(dest)->z = (src)->z
+	dest.x = src.x; \
+	dest.y = src.y; \
+	dest.z = src.z
 
 #define Vec3_Copy(dest, src) \
-	(dest)->x = (src)->x; \
-	(dest)->y = (src)->y; \
-	(dest)->z = (src)->z
+	dest.x = src.x; \
+	dest.y = src.y; \
+	dest.z = src.z
 
 #define Vec3_CopyBE(dest, src) \
-	(dest)->x = ReadBE((src)->x); \
-	(dest)->y = ReadBE((src)->y); \
-	(dest)->z = ReadBE((src)->z)
+	dest.x = ReadBE(src.x); \
+	dest.y = ReadBE(src.y); \
+	dest.z = ReadBE(src.z)
 
 #define Vec2_MultVec(dest, src) \
-	(dest)->x *= (src)->x; \
-	(dest)->y *= (src)->y; \
-	(dest)->z *= (src)->z
+	dest.x *= src.x; \
+	dest.y *= src.y; \
+	dest.z *= src.z
 
 #define Vec3_MultVec(dest, src) \
-	(dest)->x *= (src)->x; \
-	(dest)->y *= (src)->y; \
-	(dest)->z *= (src)->z
+	dest.x *= src.x; \
+	dest.y *= src.y; \
+	dest.z *= src.z
 
 #define Vec2_Mult(dest, src) \
-	(dest)->x *= src; \
-	(dest)->y *= src; \
-	(dest)->z *= src
+	dest.x *= src; \
+	dest.y *= src; \
+	dest.z *= src
 
 #define Vec3_Mult(dest, src) \
-	(dest)->x *= src; \
-	(dest)->y *= src; \
-	(dest)->z *= src
+	dest.x *= src; \
+	dest.y *= src; \
+	dest.z *= src
+
+#define Vec2_Dot(a, b) ({ \
+		(a.x * b.x) + \
+		(a.y * b.y); \
+	})
+
+#define Vec3_Dot(a, b) ({ \
+		(a.x * b.x) + \
+		(a.y * b.y) + \
+		(a.z * b.z); \
+	})
+
+#define Vec3_Cross(a, b) ({                    \
+		(typeof(*(a))) {                       \
+			a.y* b.z - b.y* a.z, \
+			a.z* b.x - b.z* a.x, \
+			a.x* b.y - b.x* a.y  \
+		};                                     \
+	})
+
+#define Vec2_Magnitude(a) ({ \
+		sqrtf( \
+			(a.x * a.x) + \
+			(a.y * a.y) \
+		); \
+	})
+
+#define Vec3_Magnitude(a) ({ \
+		sqrtf( \
+			(a.x * a.x) + \
+			(a.y * a.y) + \
+			(a.z * a.z) \
+		); \
+	})
+
+#define Vec2_Normalize(a) ({         \
+		typeof(a) ret;            \
+		f32 mgn = Vec2_Magnitude(a); \
+		if (mgn == 0) {              \
+			ret.x = ret.y = 0;       \
+		} else {                     \
+			ret.x = a.x / mgn;    \
+			ret.y = a.y / mgn;    \
+		}                            \
+		ret;                         \
+	})
+
+#define Vec3_Normalize(a) ({           \
+		typeof(a) ret;              \
+		f32 mgn = Vec3_Magnitude(a); \
+		if (mgn == 0) {                  \
+			ret.x = ret.y = ret.z = 0;   \
+		} else {                         \
+			ret.x = a.x / mgn;      \
+			ret.y = a.y / mgn;      \
+			ret.z = a.z / mgn;      \
+		}                                \
+		ret;                             \
+	})
 
 #define SQ(x)        (x * x)
 #define Math_SinS(x) sinf(BinToRad((s16)(x)))

@@ -12,12 +12,17 @@ void Light_BindLights(Scene* scene) {
 	f32 fogColor[3];
 	f32 light[16] = {
 		HU8(envLight->ambient.r), HU8(envLight->ambient.g), HU8(envLight->ambient.b),
-		HS8(envLight->dirB.x),
+		((f64)envLight->dirB.x / __INT8_MAX__),
+		
 		HU8(envLight->colorA.r), HU8(envLight->colorA.g), HU8(envLight->colorA.b),
-		HS8(envLight->dirB.y),
+		((f64)envLight->dirB.y / __INT8_MAX__),
+		
 		HU8(envLight->colorB.r), HU8(envLight->colorB.g), HU8(envLight->colorB.b),
-		HS8(envLight->dirB.z),
-		HS8(envLight->dirA.x), HS8(envLight->dirA.y), HS8(envLight->dirA.z),
+		((f64)envLight->dirB.z / __INT8_MAX__),
+		
+		((f64)envLight->dirA.x / __INT8_MAX__),
+		((f64)envLight->dirA.y / __INT8_MAX__),
+		((f64)envLight->dirA.z / __INT8_MAX__),
 		0,
 	};
 	

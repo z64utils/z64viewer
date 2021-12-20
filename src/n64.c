@@ -61,7 +61,7 @@ static enum n64_zmode gCurrentZmode;
 typedef struct ShaderList {
 	struct ShaderList* next;
 	Shader* shader;
-	void* addr;
+	void*   addr;
 } ShaderList;
 
 static ShaderList* sShaderList = 0;
@@ -312,15 +312,17 @@ static VtxF gVbuf[VBUF_MAX];
 #define G_SETCIMG         0xFF
 
 static ShaderList* ShaderList_new(void* addr, void* next) {
-	ShaderList *l = calloc(1, sizeof(*l));
+	ShaderList* l = calloc(1, sizeof(*l));
+	
 	l->addr = addr;
 	l->next = next;
 	l->shader = Shader_new();
+	
 	return l;
 }
 
 static Shader* ShaderList_add(void* addr, bool* isNew) {
-	ShaderList *l;
+	ShaderList* l;
 	
 	assert(addr);
 	assert(isNew);
@@ -603,8 +605,7 @@ static void doMaterial(void* addr) {
 		gMatState.env.alpha = (gMatState.env.lo & 0xff) / 255.0f;
 		Shader* shader = ShaderList_add(addr, &isNew);
 		
-		if (isNew)
-		{
+		if (isNew) {
 			const char* vtx = SHADER_SOURCE(
 				layout (location = 0) in vec3 aPos;
 				layout (location = 1) in vec4 aColor;
@@ -625,7 +626,8 @@ static void doMaterial(void* addr) {
 				uniform mat4 uLights;
 				
 				float fog_linear(const float dist, const float start, const float end) {
-					float s = clamp((end - dist) / (end - start), 0.0, 1.0);
+				float s = clamp((end - dist) / (end - start), 0.0, 1.0);
+				
 				return 1.0 - s;
 			}
 				
@@ -637,7 +639,7 @@ static void doMaterial(void* addr) {
 				float fogStart = uFog.x;
 				float fogEnd = uFog.y;
 				vec4 posRelToCam = view * vec4(aPos, 1.0);
-				float vtxDistToCam = length(posRelToCam.xyz) / 12;
+				float vtxDistToCam = length(posRelToCam.xyz) / (fogEnd * 0.01);
 				// gl_Position = projection * view * model * vec4(aPos, 1.0);
 				gl_Position = projection * view * vec4(aPos, 1.0);
 				vColor = aColor;
@@ -649,16 +651,16 @@ static void doMaterial(void* addr) {
 				if (aNorm == vec3(0.0)) {
 					vLightColor = vec3(1.0);
 				} else {
-					vec3 amb = uLights[0].xyz;
-					vec3 dif0 = uLights[1].xyz;
-					vec3 dif1 = uLights[2].xyz;
-					vec3 lightVector0 = normalize(uLights[3].xyz);
-					vec3 lightVector1 = normalize(vec3(uLights[0][3], uLights[1][3], uLights[2][3]));
-					//vec3 mvNormal = normalize(vec3(mul(model, aNorm)));
-					vec3 mvNormal = normalize(aNorm);
-					float dif0mod = clamp(dot(mvNormal, lightVector0), 0.0, 1.0);
-					float dif1mod = clamp(dot(mvNormal, lightVector1), 0.0, 1.0);
-					vLightColor = amb + dif0 * dif0mod + dif1 * dif1mod;
+					// vec3 amb = uLights[0].xyz;
+					// vec3 dif0 = uLights[1].xyz;
+					// vec3 dif1 = uLights[2].xyz;
+					// vec3 lightVector0 = normalize(uLights[3].xyz);
+					// vec3 lightVector1 = normalize(vec3(uLights[0][3], uLights[1][3], uLights[2][3]));
+					// vec3 mvNormal = normalize(aNorm);
+					// float dif0mod = clamp(dot(mvNormal, lightVector0), 0.0, 1.0);
+					// float dif1mod = clamp(dot(mvNormal, lightVector1), 0.0, 1.0);
+					// vLightColor = amb + dif0 * dif0mod + dif1 * dif1mod;
+					// vLightColor = dif0 * dif0mod;
 				}
 			}
 			);
@@ -677,14 +679,14 @@ static void doMaterial(void* addr) {
 				uniform vec3 uFogColor;
 				
 				/*void main() // simple default for testing...
-					{
-					     vec4 s = texture(texture0, TexCoord0);
-					     if (s.a < 0.5)
-					             discard;
-					     FragColor = s * vColor;
+				        {
+				             vec4 s = texture(texture0, TexCoord0);
+				             if (s.a < 0.5)
+				                     discard;
+				             FragColor = s * vColor;
 
-					     FragColor.rgb = mix(FragColor.rgb * vLightColor, uFogColor, vFog);
-					}*/
+				             FragColor.rgb = mix(FragColor.rgb * vLightColor, uFogColor, vFog);
+				        }*/
 			);
 			
 			/* construct fragment shader */
@@ -693,8 +695,8 @@ static void doMaterial(void* addr) {
 				uint32_t hi = gMatState.setcombine.hi;
 				uint32_t lo = gMatState.setcombine.lo;
 				
-	#define ADD(X)    f = strcatt(f, X)
-	#define ADDF(...) f = strcattf(f, __VA_ARGS__)
+#define ADD(X)    f = strcatt(f, X)
+#define ADDF(...) f = strcattf(f, __VA_ARGS__)
 				
 				ADD("void main(){");
 				
@@ -744,8 +746,8 @@ static void doMaterial(void* addr) {
 				
 				ADD("}");
 				
-	#undef ADD
-	#undef ADDF
+#undef ADD
+#undef ADDF
 			}
 			
 			Shader_update(shader, vtx, frag);
@@ -845,12 +847,62 @@ static void gbiFunc_vtx(void* cmd) {
 			v->norm.y = 0;
 			v->norm.z = 0;
 		} else {
-			v->color.r = 1;
-			v->color.g = 1;
-			v->color.b = 1;
-			v->norm.x = s8r(vaddr + 12) * div_1_127;
-			v->norm.y = s8r(vaddr + 13) * div_1_127;
-			v->norm.z = s8r(vaddr + 14) * div_1_127;
+			/*
+			   vec3 amb = uLights[0].xyz;
+			   vec3 dif0 = uLights[1].xyz;
+			   vec3 dif1 = uLights[2].xyz;
+			   vec3 lightVector0 = normalize(uLights[3].xyz);
+			   vec3 lightVector1 = normalize(vec3(uLights[0][3], uLights[1][3], uLights[2][3]));
+			   vec3 mvNormal = normalize(aNorm);
+			   float dif0mod = clamp(dot(mvNormal, lightVector0), 0.0, 1.0);
+			   float dif1mod = clamp(dot(mvNormal, lightVector1), 0.0, 1.0);
+			   // vLightColor = amb + dif0 * dif0mod + dif1 * dif1mod;
+			 */
+			Vec3f vtxNor = {
+				s8r(vaddr + 12) * div_1_127,
+				s8r(vaddr + 13) * div_1_127,
+				s8r(vaddr + 14) * div_1_127
+			};
+			Vec3f amb = {
+				gLights[0x0],
+				gLights[0x1],
+				gLights[0x2]
+			};
+			Vec3f envA = {
+				gLights[0x4],
+				gLights[0x5],
+				gLights[0x6]
+			};
+			Vec3f normA = {
+				gLights[0x8],
+				gLights[0x9],
+				gLights[0xA]
+			};
+			Vec3f envB = {
+				gLights[0x3],
+				gLights[0x7],
+				gLights[0xB]
+			};
+			Vec3f normB = {
+				gLights[0xC],
+				gLights[0xD],
+				gLights[0xE]
+			};
+			f32 modA;
+			f32 modB;
+			
+			envA = Vec3_Normalize(envA);
+			envB = Vec3_Normalize(envB);
+			vtxNor = Vec3_Normalize(vtxNor);
+			modA = CLAMP(Vec3_Dot(vtxNor, envA), 0.0, 1.0);
+			modB = CLAMP(Vec3_Dot(vtxNor, envB), 0.0, 1.0);
+			
+			v->color.r = amb.x + envA.x * modA + envB.x * modB;
+			v->color.g = amb.y + envA.y * modA + envB.y * modB;
+			v->color.b = amb.z + envA.z * modA + envB.z * modB;
+			v->norm.x = 0;
+			v->norm.y = 0;
+			v->norm.z = 0;
 		}
 		v->color.a = u8r(vaddr + 15) * div_1_255;
 		//memcpy(&v->ext, vaddr + 12, 4);
