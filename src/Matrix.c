@@ -631,6 +631,9 @@ void Matrix_Projection(MtxF* mtx, f32 fovy, f32 aspect, f32 near, f32 far, f32 s
 	
 	Matrix_Clear(mtx);
 	
+	near *= 100;
+	far *= 100;
+	
 	fovy *= M_PI / 180.0;
 	yscale = cosf(fovy / 2) / sinf(fovy / 2);
 	mtx->mf[0][0] = yscale / aspect;

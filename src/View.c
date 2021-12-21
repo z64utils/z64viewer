@@ -147,8 +147,8 @@ void View_Init(ViewContext* viewCtx, InputContext* inputCtx) {
 	Matrix_LookAt(&viewCtx->viewMtx, cam->eye, cam->at, cam->roll);
 	
 	viewCtx->fovyTarget = viewCtx->fovy = 65;
-	viewCtx->near = 0.1 * 1000;
-	viewCtx->far = 1000.0 * 1000;
+	viewCtx->near = 10.0;
+	viewCtx->far = 12800.0;
 	viewCtx->scale = 0.01;
 }
 

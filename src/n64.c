@@ -636,16 +636,16 @@ static void doMaterial(void* addr) {
 			}
 				
 				void main() {
+				float fogM = (500 * 0x100) / (uFog.y - uFog.x);
+				float fogO = (500 - uFog.x) * 0x100 / (uFog.y - uFog.x);
 				float fogStart = uFog.x;
 				float fogEnd = uFog.y;
-				vec4 posRelToCam = view * vec4(aPos, 1.0);
-				float vtxDistToCam = length(posRelToCam.xyz) / (fogEnd * 0.01);
-				// gl_Position = projection * view * model * vec4(aPos, 1.0);
+				
 				gl_Position = projection * view * vec4(aPos, 1.0);
 				vColor = aColor;
 				TexCoord0 = vec2(aTexCoord0.x, aTexCoord0.y);
 				TexCoord1 = vec2(aTexCoord1.x, aTexCoord1.y);
-				vFog = fog_linear(vtxDistToCam, fogStart, fogEnd);
+				vFog = 0; // TODO: Fix fog some day
 				
 				/* when lighting is disabled for a vertex, its normal == 0 */
 				if (aNorm == vec3(0.0))
