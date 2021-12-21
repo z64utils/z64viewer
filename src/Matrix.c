@@ -69,6 +69,13 @@ void Matrix_MultVec3fExt(Vec3f* src, Vec3f* dest, MtxF* mf) {
 	dest->z = mf->zw + (mf->zx * src->x + mf->zy * src->y + mf->zz * src->z);
 }
 
+void Matrix_MultVec4fExt(Vec4f* src, Vec4f* dest, MtxF* mf) {
+	dest->x = mf->xw + (mf->xx * src->x + mf->xy * src->y + mf->xz * src->z);
+	dest->y = mf->yw + (mf->yx * src->x + mf->yy * src->y + mf->yz * src->z);
+	dest->z = mf->zw + (mf->zx * src->x + mf->zy * src->y + mf->zz * src->z);
+	dest->w = mf->ww + (mf->wx * src->x + mf->wy * src->y + mf->wz * src->z);
+}
+
 void Matrix_MultVec3f(Vec3f* src, Vec3f* dest) {
 	MtxF* cmf = gCurrentMatrix;
 	

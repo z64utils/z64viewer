@@ -181,7 +181,7 @@ typedef struct VtxF {
 	        GLfloat y;
 	        GLfloat z;
 	   } pos;*/
-	Vec3f pos;
+	Vec4f pos;
 	struct {
 		GLfloat u;
 		GLfloat v;
@@ -607,7 +607,7 @@ static void doMaterial(void* addr) {
 		
 		if (isNew) {
 			const char* vtx = SHADER_SOURCE(
-				layout (location = 0) in vec3 aPos;
+				layout (location = 0) in vec4 aPos;
 				layout (location = 1) in vec4 aColor;
 				layout (location = 2) in vec2 aTexCoord0;
 				layout (location = 3) in vec2 aTexCoord1;
@@ -638,9 +638,9 @@ static void doMaterial(void* addr) {
 				void main() {
 				float fogM = uFog.x;
 				float fogO = uFog.y;
-				vec4 wow = projection * view * vec4(aPos, 1.0);
+				vec4 wow = projection * view * aPos;
 				
-				gl_Position = projection * view * vec4(aPos, 1.0);
+				gl_Position = projection * view * aPos;
 				vColor = aColor;
 				TexCoord0 = vec2(aTexCoord0.x, aTexCoord0.y);
 				TexCoord1 = vec2(aTexCoord1.x, aTexCoord1.y);
@@ -816,8 +816,8 @@ static void gbiFunc_vtx(void* cmd) {
 		v->pos.x = s16r(vaddr + 0) * scale;
 		v->pos.y = s16r(vaddr + 2) * scale;
 		v->pos.z = s16r(vaddr + 4) * scale;
-		Vec3f temp = v->pos;
-		Matrix_MultVec3fExt(&temp, &v->pos, gMatrix.modelNow);
+		Vec4f temp = v->pos;
+		Matrix_MultVec4fExt(&temp, &v->pos, gMatrix.modelNow);
 		// v->pos = vec3_mul_mat44f(&v->pos, gMatrix.modelNow);
 		v->texcoord0.u = s16r(vaddr + 8) * (1.0 / 1024) * (32.0 / gMatState.texWidth);
 		v->texcoord0.v = s16r(vaddr + 10) * (1.0 / 1024) * (32.0 / gMatState.texHeight);
@@ -1328,7 +1328,7 @@ void n64_draw(void* dlist) {
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(gIndices), gIndices, GL_DYNAMIC_DRAW);
 	
 	/* pos */
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VtxF), (void*)offsetof(VtxF, pos));
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(VtxF), (void*)offsetof(VtxF, pos));
 	glEnableVertexAttribArray(0);
 	
 	/* color */
