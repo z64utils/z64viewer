@@ -87,6 +87,8 @@ void Scene_Command_0x0A(Scene* scene, Room* room, SceneCmd* cmd) {
 	#if 0
 	globalCtx->roomCtx.curRoom.mesh = SEGMENTED_TO_VIRTUAL(cmd->mesh.segment);
 	#endif
+	
+	room->mesh = SEGMENTED_TO_VIRTUAL(ReadBE(cmd->mesh.segment));
 }
 // Object List
 void Scene_Command_0x0B(Scene* scene, Room* room, SceneCmd* cmd) {
@@ -355,21 +357,40 @@ SceneCmdFunc sCommandFuncTable[] = {
 
 void Scene_ExecuteCommands(Scene* scene, Room* room) {
 	u8 cmdCode;
-	SceneCmd* sceneCmd = scene->file.data;
 	
-	OsAssert(sceneCmd != NULL);
-	
-	gSPSegment(0x2, scene->file.data);
-	
-	while (1) {
-		cmdCode = sceneCmd->base.code;
-		OsPrintfEx("0x%02X", cmdCode);
-		OsAssert(cmdCode <= 0x19);
-		if (cmdCode == 0x14) {
-			OsPrintf("break", cmdCode);
-			break;
+	if (scene) {
+		SceneCmd* sceneCmd = scene->file.data;
+		
+		gSPSegment(0x2, scene->file.data);
+		
+		while (1) {
+			cmdCode = sceneCmd->base.code;
+			OsPrintfEx("0x%02X", cmdCode);
+			OsAssert(cmdCode <= 0x19);
+			if (cmdCode == 0x14) {
+				OsPrintf("break", cmdCode);
+				break;
+			}
+			sCommandFuncTable[cmdCode](scene, room, sceneCmd);
+			sceneCmd++;
 		}
-		sCommandFuncTable[cmdCode](scene, room, sceneCmd);
-		sceneCmd++;
+	}
+	
+	if (room) {
+		SceneCmd* sceneCmd = room->file.data;
+		
+		gSPSegment(0x3, room->file.data);
+		
+		while (1) {
+			cmdCode = sceneCmd->base.code;
+			OsPrintfEx("0x%02X", cmdCode);
+			OsAssert(cmdCode <= 0x19);
+			if (cmdCode == 0x14) {
+				OsPrintf("break", cmdCode);
+				break;
+			}
+			sCommandFuncTable[cmdCode](scene, room, sceneCmd);
+			sceneCmd++;
+		}
 	}
 }

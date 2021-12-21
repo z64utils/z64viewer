@@ -55,6 +55,6 @@ typedef struct {
 	MemFile file;
 } Room;
 
-void Room_Draw(void* room);
+void Room_Draw(Room* room);
 
 #endif

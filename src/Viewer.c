@@ -6,7 +6,7 @@ void Viewer_Init(ViewerContext* viewerCtx) {
 	
 	MemFile_LoadFile(&viewerCtx->scene.file, "scene.zscene");
 	MemFile_LoadFile(&viewerCtx->room[0].file, "room_0.zmap");
-	Scene_ExecuteCommands(&viewerCtx->scene, NULL);
+	Scene_ExecuteCommands(&viewerCtx->scene, &viewerCtx->room[0]);
 }
 
 void Viewer_Update(ViewerContext* viewerCtx) {
@@ -20,5 +20,5 @@ void Viewer_Draw(ViewerContext* viewerCtx) {
 	n64_ClearSegments();
 	gSPSegment(0x2, viewerCtx->scene.file.data);
 	Light_BindLights(&viewerCtx->scene);
-	z64_Draw_Room(&viewerCtx->room[0].file);
+	Room_Draw(&viewerCtx->room[0]);
 }

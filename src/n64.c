@@ -566,7 +566,7 @@ static void doMaterial(void* addr) {
 		//src += uls;
 		//fprintf(stderr, "%d %d\n", fmt, siz);
 		//memcpy(tmem, src, bytes); /* TODO dxt emulation requires line-by-line */
-		uint8_t wow[4096 * 4];
+		uint8_t wow[4096 * 8];
 		n64texconv_to_rgba8888(
 			wow
 			,

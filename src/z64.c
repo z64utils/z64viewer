@@ -126,32 +126,6 @@ void z64_Update() {
 
 /* / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / */
 
-void z64_Draw_SetScene(MemFile* zscene) {
-	n64_set_segment(0x02, zscene->data);
-	// Light_Scene_SetLights(zscene, __lightCtx);
-}
-
-void z64_Draw_Room(MemFile* zroom) {
-	u8 setup[16] = {
-		0xfb, 0, 0, 0, 0x80, 0x80, 0x80, 0x80,
-		0xdf
-	};
-	
-	n64_draw(setup);
-	n64_set_onlyGeoLayer(GEOLAYER_OPAQUE);
-	Room_Draw(zroom->data);
-	n64_set_onlyGeoLayer(GEOLAYER_OVERLAY);
-	Room_Draw(zroom->data);
-}
-
-void z64_Draw_Object() {
-}
-
-void z64_Draw_Skelanime() {
-}
-
-/* / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / */
-
 s8 Zelda64_EyeBlink(s16* frame) {
 	if ( *frame == 0 )
 		*frame = Rand_S16Offset(30, 30);
