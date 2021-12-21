@@ -5,9 +5,6 @@
 
 void Light_BindLights(Scene* scene) {
 	LightContext* lightCtx = &scene->lightCtx;
-	static s8 ss;
-	
-	ss++;
 	
 	OsAssert(lightCtx->envLight != NULL);
 	EnvLight* envLight = &lightCtx->envLight[Wrap(lightCtx->curLightId, 0, lightCtx->lightListNum)];
@@ -21,8 +18,13 @@ void Light_BindLights(Scene* scene) {
 		/* 0xC */ (f32)envLight->dirB.x / 127.0, (f32)envLight->dirB.y / 127.0, (f32)envLight->dirB.z / 127.0,
 	};
 	
-	fogParam[0] = (ReadBE(envLight->fogNear) & 0x3FF);
-	fogParam[1] = ReadBE(envLight->fogFar);
+	s16 fogA = (ReadBE(envLight->fogNear) & 0x3FF);
+	s16 fogB = ReadBE(envLight->fogFar);
+	s16 fogM = (500 * 0x100) / (fogB - fogA);
+	s16 fogO = (500 - fogA) * 0x100 / (fogB - fogA);
+	
+	fogParam[0] = fogM;
+	fogParam[1] = fogO;
 	
 	for (s32 i = 0; i < 3; i++) {
 		fogColor[i] = (f32)envLight->fogColor.c[i] / 255.0;
