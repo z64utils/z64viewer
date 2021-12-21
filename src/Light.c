@@ -5,25 +5,20 @@
 
 void Light_BindLights(Scene* scene) {
 	LightContext* lightCtx = &scene->lightCtx;
+	static s8 ss;
+	
+	ss++;
 	
 	OsAssert(lightCtx->envLight != NULL);
 	EnvLight* envLight = &lightCtx->envLight[Wrap(lightCtx->curLightId, 0, lightCtx->lightListNum)];
 	f32 fogParam[2];
 	f32 fogColor[3];
 	f32 light[16] = {
-		HU8(envLight->ambient.r), HU8(envLight->ambient.g), HU8(envLight->ambient.b),
-		((f64)envLight->dirB.x / __INT8_MAX__),
-		
-		HU8(envLight->colorA.r), HU8(envLight->colorA.g), HU8(envLight->colorA.b),
-		((f64)envLight->dirB.y / __INT8_MAX__),
-		
-		HU8(envLight->colorB.r), HU8(envLight->colorB.g), HU8(envLight->colorB.b),
-		((f64)envLight->dirB.z / __INT8_MAX__),
-		
-		((f64)envLight->dirA.x / __INT8_MAX__),
-		((f64)envLight->dirA.y / __INT8_MAX__),
-		((f64)envLight->dirA.z / __INT8_MAX__),
-		0,
+		/* 0x0 */ HU8(envLight->ambient.r), HU8(envLight->ambient.g), HU8(envLight->ambient.b),
+		/* 0x3 */ HU8(envLight->colorA.r), HU8(envLight->colorA.g), HU8(envLight->colorA.b),
+		/* 0x6 */ HU8(envLight->colorB.r), HU8(envLight->colorB.g), HU8(envLight->colorB.b),
+		/* 0x9 */ (f32)envLight->dirA.x / 127.0, (f32)envLight->dirA.y / 127.0, (f32)envLight->dirA.z / 127.0,
+		/* 0xC */ (f32)envLight->dirB.x / 127.0, (f32)envLight->dirB.y / 127.0, (f32)envLight->dirB.z / 127.0,
 	};
 	
 	fogParam[0] = (ReadBE(envLight->fogNear) & 0x3FF);

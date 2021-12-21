@@ -648,20 +648,8 @@ static void doMaterial(void* addr) {
 				vFog = fog_linear(vtxDistToCam, fogStart, fogEnd);
 				
 				/* when lighting is disabled for a vertex, its normal == 0 */
-				if (aNorm == vec3(0.0)) {
+				if (aNorm == vec3(0.0))
 					vLightColor = vec3(1.0);
-				} else {
-					// vec3 amb = uLights[0].xyz;
-					// vec3 dif0 = uLights[1].xyz;
-					// vec3 dif1 = uLights[2].xyz;
-					// vec3 lightVector0 = normalize(uLights[3].xyz);
-					// vec3 lightVector1 = normalize(vec3(uLights[0][3], uLights[1][3], uLights[2][3]));
-					// vec3 mvNormal = normalize(aNorm);
-					// float dif0mod = clamp(dot(mvNormal, lightVector0), 0.0, 1.0);
-					// float dif1mod = clamp(dot(mvNormal, lightVector1), 0.0, 1.0);
-					// vLightColor = amb + dif0 * dif0mod + dif1 * dif1mod;
-					// vLightColor = dif0 * dif0mod;
-				}
 			}
 			);
 			char frag[4096] = SHADER_SOURCE(
@@ -869,18 +857,18 @@ static void gbiFunc_vtx(void* cmd) {
 				gLights[0x2]
 			};
 			Vec3f envA = {
+				gLights[0x3],
 				gLights[0x4],
-				gLights[0x5],
-				gLights[0x6]
-			};
-			Vec3f normA = {
-				gLights[0x8],
-				gLights[0x9],
-				gLights[0xA]
+				gLights[0x5]
 			};
 			Vec3f envB = {
-				gLights[0x3],
+				gLights[0x6],
 				gLights[0x7],
+				gLights[0x8]
+			};
+			Vec3f normA = {
+				gLights[0x9],
+				gLights[0xA],
 				gLights[0xB]
 			};
 			Vec3f normB = {
@@ -891,11 +879,11 @@ static void gbiFunc_vtx(void* cmd) {
 			f32 modA;
 			f32 modB;
 			
-			envA = Vec3_Normalize(envA);
-			envB = Vec3_Normalize(envB);
+			normA = Vec3_Normalize(normA);
+			normB = Vec3_Normalize(normB);
 			vtxNor = Vec3_Normalize(vtxNor);
-			modA = CLAMP(Vec3_Dot(vtxNor, envA), 0.0, 1.0);
-			modB = CLAMP(Vec3_Dot(vtxNor, envB), 0.0, 1.0);
+			modA = CLAMP(Vec3_Dot(vtxNor, normA), 0.0, 1.0);
+			modB = CLAMP(Vec3_Dot(vtxNor, normB), 0.0, 1.0);
 			
 			v->color.r = amb.x + envA.x * modA + envB.x * modB;
 			v->color.g = amb.y + envA.y * modA + envB.y * modB;
