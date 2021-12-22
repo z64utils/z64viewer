@@ -18,16 +18,22 @@ void Light_BindLights(Scene* scene) {
 		/* 0xC */ (f32)envLight->dirB.x / 127.0, (f32)envLight->dirB.y / 127.0, (f32)envLight->dirB.z / 127.0,
 	};
 	
-	f32 fogA = (ReadBE(envLight->fogNear) & 0x3FF);
-	f32 fogB = ReadBE(envLight->fogFar);
-	fogA *= 100;
-	fogB *= 100;
-	
-	f32 fogM = (50000.0 * (0x100 * 100)) / (fogB - fogA);
-	f32 fogO = (50000.0 - fogA) * (0x100 * 100) / (fogB - fogA);
+	f32 near = (ReadBE(envLight->fogNear) & 0x3FF) * 100;
+	f32 far = ReadBE(envLight->fogFar) * 100;
+	f32 fogM = (50000.0 * 25600.0) / (far - near);
+	f32 fogO = (50000.0 - near) * 25600.0 / (far - near);
 	
 	fogParam[0] = fogM;
 	fogParam[1] = fogO;
+	
+	if (lightCtx->state & LIGHT_STATE_CHANGED) {
+		lightCtx->state &= ~LIGHT_STATE_CHANGED;
+		OsPrintfEx("LightID:    %6X", lightCtx->curLightId);
+		OsPrintf("Near:       %6.0f", near * 0.01);
+		OsPrintf("Far:        %6.0f", far * 0.01);
+		OsPrintf("Multiplier: %6.0f", fogM);
+		OsPrintf("Offset:     %6.0f", fogO);
+	}
 	
 	for (s32 i = 0; i < 3; i++) {
 		fogColor[i] = (f32)envLight->fogColor.c[i] / 255.0;

@@ -46,10 +46,15 @@ typedef struct {
 	s16   fogFar;
 } EnvLight;
 
+typedef enum {
+	LIGHT_STATE_CHANGED = 1 << 0,
+} LightState;
+
 typedef struct {
 	EnvLight* envLight;
 	u8 lightListNum;
 	u8 curLightId;
+	LightState state;
 } LightContext;
 
 struct Scene;
