@@ -28,11 +28,18 @@ void Light_BindLights(Scene* scene) {
 	
 	if (lightCtx->state & LIGHT_STATE_CHANGED) {
 		lightCtx->state &= ~LIGHT_STATE_CHANGED;
+		near *= 0.01;
+		far *= 0.01;
+		
 		OsPrintfEx("LightID:    %6X", lightCtx->curLightId);
-		OsPrintf("Near:       %6.0f", near * 0.01);
-		OsPrintf("Far:        %6.0f", far * 0.01);
+		OsPrintf("Near:       %6.0f", near);
+		OsPrintf("Far:        %6.0f", far);
 		OsPrintf("Multiplier: %6.0f", fogM);
 		OsPrintf("Offset:     %6.0f", fogO);
+		f32 fogM = (500.0 * 256.0) / (far - near);
+		f32 fogO = (500.0 - near) * 256.0 / (far - near);
+		OsPrintf("VanMult:    %6.0f", fogM);
+		OsPrintf("VanOffst:   %6.0f", fogO);
 	}
 	
 	for (s32 i = 0; i < 3; i++) {
