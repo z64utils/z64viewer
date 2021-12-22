@@ -638,17 +638,17 @@ static void doMaterial(void* addr) {
 				void main() {
 				float fogM = uFog.x;
 				float fogO = uFog.y;
-				vec4 wow = projection * view * aPos;
+				vec4 wow = projection * view * vec4(aPos.xyz, 1.0);
 				
 				gl_Position = projection * view * aPos;
 				vColor = aColor;
 				TexCoord0 = vec2(aTexCoord0.x, aTexCoord0.y);
 				TexCoord1 = vec2(aTexCoord1.x, aTexCoord1.y);
-				if (wow.z < -wow.w)
+				if (wow.w < 0)
 					vFog = -fogM + fogO;
 				else
 					vFog = (wow.z / wow.w * fogM + fogO); // TODO: Fix fog some day
-				vFog = clamp(vFog, 0.0, 1.0);
+				vFog = clamp(vFog, 0.0, 255.0) / 255;
 				
 				/* when lighting is disabled for a vertex, its normal == 0 */
 				if (aNorm == vec3(0.0))

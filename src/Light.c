@@ -18,10 +18,13 @@ void Light_BindLights(Scene* scene) {
 		/* 0xC */ (f32)envLight->dirB.x / 127.0, (f32)envLight->dirB.y / 127.0, (f32)envLight->dirB.z / 127.0,
 	};
 	
-	s16 fogA = (ReadBE(envLight->fogNear) & 0x3FF);
-	s16 fogB = ReadBE(envLight->fogFar);
-	s16 fogM = (500 * 0x100) / (fogB - fogA);
-	s16 fogO = (500 - fogA) * 0x100 / (fogB - fogA);
+	f32 fogA = (ReadBE(envLight->fogNear) & 0x3FF);
+	f32 fogB = ReadBE(envLight->fogFar);
+	fogA *= 100;
+	fogB *= 100;
+	
+	f32 fogM = (50000.0 * (0x100 * 100)) / (fogB - fogA);
+	f32 fogO = (50000.0 - fogA) * (0x100 * 100) / (fogB - fogA);
 	
 	fogParam[0] = fogM;
 	fogParam[1] = fogO;
