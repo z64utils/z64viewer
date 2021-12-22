@@ -647,7 +647,7 @@ static void doMaterial(void* addr) {
 				if (wow.w < 0)
 					vFog = -fogM + fogO;
 				else
-					vFog = (wow.z / wow.w * fogM + fogO); // TODO: Fix fog some day
+					vFog = wow.z / wow.w * fogM + fogO; // TODO: Fix fog some day
 				vFog = clamp(vFog, 0.0, 255.0) / 255;
 				
 				/* when lighting is disabled for a vertex, its normal == 0 */
