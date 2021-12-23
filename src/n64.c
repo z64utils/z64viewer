@@ -807,7 +807,6 @@ static Vec4f bakeLight(Vec3f vtxPos, Vec3f vtxNor, LightInfo* light) {
 		case LIGHT_POINT_GLOW: {
 			LightPoint* params = &light->params.point;
 			Vec3f pos = {params->x, params->y, params->z};
-			Matrix_MultVec3fExt(&(Vec3f){pos.x, pos.y, pos.z}, &pos, gMatrix.modelNow);
 			/* https://csawesome.runestone.academy/runestone/books/published/learnwebgl2/10_lights/07_lights_attenuation.html */
 			f32 dist = Vec_Vec3f_DistXYZ(&pos, &vtxPos) / 100;
 			float constant = 1.0;
@@ -866,6 +865,7 @@ static void gbiFunc_vtx(void* cmd) {
 		v->pos.x = s16r(vaddr + 0) * scale;
 		v->pos.y = s16r(vaddr + 2) * scale;
 		v->pos.z = s16r(vaddr + 4) * scale;
+		Vec3f vtxPos = {v->pos.x, v->pos.y, v->pos.z};
 		Vec4f temp = v->pos;
 		Matrix_MultVec4fExt(&temp, &v->pos, gMatrix.modelNow);
 		// v->pos = vec3_mul_mat44f(&v->pos, gMatrix.modelNow);
@@ -895,7 +895,6 @@ static void gbiFunc_vtx(void* cmd) {
 			};
 			
 			vtxNor = Vec3_Normalize(vtxNor);
-			Vec3f vtxPos = {v->pos.x, v->pos.y, v->pos.z};
 			v->color = bakeLights(vtxPos, vtxNor);
 			
 			v->norm.x = 0;
