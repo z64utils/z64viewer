@@ -3,10 +3,13 @@
 #include <HermosauhuLib.h>
 #include <Vector.h>
 
+#define LIGHT_MAX 7
+
 typedef enum {
 	LIGHT_POINT_NOGLOW,
 	LIGHT_DIRECTIONAL,
-	LIGHT_POINT_GLOW
+	LIGHT_POINT_GLOW,
+	LIGHT_AMBIENT
 } LightType;
 
 typedef struct {
@@ -25,9 +28,14 @@ typedef struct {
 	RGB8 color;
 } LightDirectional;
 
+typedef struct {
+	RGB8 color;
+} LightAmbient;
+
 typedef union {
 	LightPoint point;
 	LightDirectional dir;
+	LightAmbient amb;
 } LightParams;
 
 typedef struct {

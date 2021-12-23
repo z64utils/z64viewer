@@ -51,5 +51,33 @@ void Light_BindLights(Scene* scene) {
 	}
 	
 	n64_set_fog(uFog, uFogColor);
-	n64_set_lights(light);
+	n64_clear_lights();
+	n64_add_light(&(LightInfo){
+		LIGHT_AMBIENT, {
+			.amb = {
+				.color = envLight->ambient
+			}
+		}
+	});
+	n64_add_light(&(LightInfo){
+		LIGHT_DIRECTIONAL, {
+			.dir = {
+				.color = envLight->colorA,
+				.x = envLight->dirA.x,
+				.y = envLight->dirA.y,
+				.z = envLight->dirA.z,
+			}
+		}
+	});
+	n64_add_light(&(LightInfo){
+		LIGHT_DIRECTIONAL, {
+			.dir = {
+				.color = envLight->colorB,
+				.x = envLight->dirB.x,
+				.y = envLight->dirB.y,
+				.z = envLight->dirB.z,
+			}
+		}
+	});
+	//n64_set_lights(light);
 }

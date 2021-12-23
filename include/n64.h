@@ -8,6 +8,8 @@
 #ifndef Z64_N64_H_INCLUDED
 #define Z64_N64_H_INCLUDED
 
+#include <Light.h>
+
 enum n64_zmode {
 	ZMODE_OPA,
 	ZMODE_INTER,
@@ -35,6 +37,8 @@ void n64_setMatrix_projection(void* data);
 
 void n64_set_fog(float fog[2], float color[3]);
 void n64_set_lights(float lights[16]);
+void n64_clear_lights(void);
+void n64_add_light(LightInfo* lightInfo);
 
 void n64_clearShaderCache(void);
 

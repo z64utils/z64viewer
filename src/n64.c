@@ -74,6 +74,9 @@ static struct {
 	MtxF* modelNow;
 } gMatrix;
 
+static unsigned gLightNum;
+static LightInfo gLight[LIGHT_MAX];
+
 static float gLights[16];
 
 static struct {
@@ -176,22 +179,12 @@ typedef struct Vtx {
 } Vtx;
 
 typedef struct VtxF {
-	/*struct {
-	        GLfloat x;
-	        GLfloat y;
-	        GLfloat z;
-	   } pos;*/
 	Vec4f pos;
 	struct {
 		GLfloat u;
 		GLfloat v;
 	} texcoord0, texcoord1;
-	struct {
-		GLfloat r;
-		GLfloat g;
-		GLfloat b;
-		GLfloat a;
-	} color;
+	Vec4f color;
 	struct {
 		GLfloat x;
 		GLfloat y;
@@ -791,6 +784,44 @@ static inline Vec3f vec3_mul_mat44f(void* v_, void* mat_) {
 		       .z = v->x * mat->x.z + v->y * mat->y.z + v->z * mat->z.z + 1 * mat->w.z
 	};
 }
+			
+static Vec4f vec4color(RGB8 color) {
+	const float scale = 1 / 255.0f;
+	return (Vec4f){color.r * scale, color.g * scale, color.b * scale};
+}
+
+static Vec4f bakeLight(Vec3f vtxNor, LightInfo* light) {
+	assert(light);
+	switch (light->type) {
+		case LIGHT_AMBIENT:
+			return vec4color(light->params.amb.color);
+		case LIGHT_DIRECTIONAL: {
+			LightDirectional* params = &light->params.dir;
+			Vec3f norm = {params->x / 127.0f, params->y / 127.0f, params->z / 127.0f};
+			Vec4f color = vec4color(params->color);
+			norm = Vec3_Normalize(norm);
+			f32 mod = CLAMP(Vec3_Dot(vtxNor, norm), 0.0, 1.0);
+			Vec3_Mult(color, mod);
+			return color;
+		}
+	}
+	return (Vec4f){0};
+}
+
+static Vec4f bakeLights(Vec3f vtxNor) {
+	Vec4f final = {0};
+	int lightNum = gLightNum % ARRAY_COUNT(gLight);
+	int i;
+	
+	for (i = 0; i < lightNum; ++i) {
+		Vec4f color = bakeLight(vtxNor, &gLight[i]);
+		final.x += color.x;
+		final.y += color.y;
+		final.z += color.z;
+	}
+	
+	return final;
+}
 
 static void gbiFunc_vtx(void* cmd) {
 	uint8_t* b = cmd;
@@ -831,72 +862,27 @@ static void gbiFunc_vtx(void* cmd) {
 		v->texcoord1.v *= gMatState.tile[1].shiftT_m;
 		
 		if (gVertexColors) {
-			v->color.r = u8r(vaddr + 12) * div_1_255;
-			v->color.g = u8r(vaddr + 13) * div_1_255;
-			v->color.b = u8r(vaddr + 14) * div_1_255;
+			v->color.x = u8r(vaddr + 12) * div_1_255;
+			v->color.y = u8r(vaddr + 13) * div_1_255;
+			v->color.z = u8r(vaddr + 14) * div_1_255;
 			v->norm.x = 0;
 			v->norm.y = 0;
 			v->norm.z = 0;
 		} else {
-			/*
-			   vec3 amb = uLights[0].xyz;
-			   vec3 dif0 = uLights[1].xyz;
-			   vec3 dif1 = uLights[2].xyz;
-			   vec3 lightVector0 = normalize(uLights[3].xyz);
-			   vec3 lightVector1 = normalize(vec3(uLights[0][3], uLights[1][3], uLights[2][3]));
-			   vec3 mvNormal = normalize(aNorm);
-			   float dif0mod = clamp(dot(mvNormal, lightVector0), 0.0, 1.0);
-			   float dif1mod = clamp(dot(mvNormal, lightVector1), 0.0, 1.0);
-			   // vLightColor = amb + dif0 * dif0mod + dif1 * dif1mod;
-			 */
 			Vec3f vtxNor = {
 				s8r(vaddr + 12) * div_1_127,
 				s8r(vaddr + 13) * div_1_127,
 				s8r(vaddr + 14) * div_1_127
 			};
-			Vec3f amb = {
-				gLights[0x0],
-				gLights[0x1],
-				gLights[0x2]
-			};
-			Vec3f envA = {
-				gLights[0x3],
-				gLights[0x4],
-				gLights[0x5]
-			};
-			Vec3f envB = {
-				gLights[0x6],
-				gLights[0x7],
-				gLights[0x8]
-			};
-			Vec3f normA = {
-				gLights[0x9],
-				gLights[0xA],
-				gLights[0xB]
-			};
-			Vec3f normB = {
-				gLights[0xC],
-				gLights[0xD],
-				gLights[0xE]
-			};
-			f32 modA;
-			f32 modB;
 			
-			normA = Vec3_Normalize(normA);
-			normB = Vec3_Normalize(normB);
 			vtxNor = Vec3_Normalize(vtxNor);
-			modA = CLAMP(Vec3_Dot(vtxNor, normA), 0.0, 1.0);
-			modB = CLAMP(Vec3_Dot(vtxNor, normB), 0.0, 1.0);
+			v->color = bakeLights(vtxNor);
 			
-			v->color.r = amb.x + envA.x * modA + envB.x * modB;
-			v->color.g = amb.y + envA.y * modA + envB.y * modB;
-			v->color.b = amb.z + envA.z * modA + envB.z * modB;
 			v->norm.x = 0;
 			v->norm.y = 0;
 			v->norm.z = 0;
 		}
-		v->color.a = u8r(vaddr + 15) * div_1_255;
-		//memcpy(&v->ext, vaddr + 12, 4);
+		v->color.w = u8r(vaddr + 15) * div_1_255;
 		
 		++v;
 		vaddr += 16; /* byte stride */
@@ -1380,6 +1366,16 @@ void n64_set_fog(float fog[2], float color[3]) {
 
 void n64_set_lights(float lights[16]) {
 	memcpy(gLights, lights, sizeof(gLights));
+}
+
+void n64_clear_lights(void) {
+	gLightNum = 0;
+}
+
+void n64_add_light(LightInfo* lightInfo) {
+	int i = gLightNum % ARRAY_COUNT(gLight);
+	gLight[i] = *lightInfo;
+	++gLightNum;
 }
 
 void n64_set_onlyZmode(enum n64_zmode zmode) {
