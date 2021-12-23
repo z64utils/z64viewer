@@ -1,7 +1,7 @@
 #ifndef __Z64VIEW_H__
 #define __Z64VIEW_H__
 #include <Global.h>
-#include <HermosauhuLib.h>
+#include <ExtLib.h>
 #include <Vector.h>
 #include <Matrix.h>
 #include <Input.h>

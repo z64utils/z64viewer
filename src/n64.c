@@ -24,7 +24,7 @@
 
 #include <Matrix.h>
 #include <Vector.h>
-#include <HermosauhuLib.h>
+#include <ExtLib.h>
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>

@@ -2,7 +2,7 @@
 #define __Z64GLOBAL_H__
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <HermosauhuLib.h>
+#include <ExtLib.h>
 #include <Vector.h>
 
 struct ViewerContext;

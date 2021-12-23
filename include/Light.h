@@ -1,6 +1,6 @@
 #ifndef __Z64LIGHT_H__
 #define __Z64LIGHT_H__
-#include <HermosauhuLib.h>
+#include <ExtLib.h>
 #include <Vector.h>
 
 #define LIGHT_MAX 7

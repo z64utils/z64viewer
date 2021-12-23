@@ -1,7 +1,7 @@
 #ifndef __Z64MATRIX_H__
 #define __Z64MATRIX_H__
 
-#include <HermosauhuLib.h>
+#include <ExtLib.h>
 #include <Vector.h>
 
 typedef enum {

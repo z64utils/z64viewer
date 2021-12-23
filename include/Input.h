@@ -1,7 +1,7 @@
 #ifndef __Z64INPUT__
 #define __Z64INPUT__
 #include <Global.h>
-#include <HermosauhuLib.h>
+#include <ExtLib.h>
 #include <Vector.h>
 #include <GLFW/glfw3.h>
 

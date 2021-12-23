@@ -1,9 +1,11 @@
-#define __HERMO_C__
-#include "HermosauhuLib.h"
+#define __EXTLIB_C__
+#include "ExtLib.h"
 
-/* 👺 PRINTF 👺 */
+// ExtendedLibrary
+
+// Print
 PrintfSuppressLevel gPrintfSuppress = 0;
-char* sPrintfPrefix = "👺🚬";
+char* sPrintfPrefix = "ExtLib";
 
 void printf_SetSuppressLevel(PrintfSuppressLevel lvl) {
 	gPrintfSuppress = lvl;
@@ -129,7 +131,7 @@ void printf_WinFix() {
 	#endif
 }
 
-/* 👺 LIB 👺 */
+// Lib
 void* Lib_MemMem(const void* haystack, size_t haystackSize, const void* needle, size_t needleSize) {
 	if (haystack == NULL || needle == NULL)
 		return NULL;
@@ -219,7 +221,7 @@ s32 Lib_ParseArguments(char* argv[], char* arg, u32* parArg) {
 	return 0;
 }
 
-/* 👺 FILE 👺 */
+// File
 s32 File_Load(void** dst, char* filepath) {
 	s32 size;
 	
@@ -274,7 +276,7 @@ void File_Save_ReqExt(char* filepath, void* src, s32 size, const char* ext) {
 	printf_error("[%s] does not match extension [%s]", src, ext);
 }
 
-/* 👺 MEMFILE 👺 */
+// MemFile
 MemFile MemFile_Initialize() {
 	return (MemFile) { 0 };
 }
@@ -401,7 +403,7 @@ void MemFile_Free(MemFile* memFile) {
 	}
 }
 
-/* 👺 STRING 👺 */
+// String
 u32 String_HexStrToInt(char* string) {
 	return strtol(string, NULL, 16);
 }

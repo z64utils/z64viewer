@@ -1,5 +1,5 @@
-#ifndef __HERMOSAUHU_LIB_H__
-#define __HERMOSAUHU_LIB_H__
+#ifndef __EXTLIB_H__
+#define __EXTLIB_H__
 
 #include <stdint.h>
 #include <stdio.h>
@@ -8,6 +8,7 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <assert.h>
+#include <math.h>
 
 typedef signed char s8;
 typedef unsigned char u8;
@@ -113,7 +114,6 @@ typedef struct {
 	u32 seekPoint;
 } MemFile;
 
-/* 👺 PRINTF 👺 */
 void printf_SetSuppressLevel(PrintfSuppressLevel lvl);
 void printf_SetPrefix(char* fmt);
 void printf_toolinfo(const char* toolname, const char* fmt, ...);
@@ -123,21 +123,18 @@ void printf_error(const char* fmt, ...);
 void printf_info(const char* fmt, ...);
 void printf_WinFix();
 
-/* 👺 LIB 👺 */
 void* Lib_MemMem(const void* haystack, size_t haystackSize, const void* needle, size_t needleSize);
 void* Lib_Malloc(void* data, s32 size);
 void* Lib_Calloc(void* data, s32 size);
 void* Lib_Realloc(void* data, s32 size);
 void Lib_ByteSwap(void* src, s32 size);
 
-/* 👺 FILE 👺 */
 s32 File_Load(void** dst, char* filepath);
 void File_Save(char* filepath, void* src, s32 size);
 s32 File_Load_ReqExt(void** dst, char* filepath, const char* ext);
 void File_Save_ReqExt(char* filepath, void* src, s32 size, const char* ext);
 s32 Lib_ParseArguments(char* argv[], char* arg, u32* parArg);
 
-/* 👺 MEMFILE 👺 */
 MemFile MemFile_Initialize();
 void MemFile_Malloc(MemFile* memFile, u32 size);
 void MemFile_Realloc(MemFile* memFile, u32 size);
@@ -149,7 +146,6 @@ s32 MemFile_LoadFile_ReqExt(MemFile* memFile, char* filepath, const char* ext);
 s32 MemFile_SaveFile_ReqExt(MemFile* memFile, char* filepath, s32 size, const char* ext);
 void MemFile_Free(MemFile* memFile);
 
-/* 👺 STRING 👺 */
 u32 String_HexStrToInt(char* string);
 u32 String_NumStrToInt(char* string);
 f64 String_NumStrToF64(char* string);
@@ -162,7 +158,6 @@ void String_GetPath(char* dst, char* src);
 void String_GetBasename(char* dst, char* src);
 void String_GetFilename(char* dst, char* src);
 
-/* 👺 NODE 👺 */
 #define Node_Add(head, node) {             \
 		OsAssert(node != NULL)             \
 		typeof(node) lastNode = head;      \
@@ -291,7 +286,7 @@ extern PrintfSuppressLevel gPrintfSuppress;
 		exit(EXIT_FAILURE); \
 }
 
-#ifndef __HERMO_C__
+#ifndef __EXTLIB_C__
 
 #define Lib_Malloc(data, size) Lib_Malloc(data, size); \
 	OsPrintfEx("Lib_Malloc: size [0x%X]", size);
@@ -328,6 +323,4 @@ extern PrintfSuppressLevel gPrintfSuppress;
 
 #define Main(y1, y2) main(y1, y2)
 
-#include <math.h>
-
-#endif /* __HERMOSAUHU_LIB_H__ */
+#endif /* __EXTLIB_H__ */

@@ -1,7 +1,7 @@
 #ifndef __Z64VECTOR_H__
 #define __Z64VECTOR_H__
 
-#include <HermosauhuLib.h>
+#include <ExtLib.h>
 
 typedef struct {
 	f32 x;
