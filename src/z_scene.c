@@ -151,15 +151,10 @@ void Scene_Command_0x0B(Scene* scene, Room* room, SceneCmd* cmd) {
 }
 // Light List
 void Scene_Command_0x0C(Scene* scene, Room* room, SceneCmd* cmd) {
-	#if 0
-	s32 i;
-	LightInfo* lightInfo = SEGMENTED_TO_VIRTUAL(cmd->lightList.segment);
-	
-	for (i = 0; i < cmd->lightList.num; i++) {
-		LightContext_InsertLight(globalCtx, &globalCtx->lightCtx, lightInfo);
-		lightInfo++;
-	}
-	#endif
+	OsAssert(scene != NULL && room != NULL);
+	scene->lightCtx.room[room->num].lightNum = cmd->lightList.num;
+	scene->lightCtx.room[room->num].lightList =
+	    SEGMENTED_TO_VIRTUAL(ReadBE(cmd->lightList.segment));
 }
 // Path List
 void Scene_Command_0x0D(Scene* scene, Room* room, SceneCmd* cmd) {
@@ -176,8 +171,9 @@ void Scene_Command_0x0E(Scene* scene, Room* room, SceneCmd* cmd) {
 }
 // Light Setting List
 void Scene_Command_0x0F(Scene* scene, Room* room, SceneCmd* cmd) {
+	OsAssert(scene != NULL);
 	scene->lightCtx.envLight = SEGMENTED_TO_VIRTUAL(ReadBE(cmd->lightSettingList.segment));
-	scene->lightCtx.lightListNum = cmd->lightSettingList.num;
+	scene->lightCtx.envListNum = cmd->lightSettingList.num;
 }
 // Skybox Settings
 void Scene_Command_0x11(Scene* scene, Room* room, SceneCmd* cmd) {

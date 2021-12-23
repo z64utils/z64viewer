@@ -38,7 +38,7 @@ void n64_setMatrix_projection(void* data);
 void n64_set_fog(float fog[2], float color[3]);
 void n64_set_lights(float lights[16]);
 void n64_clear_lights(void);
-void n64_add_light(LightInfo* lightInfo);
+bool n64_add_light(LightInfo* lightInfo);
 
 void n64_clearShaderCache(void);
 

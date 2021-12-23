@@ -42,7 +42,7 @@ typedef union {
 	PolygonType2 polygon2;
 } Mesh;
 
-typedef struct {
+typedef struct Room {
 	s8      num;
 	u8      unk_01;
 	u8      unk_02;

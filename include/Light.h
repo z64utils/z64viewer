@@ -33,7 +33,7 @@ typedef struct {
 } LightAmbient;
 
 typedef union {
-	LightPoint point;
+	LightPoint   point;
 	LightDirectional dir;
 	LightAmbient amb;
 } LightParams;
@@ -59,13 +59,21 @@ typedef enum {
 } LightState;
 
 typedef struct {
+	struct {
+		LightInfo* lightList;
+		u8 lightNum;
+	} room[256];
 	EnvLight* envLight;
-	u8 lightListNum;
-	u8 curLightId;
+	u8 envListNum;
+	u8 curEnvId;
 	LightState state;
 } LightContext;
 
 struct Scene;
-void Light_BindLights(struct Scene* scene);
+struct Room;
+struct ViewContext;
+void Light_SetFog(struct Scene* scene, struct ViewContext* viewCtx);
+void Light_BindEnvLights(struct Scene* scene);
+void Light_BindRoomLights(struct Scene* scene, struct Room* room);
 
 #endif

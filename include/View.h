@@ -21,7 +21,7 @@ typedef struct {
 	f32   speed;
 } CameraFlyMode;
 
-typedef struct {
+typedef struct ViewContext {
 	f32     fovy;
 	f32     fovyTarget;
 	f32     near;
@@ -33,10 +33,13 @@ typedef struct {
 	CamSettings settings;
 	Camera* currentCamera;
 	Camera  camera[4];
-	bool    cameraControl;
-	bool    setCamMove;
 	Vec2s   projectDim;
 	CameraFlyMode flyMode;
+	struct {
+		u8 cameraControl : 1;
+		u8 setCamMove    : 1;
+		u8 matchDrawDist : 1;
+	};
 } ViewContext;
 
 void View_Camera_FlyMode(ViewContext* viewCtx, InputContext* inputCtx);

@@ -3,25 +3,19 @@
 #define HU8(HX) (0.00392156862745f * (HX))
 #define HS8(HX) ((char)(HX))
 
-void Light_BindLights(Scene* scene) {
+void Light_SetFog(Scene* scene, ViewContext* viewCtx) {
 	LightContext* lightCtx = &scene->lightCtx;
-	
-	OsAssert(lightCtx->envLight != NULL);
-	EnvLight* envLight = &lightCtx->envLight[Wrap(lightCtx->curLightId, 0, lightCtx->lightListNum)];
+	EnvLight* envLight;
 	f32 uFog[2];
 	f32 uFogColor[3];
-	f32 light[16] = {
-		/* 0x0 */ HU8(envLight->ambient.r), HU8(envLight->ambient.g), HU8(envLight->ambient.b),
-		/* 0x3 */ HU8(envLight->colorA.r), HU8(envLight->colorA.g), HU8(envLight->colorA.b),
-		/* 0x6 */ HU8(envLight->colorB.r), HU8(envLight->colorB.g), HU8(envLight->colorB.b),
-		/* 0x9 */ (f32)envLight->dirA.x / 127.0, (f32)envLight->dirA.y / 127.0, (f32)envLight->dirA.z / 127.0,
-		/* 0xC */ (f32)envLight->dirB.x / 127.0, (f32)envLight->dirB.y / 127.0, (f32)envLight->dirB.z / 127.0,
-	};
-	
-	f32 near = (ReadBE(envLight->fogNear) & 0x3FF);
+	f32 near;
 	f32 far = 1000; // Hardcoded to this value in OoT. z_play.c function Gameplay_SetFog
 	f32 fogMultiply;
 	f32 fogOffset;
+	
+	envLight = &lightCtx->envLight[Wrap(lightCtx->curEnvId, 0, lightCtx->envListNum)];
+	OsAssert(envLight != NULL);
+	near = (ReadBE(envLight->fogNear) & 0x3FF);
 	
 	if (near >= 1000) {
 		fogMultiply = 0;
@@ -40,26 +34,42 @@ void Light_BindLights(Scene* scene) {
 	uFog[0] = fogMultiply;
 	uFog[1] = fogOffset;
 	
-	if (lightCtx->state & LIGHT_STATE_CHANGED) {
-		lightCtx->state &= ~LIGHT_STATE_CHANGED;
-		
-		OsPrintfEx("LightID:    %6X", lightCtx->curLightId);
-	}
-	
 	for (s32 i = 0; i < 3; i++) {
 		uFogColor[i] = (f32)envLight->fogColor.c[i] / 255.0;
 	}
 	
 	n64_set_fog(uFog, uFogColor);
+	
+	if (viewCtx->matchDrawDist)
+		viewCtx->far = ReadBE(lightCtx->envLight[lightCtx->curEnvId].fogFar);
+}
+
+void Light_BindEnvLights(Scene* scene) {
+	LightContext* lightCtx = &scene->lightCtx;
+	EnvLight* envLight;
+	
+	OsAssert(lightCtx->envLight != NULL);
+	envLight = &lightCtx->envLight[Wrap(lightCtx->curEnvId, 0, lightCtx->envListNum)];
+	
+	if (lightCtx->state & LIGHT_STATE_CHANGED) {
+		lightCtx->state &= ~LIGHT_STATE_CHANGED;
+		
+		OsPrintfEx("LightID:    %6X", lightCtx->curEnvId);
+	}
+	
 	n64_clear_lights();
-	n64_add_light(&(LightInfo){
+	
+	n64_add_light(
+		&(LightInfo) {
 		LIGHT_AMBIENT, {
 			.amb = {
 				.color = envLight->ambient
 			}
 		}
-	});
-	n64_add_light(&(LightInfo){
+	}
+	);
+	n64_add_light(
+		&(LightInfo) {
 		LIGHT_DIRECTIONAL, {
 			.dir = {
 				.color = envLight->colorA,
@@ -68,8 +78,10 @@ void Light_BindLights(Scene* scene) {
 				.z = envLight->dirA.z,
 			}
 		}
-	});
-	n64_add_light(&(LightInfo){
+	}
+	);
+	n64_add_light(
+		&(LightInfo) {
 		LIGHT_DIRECTIONAL, {
 			.dir = {
 				.color = envLight->colorB,
@@ -78,16 +90,28 @@ void Light_BindLights(Scene* scene) {
 				.z = envLight->dirB.z,
 			}
 		}
-	});
-	n64_add_light(&(LightInfo){ /* test point light */
-		LIGHT_POINT_GLOW, {
-			.point = {
-				.color = {0, -1, 0},
-				.x = 0,
-				.y = 10,
-				.z = 0,
-			}
+	}
+	);
+}
+
+void Light_BindRoomLights(Scene* scene, Room* room) {
+	LightContext* lightCtx = &scene->lightCtx;
+	LightInfo* infoList = lightCtx->room[room->num].lightList;
+	
+	for (s32 i = 0; i < lightCtx->room[room->num].lightNum; i++, infoList++) {
+		LightInfo light = *infoList;
+		
+		if (light.type != LIGHT_DIRECTIONAL) {
+			light.params.point.radius = ReadBE(light.params.point.radius);
+			light.params.point.x = ReadBE(light.params.point.x);
+			light.params.point.y = ReadBE(light.params.point.y);
+			light.params.point.z = ReadBE(light.params.point.z);
+		} else {
 		}
-	});
-	//n64_set_lights(light);
+		
+		if (n64_add_light(&light)) {
+			// gLight Full
+			break;
+		}
+	}
 }
