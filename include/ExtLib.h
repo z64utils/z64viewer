@@ -212,31 +212,18 @@ void String_GetFilename(char* dst, char* src);
 		(min) + (r - (min)) % range;                \
 	})
 
+// Checks endianess with tst & tstP
 #define ReadBE(in) ({               \
 		typeof(in) out;             \
 		s32 tst = 1;                \
 		u8* tstP = (u8*)&tst;       \
 		if (tstP[0] != 0) {         \
 			s32 size = sizeof(in);  \
-			u8* ptrS = (u8*)&in;    \
-			u8* ptrD = (u8*)&out;   \
+			u8* b = (u8*)&in;       \
 			if (size == 2) {        \
-				ptrD[0] = ptrS[1];  \
-				ptrD[1] = ptrS[0];  \
+				out = (b[0] << 8) | b[1]; \
 			} else if (size == 4) { \
-				ptrD[0] = ptrS[3];  \
-				ptrD[1] = ptrS[2];  \
-				ptrD[2] = ptrS[1];  \
-				ptrD[3] = ptrS[0];  \
-			} else if (size == 8) { \
-				ptrD[0] = ptrS[7];  \
-				ptrD[1] = ptrS[6];  \
-				ptrD[2] = ptrS[5];  \
-				ptrD[3] = ptrS[4];  \
-				ptrD[4] = ptrS[3];  \
-				ptrD[5] = ptrS[2];  \
-				ptrD[6] = ptrS[1];  \
-				ptrD[7] = ptrS[0];  \
+				out = (b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3]; \
 			}                       \
 		} else {                    \
 			out = in;               \
