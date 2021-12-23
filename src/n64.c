@@ -790,7 +790,7 @@ static Vec4f vec4color(RGB8 color) {
 	return (Vec4f){color.r * scale, color.g * scale, color.b * scale};
 }
 
-static Vec4f bakeLight(Vec3f vtxNor, LightInfo* light) {
+static Vec4f bakeLight(Vec3f vtxPos, Vec3f vtxNor, LightInfo* light) {
 	assert(light);
 	switch (light->type) {
 		case LIGHT_AMBIENT:
@@ -804,17 +804,36 @@ static Vec4f bakeLight(Vec3f vtxNor, LightInfo* light) {
 			Vec3_Mult(color, mod);
 			return color;
 		}
+		case LIGHT_POINT_GLOW: {
+			LightPoint* params = &light->params.point;
+			Vec3f pos = {params->x, params->y, params->z};
+			Matrix_MultVec3fExt(&(Vec3f){pos.x, pos.y, pos.z}, &pos, gMatrix.modelNow);
+			/* https://csawesome.runestone.academy/runestone/books/published/learnwebgl2/10_lights/07_lights_attenuation.html */
+			f32 dist = Vec_Vec3f_DistXYZ(&pos, &vtxPos) / 100;
+			float constant = 1.0;
+			float linear = 0.01f;
+			float quadratic = 0.01f;
+			f32 attenuation = 1.0 / (constant + linear * dist + quadratic * (dist * dist));
+			Vec3f dir;
+			Vec3_Substract(dir, pos, vtxPos);
+			Vec3f norm = Vec3_Normalize(dir);
+			Vec4f color = vec4color(params->color);
+			f32 mod = CLAMP(Vec3_Dot(vtxNor, norm), 0.0, 1.0);
+			mod *= attenuation;
+			Vec3_Mult(color, mod);
+			return color;
+		}
 	}
 	return (Vec4f){0};
 }
 
-static Vec4f bakeLights(Vec3f vtxNor) {
+static Vec4f bakeLights(Vec3f vtxPos, Vec3f vtxNor) {
 	Vec4f final = {0};
 	int lightNum = gLightNum % ARRAY_COUNT(gLight);
 	int i;
 	
 	for (i = 0; i < lightNum; ++i) {
-		Vec4f color = bakeLight(vtxNor, &gLight[i]);
+		Vec4f color = bakeLight(vtxPos, vtxNor, &gLight[i]);
 		final.x += color.x;
 		final.y += color.y;
 		final.z += color.z;
@@ -876,7 +895,8 @@ static void gbiFunc_vtx(void* cmd) {
 			};
 			
 			vtxNor = Vec3_Normalize(vtxNor);
-			v->color = bakeLights(vtxNor);
+			Vec3f vtxPos = {v->pos.x, v->pos.y, v->pos.z};
+			v->color = bakeLights(vtxPos, vtxNor);
 			
 			v->norm.x = 0;
 			v->norm.y = 0;

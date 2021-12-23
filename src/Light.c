@@ -79,5 +79,15 @@ void Light_BindLights(Scene* scene) {
 			}
 		}
 	});
+	n64_add_light(&(LightInfo){ /* test point light */
+		LIGHT_POINT_GLOW, {
+			.point = {
+				.color = {0, -1, 0},
+				.x = 0,
+				.y = 10,
+				.z = 0,
+			}
+		}
+	});
 	//n64_set_lights(light);
 }
