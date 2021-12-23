@@ -69,6 +69,12 @@ void Matrix_MultVec3fExt(Vec3f* src, Vec3f* dest, MtxF* mf) {
 	dest->z = mf->zw + (mf->zx * src->x + mf->zy * src->y + mf->zz * src->z);
 }
 
+void Matrix_OrientVec3f(Vec3f* src, Vec3f* dest, MtxF* mf) {
+	dest->x = mf->xx * src->x + mf->xy * src->y + mf->xz * src->z;
+	dest->y = mf->yx * src->x + mf->yy * src->y + mf->yz * src->z;
+	dest->z = mf->zx * src->x + mf->zy * src->y + mf->zz * src->z;
+}
+
 void Matrix_MultVec4fExt(Vec4f* src, Vec4f* dest, MtxF* mf) {
 	dest->x = mf->xw + (mf->xx * src->x + mf->xy * src->y + mf->xz * src->z);
 	dest->y = mf->yw + (mf->yx * src->x + mf->yy * src->y + mf->yz * src->z);

@@ -354,7 +354,9 @@ SceneCmdFunc sCommandFuncTable[] = {
 void Scene_ExecuteCommands(Scene* scene, Room* room) {
 	u8 cmdCode;
 	
-	if (scene) {
+	// Process scene commands separately
+	if (room == NULL) {
+		OsPrintfEx("Executing Scene Commands");
 		SceneCmd* sceneCmd = scene->file.data;
 		
 		gSPSegment(0x2, scene->file.data);
@@ -370,9 +372,8 @@ void Scene_ExecuteCommands(Scene* scene, Room* room) {
 			sCommandFuncTable[cmdCode](scene, room, sceneCmd);
 			sceneCmd++;
 		}
-	}
-	
-	if (room) {
+	} else {
+		OsPrintfEx("Executing Room Commands");
 		SceneCmd* sceneCmd = room->file.data;
 		
 		gSPSegment(0x3, room->file.data);

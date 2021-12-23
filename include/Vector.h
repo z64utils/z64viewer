@@ -11,9 +11,14 @@ typedef struct {
 } Vec4f;
 
 typedef struct {
-	f32 x;
-	f32 y;
-	f32 z;
+	union {
+		struct {
+			f32 x;
+			f32 y;
+			f32 z;
+		};
+		f32 s[3];
+	};
 } Vec3f;
 
 typedef struct {
@@ -186,13 +191,18 @@ void Rect_Set(Rect* dest, s32 x, s32 w, s32 y, s32 h);
 
 #define Vec2_Mult(dest, src) \
 	dest.x *= src; \
-	dest.y *= src; \
-	dest.z *= src
+	dest.y *= src;
 
 #define Vec3_Mult(dest, src) \
 	dest.x *= src; \
 	dest.y *= src; \
 	dest.z *= src
+
+#define Vec4_Mult(dest, src) \
+	dest.x *= src; \
+	dest.y *= src; \
+	dest.z *= src; \
+	dest.w *= src
 
 #define Vec2_Dot(a, b) ({ \
 		(a.x * b.x) + \
@@ -253,7 +263,7 @@ void Rect_Set(Rect* dest, s32 x, s32 w, s32 y, s32 h);
 		ret;                             \
 	})
 
-#define SQ(x)        (x * x)
+#define SQ(x)        ((x) * (x))
 #define Math_SinS(x) sinf(BinToRad((s16)(x)))
 #define Math_CosS(x) cosf(BinToRad((s16)(x)))
 #define Math_SinF(x) sinf(DegToRad(x))

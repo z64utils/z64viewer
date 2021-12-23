@@ -806,14 +806,60 @@ static Vec4f bakeLight(Vec3f vtxPos, Vec3f vtxNor, LightInfo* light) {
 		    
 		    return color;
 	    }
-	    case LIGHT_POINT_GLOW: {
+	    case LIGHT_POINT_GLOW:
+	    case LIGHT_POINT_NOGLOW: {
 		    LightPoint* params = &light->params.point;
+		    
+		    #if 0 // TODO: Does not work, fix pls
+		    
+		    Vec4f color = {
+			    params->color.r / 255.0f,
+			    params->color.g / 255.0f,
+			    params->color.b / 255.0f,
+			    1.0f
+		    };
+		    Vec3f lPos = {
+			    params->x - vtxPos.x,
+			    params->y - vtxPos.y,
+			    params->z - vtxPos.z
+		    };
+		    f32 radius = (f32)params->radius / 255;
+		    f32 k, ks, ksf, v, d, l;
+		    f32 instensity;
+		    Vec3f lPosInv = { 0 };
+		    
+		    radius = 255.0f - 255.0f * (radius * radius);
+		    l = 255;
+		    k = Vec3_Dot(lPos, lPos) * 2.0f;
+		    ks = sqrtf(k);
+		    
+		    Matrix_OrientVec3f(&lPos, &lPosInv, gMatrix.modelNow);
+		    
+		    for (u32 i = 0; i < 3; ++i) {
+			    lPosInv.s[i] = (4.0f * lPosInv.s[i] / ks);
+			    if (lPosInv.s[i] < -1.0f)
+				    lPosInv.s[i] = -1.0f;
+			    if (lPosInv.s[i] > 1.0f)
+				    lPosInv.s[i] = 1.0f;
+		    }
+		    
+		    v = Vec3_Dot(lPosInv, vtxNor);
+		    v = CLAMP(v, -1.0, 1.0);
+		    ksf = floorf(ks);
+		    d = (ksf * l * 2.0f + SQ(ksf) * radius / 8.0f) * 1.52587890625e-05f + 1.0f;
+		    instensity = v / d;
+		    Vec4_Mult(color, instensity);
+		    
+		    return color;
+		    
+		    #else
+		    
 		    Vec3f pos = { params->x, params->y, params->z };
 		    /* https://csawesome.runestone.academy/runestone/books/published/learnwebgl2/10_lights/07_lights_attenuation.html */
 		    f32 dist = Vec_Vec3f_DistXYZ(&pos, &vtxPos) / 100;
-		    float constant = 1.0;
-		    float linear = 0.01f;
-		    float quadratic = 0.01f;
+		    float constant = 1.0 / 255.0;
+		    float linear = 1.0f;
+		    float quadratic = 1.0f - 1.0f * SQ((f32)params->radius / 255.0);
 		    f32 attenuation = 1.0 / (constant + linear * dist + quadratic * (dist * dist));
 		    Vec3f dir;
 		    Vec3_Substract(dir, pos, vtxPos);
@@ -824,6 +870,8 @@ static Vec4f bakeLight(Vec3f vtxPos, Vec3f vtxNor, LightInfo* light) {
 		    Vec3_Mult(color, mod);
 		    
 		    return color;
+		    
+		    #endif
 	    }
 	}
 	
@@ -832,10 +880,9 @@ static Vec4f bakeLight(Vec3f vtxPos, Vec3f vtxNor, LightInfo* light) {
 
 static Vec4f bakeLights(Vec3f vtxPos, Vec3f vtxNor) {
 	Vec4f final = { 0 };
-	int lightNum = gLightNum % ARRAY_COUNT(gLight);
 	int i;
 	
-	for (i = 0; i < lightNum; ++i) {
+	for (i = 0; i < gLightNum; ++i) {
 		Vec4f color = bakeLight(vtxPos, vtxNor, &gLight[i]);
 		final.x += color.x;
 		final.y += color.y;
