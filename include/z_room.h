@@ -37,6 +37,7 @@ typedef struct Room {
 	u32     segment;
 	char    unk_10[0x4];
 	MemFile file;
+	u8      inDoorLights;
 } Room;
 
 void Room_Draw(Room* room);

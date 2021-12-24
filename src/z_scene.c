@@ -182,6 +182,10 @@ void Scene_Command_0x11(Scene* scene, Room* room, SceneCmd* cmd) {
 	globalCtx->envCtx.unk_17 = globalCtx->envCtx.unk_18 = cmd->skyboxSettings.unk_05;
 	globalCtx->envCtx.indoors = cmd->skyboxSettings.unk_06;
 	#endif
+	
+	if (room) {
+		room->inDoorLights = cmd->skyboxSettings.unk_06;
+	}
 }
 // Skybox Disables
 void Scene_Command_0x12(Scene* scene, Room* room, SceneCmd* cmd) {

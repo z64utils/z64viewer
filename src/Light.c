@@ -44,12 +44,49 @@ void Light_SetFog(Scene* scene, ViewContext* viewCtx) {
 		viewCtx->far = ReadBE(lightCtx->envLight[lightCtx->curEnvId].fogFar);
 }
 
-void Light_BindEnvLights(Scene* scene) {
+void Light_BindEnvLights(Scene* scene, Room* currentRoom) {
+	OsAssert(scene->lightCtx.envLight != NULL);
 	LightContext* lightCtx = &scene->lightCtx;
-	EnvLight* envLight;
+	EnvLight* envLight = &lightCtx->envLight[Wrap(lightCtx->curEnvId, 0, lightCtx->envListNum)];
+	Vec3c dirA = {
+		envLight->dirA.x,
+		envLight->dirA.y,
+		envLight->dirA.z
+	};
+	Vec3c dirB = {
+		envLight->dirB.x,
+		envLight->dirB.y,
+		envLight->dirB.z
+	};
 	
-	OsAssert(lightCtx->envLight != NULL);
-	envLight = &lightCtx->envLight[Wrap(lightCtx->curEnvId, 0, lightCtx->envListNum)];
+	if (currentRoom && currentRoom->inDoorLights == false && lightCtx->curEnvId < 4) {
+		switch (lightCtx->curEnvId) {
+		    case 0: {
+			    lightCtx->dayTime = 0x6000; // 06.00
+			    break;
+		    }
+		    case 1: {
+			    lightCtx->dayTime = 0x8001; // 12.00
+			    break;
+		    }
+		    case 2: {
+			    lightCtx->dayTime = 0xb556; // 17.00
+			    break;
+		    }
+		    case 3: {
+			    lightCtx->dayTime = 0xFFFF; // 24.00
+			    break;
+		    }
+		}
+		
+		dirA = (Vec3c) {
+			(Math_SinS(((void)0, lightCtx->dayTime) - 0x8000) * 120.0f),
+			Math_CosS(((void)0, lightCtx->dayTime) - 0x8000) * 120.0f,
+			(Math_CosS(((void)0, lightCtx->dayTime) - 0x8000) * 20.0f)
+		};
+		
+		Vec3_Substract(dirB, (Vec3c) { 0 }, dirA);
+	}
 	
 	if (lightCtx->state & LIGHT_STATE_CHANGED) {
 		lightCtx->state &= ~LIGHT_STATE_CHANGED;
@@ -73,9 +110,9 @@ void Light_BindEnvLights(Scene* scene) {
 		LIGHT_DIRECTIONAL, {
 			.dir = {
 				.color = envLight->colorA,
-				.x = envLight->dirA.x,
-				.y = envLight->dirA.y,
-				.z = envLight->dirA.z,
+				.x = dirA.x,
+				.y = dirA.y,
+				.z = dirA.z,
 			}
 		}
 	}
@@ -85,9 +122,9 @@ void Light_BindEnvLights(Scene* scene) {
 		LIGHT_DIRECTIONAL, {
 			.dir = {
 				.color = envLight->colorB,
-				.x = envLight->dirB.x,
-				.y = envLight->dirB.y,
-				.z = envLight->dirB.z,
+				.x = dirB.x,
+				.y = dirB.y,
+				.z = dirB.z,
 			}
 		}
 	}

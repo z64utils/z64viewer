@@ -64,16 +64,17 @@ typedef struct {
 		u8 lightNum;
 	} room[256];
 	EnvLight* envLight;
-	u8 envListNum;
-	u8 curEnvId;
+	u8  envListNum;
+	u8  curEnvId;
 	LightState state;
+	s16 dayTime;
 } LightContext;
 
 struct Scene;
 struct Room;
 struct ViewContext;
 void Light_SetFog(struct Scene* scene, struct ViewContext* viewCtx);
-void Light_BindEnvLights(struct Scene* scene);
+void Light_BindEnvLights(struct Scene* scene, struct Room* currentRoom);
 void Light_BindRoomLights(struct Scene* scene, struct Room* room);
 
 #endif
