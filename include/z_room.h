@@ -6,21 +6,7 @@
 typedef struct {
 	u32 opa;
 	u32 xlu;
-} PolygonDlist;
-
-typedef struct {
-	u8  type;
-	u8  num;
-	u32 start;
-	u32 end;
-} Polygon;
-
-typedef struct {
-	u8  type;
-	u8  num;
-	u32 start;
-	u32 end;
-} PolygonType0;
+} PolygonDlist0;
 
 typedef struct {
 	Vec3s pos;
@@ -31,15 +17,13 @@ typedef struct {
 
 typedef struct {
 	u8  type;
-	u8  num; // number of dlist entries
+	u8  num;
 	u32 start;
 	u32 end;
-} PolygonType2;
+} Polygon;
 
 typedef union {
 	Polygon polygon;
-	PolygonType0 polygon0;
-	PolygonType2 polygon2;
 } Mesh;
 
 typedef struct Room {

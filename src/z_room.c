@@ -16,16 +16,15 @@ void Room_Draw(Room* room) {
 			n64_set_onlyGeoLayer(GEOLAYER_OPAQUE);
 		} else {
 			n64_set_onlyGeoLayer(GEOLAYER_OVERLAY);
-			
 		}
 		
 		switch (type) {
 		    case 0: {
-			    PolygonDlist* polyDL = SEGMENTED_TO_VIRTUAL(
-				    ReadBE(room->mesh->polygon0.start)
+			    PolygonDlist0* polyDL = SEGMENTED_TO_VIRTUAL(
+				    ReadBE(room->mesh->polygon.start)
 			    );
 			    
-			    for (s32 i = 0; i < room->mesh->polygon0.num; i++) {
+			    for (s32 i = 0; i < room->mesh->polygon.num; i++) {
 				    if (polyDL->opa) {
 					    gSPDisplayList(ReadBE(polyDL->opa));
 				    }
@@ -40,10 +39,10 @@ void Room_Draw(Room* room) {
 		    }
 		    case 2: {
 			    PolygonDlist2* polyDL = SEGMENTED_TO_VIRTUAL(
-				    ReadBE(room->mesh->polygon2.start)
+				    ReadBE(room->mesh->polygon.start)
 			    );
 			    
-			    for (s32 i = 0; i < room->mesh->polygon2.num; i++) {
+			    for (s32 i = 0; i < room->mesh->polygon.num; i++) {
 				    if (polyDL->opa) {
 					    gSPDisplayList(ReadBE(polyDL->opa));
 				    }
