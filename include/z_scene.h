@@ -4,6 +4,7 @@
 #include <Light.h>
 #include <z_room.h>
 #include <n64.h>
+#include <Rand.h>
 
 typedef struct Scene {
 	LightContext lightCtx;

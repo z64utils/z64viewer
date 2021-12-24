@@ -351,8 +351,64 @@ SceneCmdFunc sCommandFuncTable[] = {
 	Scene_Command_0x19
 };
 
+char* sColorPrint[] = {
+	PRNT_REDD,
+	PRNT_GREN,
+	PRNT_YELW,
+	PRNT_BLUE,
+	PRNT_PRPL,
+	PRNT_CYAN,
+};
+
+char* sCommandNameTable[] = {
+	"Spawn Player",
+	"Actor List",
+	"Unused 02",
+	"Collision Header",
+	"Room List",
+	"Wind Settings",
+	"Entrance List",
+	"Special Files",
+	"Room Behavior",
+	"Undefined",
+	"Mesh Header",
+	"Object List",
+	"Light List",
+	"Path List",
+	"Transition Actor List",
+	"Light Setting List",
+	"Skybox Settings",
+	"Skybox Disables",
+	"Time Settings",
+	"Exit List",
+	"Break",
+	"Sound Settings",
+	"Echo Setting",
+	"Cutscene Data",
+	"Alternate Headers",
+	"Misc. Settings",
+};
+
+void Scene_DebugOsPrintf(u8 code, u8* flag) {
+	static u8 color = 0;
+	
+	if (code != 0x14) {
+		color = Wrap(color + 1, 1, 5);
+	} else {
+		color = 0;
+	}
+	
+	if (!*flag) {
+		OsPrintfEx("%s%-30s 0x%02X" PRNT_RSET, sColorPrint[color], sCommandNameTable[code], code);
+		(*flag)++;
+	} else {
+		OsPrintf("%s%-30s 0x%02X" PRNT_RSET, sColorPrint[color], sCommandNameTable[code], code);
+	}
+}
+
 void Scene_ExecuteCommands(Scene* scene, Room* room) {
 	u8 cmdCode;
+	u8 printFlag = 0;
 	
 	// Process scene commands separately
 	if (room == NULL) {
@@ -363,10 +419,9 @@ void Scene_ExecuteCommands(Scene* scene, Room* room) {
 		
 		while (1) {
 			cmdCode = sceneCmd->base.code;
-			OsPrintfEx("0x%02X", cmdCode);
 			OsAssert(cmdCode <= 0x19);
+			Scene_DebugOsPrintf(cmdCode, &printFlag);
 			if (cmdCode == 0x14) {
-				OsPrintf("break", cmdCode);
 				break;
 			}
 			sCommandFuncTable[cmdCode](scene, room, sceneCmd);
@@ -380,10 +435,9 @@ void Scene_ExecuteCommands(Scene* scene, Room* room) {
 		
 		while (1) {
 			cmdCode = sceneCmd->base.code;
-			OsPrintfEx("0x%02X", cmdCode);
 			OsAssert(cmdCode <= 0x19);
+			Scene_DebugOsPrintf(cmdCode, &printFlag);
 			if (cmdCode == 0x14) {
-				OsPrintf("break", cmdCode);
 				break;
 			}
 			sCommandFuncTable[cmdCode](scene, room, sceneCmd);

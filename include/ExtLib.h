@@ -224,6 +224,8 @@ void String_GetFilename(char* dst, char* src);
 				out = (b[0] << 8) | b[1]; \
 			} else if (size == 4) { \
 				out = (b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3]; \
+			} else {                \
+				out = in;           \
 			}                       \
 		} else {                    \
 			out = in;               \
@@ -254,10 +256,13 @@ extern PrintfSuppressLevel gPrintfSuppress;
 
 #define PRNT_DGRY "\e[90;2m"
 #define PRNT_GRAY "\e[0;90m"
-#define PRNT_REDD "\e[0;91m"
 #define PRNT_DRED "\e[91;2m"
+#define PRNT_REDD "\e[0;91m"
+#define PRNT_GREN "\e[0;92m"
 #define PRNT_YELW "\e[0;93m"
 #define PRNT_BLUE "\e[0;94m"
+#define PRNT_PRPL "\e[0;95m"
+#define PRNT_CYAN "\e[0;96m"
 #define PRNT_RSET "\e[m"
 #define PRNT_NL   "\n"
 #define PRNT_RNL  PRNT_RSET PRNT_NL
