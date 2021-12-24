@@ -10,6 +10,7 @@ void Room_Draw(Room* room) {
 	
 	gSPSegment(0x03, room->file.data);
 	n64_draw(setup);
+	n64_set_onlyZmode(ZMODE_ALL);
 	
 	for (s32 z = 0; z < 2; z++) {
 		if (z == 0) {
