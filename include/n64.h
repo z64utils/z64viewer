@@ -43,7 +43,8 @@ bool n64_add_light(LightInfo* lightInfo);
 void n64_clearShaderCache(void);
 
 #define gSPMatrix(mtx)            n64_setMatrix_model(mtx)
-#define gSPDisplayList(dl)        n64_draw(n64_virt2phys(dl))
+#define gSPDisplayListSeg(dl)     n64_draw(n64_virt2phys(dl))
+#define gSPDisplayList(dl)        n64_draw(dl)
 #define gSPSegment(sed, data)     n64_set_segment(sed, data)
 #define SEGMENTED_TO_VIRTUAL(seg) n64_virt2phys(seg)
 

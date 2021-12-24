@@ -29,8 +29,8 @@ typedef union {
 	};
 } MtxF;
 
-static MtxF* gMatrixStack;
-static MtxF* gCurrentMatrix;
+extern MtxF* gMatrixStack;
+extern MtxF* gCurrentMatrix;
 extern const MtxF gMtxFClear;
 
 void Matrix_Init();

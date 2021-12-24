@@ -27,10 +27,10 @@ void Room_Draw(Room* room) {
 			    
 			    for (s32 i = 0; i < room->mesh->polygon.num; i++) {
 				    if (polyDL->opa) {
-					    gSPDisplayList(ReadBE(polyDL->opa));
+					    gSPDisplayListSeg(ReadBE(polyDL->opa));
 				    }
 				    if (polyDL->xlu) {
-					    gSPDisplayList(ReadBE(polyDL->xlu));
+					    gSPDisplayListSeg(ReadBE(polyDL->xlu));
 				    }
 				    
 				    polyDL++;
@@ -45,10 +45,10 @@ void Room_Draw(Room* room) {
 			    
 			    for (s32 i = 0; i < room->mesh->polygon.num; i++) {
 				    if (polyDL->opa) {
-					    gSPDisplayList(ReadBE(polyDL->opa));
+					    gSPDisplayListSeg(ReadBE(polyDL->opa));
 				    }
 				    if (polyDL->xlu) {
-					    gSPDisplayList(ReadBE(polyDL->xlu));
+					    gSPDisplayListSeg(ReadBE(polyDL->xlu));
 				    }
 				    
 				    polyDL++;

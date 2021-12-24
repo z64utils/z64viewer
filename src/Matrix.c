@@ -3,8 +3,8 @@
 #define    FTOFIX32(x) (long)((x) * (float)0x00010000)
 #define    FIX32TOF(x) ((float)(x) * (1.0f / (float)0x00010000))
 
-static MtxF* gMatrixStack;
-static MtxF* gCurrentMatrix;
+MtxF* gMatrixStack;
+MtxF* gCurrentMatrix;
 const MtxF gMtxFClear = {
 	1.0f, 0.0f, 0.0f, 0.0f,
 	0.0f, 1.0f, 0.0f, 0.0f,
@@ -46,10 +46,12 @@ void Matrix_Pop(void) {
 }
 
 void Matrix_Get(MtxF* dest) {
+	OsAssert(dest != NULL);
 	Matrix_MtxFCopy(dest, gCurrentMatrix);
 }
 
 void Matrix_Put(MtxF* src) {
+	OsAssert(src != NULL);
 	Matrix_MtxFCopy(gCurrentMatrix, src);
 }
 

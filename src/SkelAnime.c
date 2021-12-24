@@ -145,7 +145,7 @@ void SkelAnime_Limb(u32 skelSeg, u8 limbId, Mtx** mtx, Vec3s* jointTable) {
 			Matrix_ToMtx((*mtx)++);
 		}
 		gSPMatrix(&mtxF);
-		gSPDisplayList(ReadBE(limb->dList));
+		gSPDisplayListSeg(ReadBE(limb->dList));
 	}
 	
 	limbList++;
