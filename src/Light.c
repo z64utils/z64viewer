@@ -8,10 +8,15 @@ void Light_SetFog(Scene* scene, ViewContext* viewCtx) {
 	EnvLight* envLight;
 	f32 uFog[2];
 	f32 uFogColor[3];
-	f32 near;
-	f32 far = 1000; // Hardcoded to this value in OoT. z_play.c function Gameplay_SetFog
-	f32 fogMultiply;
-	f32 fogOffset;
+	s16 near;
+	/* Hardcoded to this value in OoT. z_play.c function Gameplay_SetFog
+	 * NOTE: Adjusted from 1000 to 999.01 to match Angrylion & GlideN64.
+	 * Possibly not ideal change, but does not seem to affect results
+	 * negatively. Might take another look at this later.
+	 */
+	f32 far = 999.01;
+	s16 fogMultiply;
+	s16 fogOffset;
 	
 	envLight = &lightCtx->envLight[Wrap(lightCtx->curEnvId, 0, lightCtx->envListNum)];
 	OsAssert(envLight != NULL);
@@ -21,14 +26,14 @@ void Light_SetFog(Scene* scene, ViewContext* viewCtx) {
 		fogMultiply = 0;
 		fogOffset = 0;
 	} else if (near >= 997) {
-		fogMultiply = 3276700.0;
-		fogOffset = 3302400.0;
+		fogMultiply = 32767;
+		fogOffset = 33024;
 	} else if (near < 0) {
 		fogMultiply = 0;
-		fogOffset = 25500.0;
+		fogOffset = 255;
 	} else {
-		fogMultiply = (500.0 * 256.0) / (far - near);
-		fogOffset = (500.0 - near) * 256.0 / (far - near);
+		fogMultiply = ((500 * 0x100) / (far - near));
+		fogOffset = ((500 - near) * 0x100 / (far - near));
 	}
 	
 	uFog[0] = fogMultiply;

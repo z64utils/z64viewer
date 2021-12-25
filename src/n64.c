@@ -637,10 +637,11 @@ static void doMaterial(void* addr) {
 				vColor = aColor;
 				TexCoord0 = vec2(aTexCoord0.x, aTexCoord0.y);
 				TexCoord1 = vec2(aTexCoord1.x, aTexCoord1.y);
-				if (wow.w < 0)
+				if (wow.w < 0) {
 					vFog = -fogM + fogO;
-				else
+				} else {
 					vFog = wow.z / wow.w * fogM + fogO;
+				}
 				vFog = clamp(vFog, 0.0, 255.0) / 255;
 				
 				/* when lighting is disabled for a vertex, its normal == 0 */
