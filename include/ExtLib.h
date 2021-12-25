@@ -234,6 +234,11 @@ void String_GetFilename(char* dst, char* src);
 	}                               \
 )
 
+#define WriteBE(type, set) ({ \
+	type get = set; \
+	ReadBE(get); \
+})
+
 #define ByteSwap(in) {                        \
 		s32 tst = 1;                          \
 		u8* tstP = (u8*)&tst;                 \
