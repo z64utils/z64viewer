@@ -1,23 +1,23 @@
 #include <z_scene.h>
 
 // Spawn Player
-void Scene_Command_0x00(Scene* scene, Room* room, SceneCmd* cmd) {
+void Scene_LoadCmd_0x00(Scene* scene, Room* room, SceneCmd* cmd) {
 }
 // Actor List
-void Scene_Command_0x01(Scene* scene, Room* room, SceneCmd* cmd) {
+void Scene_LoadCmd_0x01(Scene* scene, Room* room, SceneCmd* cmd) {
 	#if 0
 	globalCtx->numSetupActors = cmd->actorList.num;
 	globalCtx->setupActorList = SEGMENTED_TO_VIRTUAL(cmd->actorList.segment);
 	#endif
 }
 // Unused 02
-void Scene_Command_0x02(Scene* scene, Room* room, SceneCmd* cmd) {
+void Scene_LoadCmd_0x02(Scene* scene, Room* room, SceneCmd* cmd) {
 	#if 0
 	globalCtx->unk_11DFC = SEGMENTED_TO_VIRTUAL(cmd->unused02.segment);
 	#endif
 }
 // Collision Header
-void Scene_Command_0x03(Scene* scene, Room* room, SceneCmd* cmd) {
+void Scene_LoadCmd_0x03(Scene* scene, Room* room, SceneCmd* cmd) {
 	#if 0
 	CollisionHeader* colHeader = SEGMENTED_TO_VIRTUAL(cmd->colHeader.segment);
 	
@@ -31,14 +31,14 @@ void Scene_Command_0x03(Scene* scene, Room* room, SceneCmd* cmd) {
 	#endif
 }
 // Room List
-void Scene_Command_0x04(Scene* scene, Room* room, SceneCmd* cmd) {
+void Scene_LoadCmd_0x04(Scene* scene, Room* room, SceneCmd* cmd) {
 	#if 0
 	globalCtx->numRooms = cmd->roomList.num;
 	globalCtx->roomList = SEGMENTED_TO_VIRTUAL(cmd->roomList.segment);
 	#endif
 }
 // Wind Settings
-void Scene_Command_0x05(Scene* scene, Room* room, SceneCmd* cmd) {
+void Scene_LoadCmd_0x05(Scene* scene, Room* room, SceneCmd* cmd) {
 	#if 0
 	s8 x = cmd->windSettings.x;
 	s8 y = cmd->windSettings.y;
@@ -52,13 +52,13 @@ void Scene_Command_0x05(Scene* scene, Room* room, SceneCmd* cmd) {
 	#endif
 }
 // Entrance List
-void Scene_Command_0x06(Scene* scene, Room* room, SceneCmd* cmd) {
+void Scene_LoadCmd_0x06(Scene* scene, Room* room, SceneCmd* cmd) {
 	#if 0
 	globalCtx->setupEntranceList = SEGMENTED_TO_VIRTUAL(cmd->entranceList.segment);
 	#endif
 }
 // Special Files
-void Scene_Command_0x07(Scene* scene, Room* room, SceneCmd* cmd) {
+void Scene_LoadCmd_0x07(Scene* scene, Room* room, SceneCmd* cmd) {
 	#if 0
 	if (cmd->specialFiles.keepObjectId != 0) {
 		globalCtx->objectCtx.subKeepIndex = Object_Spawn(&globalCtx->objectCtx, cmd->specialFiles.keepObjectId);
@@ -71,7 +71,7 @@ void Scene_Command_0x07(Scene* scene, Room* room, SceneCmd* cmd) {
 	#endif
 }
 // Room Behavior
-void Scene_Command_0x08(Scene* scene, Room* room, SceneCmd* cmd) {
+void Scene_LoadCmd_0x08(Scene* scene, Room* room, SceneCmd* cmd) {
 	#if 0
 	globalCtx->roomCtx.curRoom.unk_03 = cmd->roomBehavior.gpFlag1;
 	globalCtx->roomCtx.curRoom.unk_02 = cmd->roomBehavior.gpFlag2 & 0xFF;
@@ -80,10 +80,10 @@ void Scene_Command_0x08(Scene* scene, Room* room, SceneCmd* cmd) {
 	#endif
 }
 // Undefined
-void Scene_Command_0x09(Scene* scene, Room* room, SceneCmd* cmd) {
+void Scene_LoadCmd_0x09(Scene* scene, Room* room, SceneCmd* cmd) {
 }
 // Mesh Header
-void Scene_Command_0x0A(Scene* scene, Room* room, SceneCmd* cmd) {
+void Scene_LoadCmd_0x0A(Scene* scene, Room* room, SceneCmd* cmd) {
 	#if 0
 	globalCtx->roomCtx.curRoom.mesh = SEGMENTED_TO_VIRTUAL(cmd->mesh.segment);
 	#endif
@@ -91,7 +91,7 @@ void Scene_Command_0x0A(Scene* scene, Room* room, SceneCmd* cmd) {
 	room->mesh = SEGMENTED_TO_VIRTUAL(ReadBE(cmd->mesh.segment));
 }
 // Object List
-void Scene_Command_0x0B(Scene* scene, Room* room, SceneCmd* cmd) {
+void Scene_LoadCmd_0x0B(Scene* scene, Room* room, SceneCmd* cmd) {
 	#if 0
 	s32 i;
 	s32 j;
@@ -150,33 +150,33 @@ void Scene_Command_0x0B(Scene* scene, Room* room, SceneCmd* cmd) {
 	#endif
 }
 // Light List
-void Scene_Command_0x0C(Scene* scene, Room* room, SceneCmd* cmd) {
+void Scene_LoadCmd_0x0C(Scene* scene, Room* room, SceneCmd* cmd) {
 	OsAssert(scene != NULL && room != NULL);
 	scene->lightCtx.room[room->num].lightNum = cmd->lightList.num;
 	scene->lightCtx.room[room->num].lightList =
 	    SEGMENTED_TO_VIRTUAL(ReadBE(cmd->lightList.segment));
 }
 // Path List
-void Scene_Command_0x0D(Scene* scene, Room* room, SceneCmd* cmd) {
+void Scene_LoadCmd_0x0D(Scene* scene, Room* room, SceneCmd* cmd) {
 	#if 0
 	globalCtx->setupPathList = SEGMENTED_TO_VIRTUAL(cmd->pathList.segment);
 	#endif
 }
 // Transition Actor List
-void Scene_Command_0x0E(Scene* scene, Room* room, SceneCmd* cmd) {
+void Scene_LoadCmd_0x0E(Scene* scene, Room* room, SceneCmd* cmd) {
 	#if 0
 	globalCtx->transiActorCtx.numActors = cmd->transiActorList.num;
 	globalCtx->transiActorCtx.list = SEGMENTED_TO_VIRTUAL(cmd->transiActorList.segment);
 	#endif
 }
 // Light Setting List
-void Scene_Command_0x0F(Scene* scene, Room* room, SceneCmd* cmd) {
+void Scene_LoadCmd_0x0F(Scene* scene, Room* room, SceneCmd* cmd) {
 	OsAssert(scene != NULL);
 	scene->lightCtx.envLight = SEGMENTED_TO_VIRTUAL(ReadBE(cmd->lightSettingList.segment));
 	scene->lightCtx.envListNum = cmd->lightSettingList.num;
 }
 // Skybox Settings
-void Scene_Command_0x11(Scene* scene, Room* room, SceneCmd* cmd) {
+void Scene_LoadCmd_0x11(Scene* scene, Room* room, SceneCmd* cmd) {
 	#if 0
 	globalCtx->skyboxId = cmd->skyboxSettings.skyboxId;
 	globalCtx->envCtx.unk_17 = globalCtx->envCtx.unk_18 = cmd->skyboxSettings.unk_05;
@@ -188,14 +188,14 @@ void Scene_Command_0x11(Scene* scene, Room* room, SceneCmd* cmd) {
 	}
 }
 // Skybox Disables
-void Scene_Command_0x12(Scene* scene, Room* room, SceneCmd* cmd) {
+void Scene_LoadCmd_0x12(Scene* scene, Room* room, SceneCmd* cmd) {
 	#if 0
 	globalCtx->envCtx.skyboxDisabled = cmd->skyboxDisables.unk_04;
 	globalCtx->envCtx.sunMoonDisabled = cmd->skyboxDisables.unk_05;
 	#endif
 }
 // Time Settings
-void Scene_Command_0x10(Scene* scene, Room* room, SceneCmd* cmd) {
+void Scene_LoadCmd_0x10(Scene* scene, Room* room, SceneCmd* cmd) {
 	#if 0
 	if ((cmd->timeSettings.hour != 0xFF) && (cmd->timeSettings.min != 0xFF)) {
 		gSaveContext.skyboxTime = gSaveContext.dayTime =
@@ -232,13 +232,13 @@ void Scene_Command_0x10(Scene* scene, Room* room, SceneCmd* cmd) {
 	#endif
 }
 // Exit List
-void Scene_Command_0x13(Scene* scene, Room* room, SceneCmd* cmd) {
+void Scene_LoadCmd_0x13(Scene* scene, Room* room, SceneCmd* cmd) {
 	#if 0
 	globalCtx->setupExitList = SEGMENTED_TO_VIRTUAL(cmd->exitList.segment);
 	#endif
 }
 // Sound Settings
-void Scene_Command_0x15(Scene* scene, Room* room, SceneCmd* cmd) {
+void Scene_LoadCmd_0x15(Scene* scene, Room* room, SceneCmd* cmd) {
 	#if 0
 	globalCtx->soundCtx.seqIndex = cmd->soundSettings.seqIndex;
 	globalCtx->soundCtx.nightSeqIndex = cmd->soundSettings.nightSeqIndex;
@@ -249,20 +249,20 @@ void Scene_Command_0x15(Scene* scene, Room* room, SceneCmd* cmd) {
 	#endif
 }
 // Echo Setting
-void Scene_Command_0x16(Scene* scene, Room* room, SceneCmd* cmd) {
+void Scene_LoadCmd_0x16(Scene* scene, Room* room, SceneCmd* cmd) {
 	#if 0
 	globalCtx->roomCtx.curRoom.echo = cmd->echoSettings.echo;
 	#endif
 }
 // Cutscene Data
-void Scene_Command_0x17(Scene* scene, Room* room, SceneCmd* cmd) {
+void Scene_LoadCmd_0x17(Scene* scene, Room* room, SceneCmd* cmd) {
 	#if 0
 	osSyncPrintf("\ngame_play->demo_play.data=[%x]", globalCtx->csCtx.segment);
 	globalCtx->csCtx.segment = SEGMENTED_TO_VIRTUAL(cmd->cutsceneData.segment);
 	#endif
 }
 // Alternate Headers
-void Scene_Command_0x18(Scene* scene, Room* room, SceneCmd* cmd) {
+void Scene_LoadCmd_0x18(Scene* scene, Room* room, SceneCmd* cmd) {
 	#if 0
 	s32 pad;
 	SceneCmd* altHeader;
@@ -301,7 +301,7 @@ void Scene_Command_0x18(Scene* scene, Room* room, SceneCmd* cmd) {
 	#endif
 }
 // Misc. Settings (Camera & World Map Area)
-void Scene_Command_0x19(Scene* scene, Room* room, SceneCmd* cmd) {
+void Scene_LoadCmd_0x19(Scene* scene, Room* room, SceneCmd* cmd) {
 	#if 0
 	YREG(15) = cmd->miscSettings.cameraMovement;
 	gSaveContext.worldMapArea = cmd->miscSettings.area;
@@ -326,33 +326,33 @@ void Scene_Command_0x19(Scene* scene, Room* room, SceneCmd* cmd) {
 	#endif
 }
 
-SceneCmdFunc sCommandFuncTable[] = {
-	Scene_Command_0x00,
-	Scene_Command_0x01,
-	Scene_Command_0x02,
-	Scene_Command_0x03,
-	Scene_Command_0x04,
-	Scene_Command_0x05,
-	Scene_Command_0x06,
-	Scene_Command_0x07,
-	Scene_Command_0x08,
-	Scene_Command_0x09,
-	Scene_Command_0x0A,
-	Scene_Command_0x0B,
-	Scene_Command_0x0C,
-	Scene_Command_0x0D,
-	Scene_Command_0x0E,
-	Scene_Command_0x0F,
-	Scene_Command_0x10,
-	Scene_Command_0x11,
-	Scene_Command_0x12,
-	Scene_Command_0x13,
+SceneCmdFunc sLoadCmdFuncTable[] = {
+	Scene_LoadCmd_0x00,
+	Scene_LoadCmd_0x01,
+	Scene_LoadCmd_0x02,
+	Scene_LoadCmd_0x03,
+	Scene_LoadCmd_0x04,
+	Scene_LoadCmd_0x05,
+	Scene_LoadCmd_0x06,
+	Scene_LoadCmd_0x07,
+	Scene_LoadCmd_0x08,
+	Scene_LoadCmd_0x09,
+	Scene_LoadCmd_0x0A,
+	Scene_LoadCmd_0x0B,
+	Scene_LoadCmd_0x0C,
+	Scene_LoadCmd_0x0D,
+	Scene_LoadCmd_0x0E,
+	Scene_LoadCmd_0x0F,
+	Scene_LoadCmd_0x10,
+	Scene_LoadCmd_0x11,
+	Scene_LoadCmd_0x12,
+	Scene_LoadCmd_0x13,
 	NULL,
-	Scene_Command_0x15,
-	Scene_Command_0x16,
-	Scene_Command_0x17,
-	Scene_Command_0x18,
-	Scene_Command_0x19
+	Scene_LoadCmd_0x15,
+	Scene_LoadCmd_0x16,
+	Scene_LoadCmd_0x17,
+	Scene_LoadCmd_0x18,
+	Scene_LoadCmd_0x19
 };
 
 char* sColorPrint[] = {
@@ -428,7 +428,7 @@ void Scene_ExecuteCommands(Scene* scene, Room* room) {
 			if (cmdCode == 0x14) {
 				break;
 			}
-			sCommandFuncTable[cmdCode](scene, room, sceneCmd);
+			sLoadCmdFuncTable[cmdCode](scene, room, sceneCmd);
 			sceneCmd++;
 		}
 	} else {
@@ -444,7 +444,7 @@ void Scene_ExecuteCommands(Scene* scene, Room* room) {
 			if (cmdCode == 0x14) {
 				break;
 			}
-			sCommandFuncTable[cmdCode](scene, room, sceneCmd);
+			sLoadCmdFuncTable[cmdCode](scene, room, sceneCmd);
 			sceneCmd++;
 		}
 	}
