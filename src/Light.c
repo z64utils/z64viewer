@@ -27,7 +27,7 @@ void Light_SetFog(Scene* scene, ViewContext* viewCtx) {
 		fogOffset = 0;
 	} else if (near >= 997) {
 		fogMultiply = 32767;
-		fogOffset = 33024;
+		fogOffset = -32512;
 	} else if (near < 0) {
 		fogMultiply = 0;
 		fogOffset = 255;

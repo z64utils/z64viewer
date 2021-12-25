@@ -237,10 +237,10 @@ void String_GetFilename(char* dst, char* src);
 	}                               \
 )
 
-#define WriteBE(type, set) ({ \
-		type get = set; \
-		ReadBE(get); \
-	})
+#define WriteBE(dest, set) { \
+		typeof(dest) get = set; \
+		dest = ReadBE(get); \
+}
 
 #define ByteSwap(in) {                        \
 		s32 tst = 1;                          \
