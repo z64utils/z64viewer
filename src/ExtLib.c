@@ -162,6 +162,63 @@ void* Lib_MemMem(const void* haystack, size_t haystackSize, const void* needle, 
 	return NULL;
 }
 
+static int memcasecmp(const char* vs1, const char* vs2, size_t n) {
+	size_t i;
+	char const* s1 = vs1;
+	char const* s2 = vs2;
+	
+	for (i = 0; i < n; i++) {
+		unsigned char u1 = s1[i];
+		unsigned char u2 = s2[i];
+		int U1 = toupper(u1);
+		int U2 = toupper(u2);
+		int diff = (255 <= __INT_MAX__ ? U1 - U2
+	    : U1 < U2 ? -1 : U2 < U1);
+		if (diff)
+			return diff;
+	}
+	
+	return 0;
+}
+
+void* Lib_MemMemIgnCase(const void* haystack, size_t haystackSize, const void* needle, size_t needleSize) {
+	if (haystack == NULL || needle == NULL)
+		return NULL;
+	register char* cur, * last;
+	const char* cl = (const char*)haystack;
+	const char* cs = (const char*)needle;
+	
+	/* we need something to compare */
+	if (haystackSize == 0 || needleSize == 0)
+		return NULL;
+	
+	/* "s" must be smaller or equal to "l" */
+	if (haystackSize < needleSize)
+		return NULL;
+	
+	/* special case where s_len == 1 */
+	if (needleSize == 1)
+		return memchr(haystack, (int)*cs, haystackSize);
+	
+	/* the last position where its possible to find "s" in "l" */
+	last = (char*)cl + haystackSize - needleSize;
+	
+	for (cur = (char*)cl; cur <= last; cur++) {
+		char lowCur = *cur;
+		
+		if (!(lowCur >= 'a' && lowCur <= 'z') && !(lowCur >= 'A' && lowCur <= 'Z')) {
+			continue;
+		}
+		
+		lowCur = lowCur < 'a' ? lowCur + 32 : lowCur;
+		
+		if (lowCur == *cs && memcasecmp(cur, cs, needleSize) == 0)
+			return cur;
+	}
+	
+	return NULL;
+}
+
 void Lib_ByteSwap(void* src, s32 size) {
 	u32 buffer[16] = { 0 };
 	u8* temp = (u8*)buffer;
@@ -206,11 +263,13 @@ void* Lib_Realloc(void* data, s32 size) {
 s32 Lib_ParseArguments(char* argv[], char* arg, u32* parArg) {
 	s32 i = 1;
 	
-	*parArg = 0;
+	if (parArg != NULL)
+		*parArg = 0;
 	
 	while (argv[i] != NULL) {
 		if (Lib_MemMem(argv[i], strlen(arg), arg, strlen(arg))) {
-			*parArg =  i + 1;
+			if (parArg != NULL)
+				*parArg =  i + 1;
 			
 			return i + 1;
 		}
@@ -327,6 +386,43 @@ s32 MemFile_Write(MemFile* dest, void* src, u32 size) {
 s32 MemFile_LoadFile(MemFile* memFile, char* filepath) {
 	u32 tempSize;
 	FILE* file = fopen(filepath, "rb");
+	
+	if (file == NULL) {
+		printf_warning("Failed to fopen file [%s].", filepath);
+		
+		return 1;
+	}
+	
+	fseek(file, 0, SEEK_END);
+	tempSize = ftell(file);
+	
+	if (memFile->data == NULL) {
+		MemFile_Malloc(memFile, tempSize);
+		memFile->memSize = memFile->dataSize = tempSize;
+		if (memFile->data == NULL) {
+			printf_warning("Failed to malloc MemFile.\n\tAttempted size is [0x%X] bytes to store data from [%s].", tempSize, filepath);
+			
+			return 1;
+		}
+	} else if (memFile->memSize < tempSize) {
+		MemFile_Realloc(memFile, tempSize);
+	}
+	memFile->dataSize = tempSize;
+	
+	rewind(file);
+	fread(memFile->data, 1, memFile->dataSize, file);
+	fclose(file);
+	
+	printf_debugExt("File: [%s]", filepath);
+	printf_debug("Ptr: %08X", memFile->data);
+	printf_debug("Size: %08X", memFile->dataSize);
+	
+	return 0;
+}
+
+s32 MemFile_LoadFile_String(MemFile* memFile, char* filepath) {
+	u32 tempSize;
+	FILE* file = fopen(filepath, "r");
 	
 	if (file == NULL) {
 		printf_warning("Failed to fopen file [%s].", filepath);

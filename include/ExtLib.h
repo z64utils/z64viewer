@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <math.h>
+#include <ctype.h>
 
 typedef signed char s8;
 typedef unsigned char u8;
@@ -124,6 +125,7 @@ void printf_info(const char* fmt, ...);
 void printf_WinFix();
 
 void* Lib_MemMem(const void* haystack, size_t haystackSize, const void* needle, size_t needleSize);
+void* Lib_MemMemIgnCase(const void* haystack, size_t haystackSize, const void* needle, size_t needleSize);
 void* Lib_Malloc(void* data, s32 size);
 void* Lib_Calloc(void* data, s32 size);
 void* Lib_Realloc(void* data, s32 size);
@@ -141,6 +143,7 @@ void MemFile_Realloc(MemFile* memFile, u32 size);
 void MemFile_Rewind(MemFile* memFile);
 s32 MemFile_Write(MemFile* dest, void* src, u32 size);
 s32 MemFile_LoadFile(MemFile* memFile, char* filepath);
+s32 MemFile_LoadFile_String(MemFile* memFile, char* filepath);
 s32 MemFile_SaveFile(MemFile* memFile, char* filepath);
 s32 MemFile_LoadFile_ReqExt(MemFile* memFile, char* filepath, const char* ext);
 s32 MemFile_SaveFile_ReqExt(MemFile* memFile, char* filepath, s32 size, const char* ext);
@@ -235,9 +238,9 @@ void String_GetFilename(char* dst, char* src);
 )
 
 #define WriteBE(type, set) ({ \
-	type get = set; \
-	ReadBE(get); \
-})
+		type get = set; \
+		ReadBE(get); \
+	})
 
 #define ByteSwap(in) {                        \
 		s32 tst = 1;                          \
