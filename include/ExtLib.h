@@ -131,9 +131,9 @@ void* Lib_Calloc(void* data, s32 size);
 void* Lib_Realloc(void* data, s32 size);
 void Lib_ByteSwap(void* src, s32 size);
 
-s32 File_Load(void** dst, char* filepath);
+void* File_Load(void* destSize, char* filepath);
 void File_Save(char* filepath, void* src, s32 size);
-s32 File_Load_ReqExt(void** dst, char* filepath, const char* ext);
+void* File_Load_ReqExt(void* size, char* filepath, const char* ext);
 void File_Save_ReqExt(char* filepath, void* src, s32 size, const char* ext);
 s32 Lib_ParseArguments(char* argv[], char* arg, u32* parArg);
 

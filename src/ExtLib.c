@@ -281,8 +281,10 @@ s32 Lib_ParseArguments(char* argv[], char* arg, u32* parArg) {
 }
 
 // File
-s32 File_Load(void** dst, char* filepath) {
+void* File_Load(void* destSize, char* filepath) {
 	s32 size;
+	void* dest;
+	s32* ss = destSize;
 	
 	FILE* file = fopen(filepath, "rb");
 	
@@ -292,17 +294,17 @@ s32 File_Load(void** dst, char* filepath) {
 	
 	fseek(file, 0, SEEK_END);
 	size = ftell(file);
-	if (*dst == NULL) {
-		*dst = Lib_Malloc(*dst, size);
-		if (*dst == NULL) {
-			printf_error("Failed to malloc [0x%X] bytes to store data from [%s].", size, filepath);
-		}
+	dest = Lib_Malloc(0, size);
+	if (dest == NULL) {
+		printf_error("Failed to malloc [0x%X] bytes to store data from [%s].", size, filepath);
 	}
 	rewind(file);
-	fread(*dst, sizeof(char), size, file);
+	fread(dest, sizeof(char), size, file);
 	fclose(file);
 	
-	return size;
+	ss[0] = size;
+	
+	return dest;
 }
 
 void File_Save(char* filepath, void* src, s32 size) {
@@ -316,9 +318,9 @@ void File_Save(char* filepath, void* src, s32 size) {
 	fclose(file);
 }
 
-s32 File_Load_ReqExt(void** dst, char* filepath, const char* ext) {
+void* File_Load_ReqExt(void* size, char* filepath, const char* ext) {
 	if (Lib_MemMem(filepath, strlen(filepath), ext, strlen(ext))) {
-		return File_Load(dst, filepath);
+		return File_Load(size, filepath);
 	}
 	printf_error("[%s] does not match extension [%s]", filepath, ext);
 	
