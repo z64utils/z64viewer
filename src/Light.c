@@ -9,12 +9,7 @@ void Light_SetFog(Scene* scene, ViewContext* viewCtx) {
 	f32 uFog[2];
 	f32 uFogColor[3];
 	s16 near;
-	/* Hardcoded to this value in OoT. z_play.c function Gameplay_SetFog
-	 * NOTE: Adjusted from 1000 to 999.01 to match Angrylion & GlideN64.
-	 * Possibly not ideal change, but does not seem to affect results
-	 * negatively. Might take another look at this later.
-	 */
-	f32 far = 999.01;
+	s16 far = 1000.0; // Hardcoded in OoT. z_play.c Gameplay_SetFog
 	s16 fogMultiply;
 	s16 fogOffset;
 	
