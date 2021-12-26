@@ -155,6 +155,8 @@ f64 String_NumStrToF64(char* string);
 s32 String_GetLineCount(char* str);
 char* String_GetLine(char* str, s32 line);
 char* String_GetWord(char* str, s32 word);
+void String_GetLine2(char* dest, char* str, s32 line);
+void String_GetWord2(char* dest, char* str, s32 word);
 void String_CaseToLow(char* s, s32 i);
 void String_CaseToUp(char* s, s32 i);
 void String_GetPath(char* dst, char* src);

@@ -590,6 +590,60 @@ char* String_GetWord(char* str, s32 word) {
 	return buffer;
 }
 
+void String_GetLine2(char* dest, char* str, s32 line) {
+	s32 iLine = 0;
+	s32 i = 0;
+	s32 j = 0;
+	
+	while (str[i] != '\0') {
+		j = 0;
+		if (str[i] != '\n') {
+			while (str[i + j] != '\n' && str[i + j] != '\0') {
+				j++;
+			}
+			
+			iLine++;
+			
+			if (iLine == line) {
+				break;
+			}
+			
+			i += j;
+		} else {
+			i++;
+		}
+	}
+	
+	memcpy(dest, &str[i], j);
+}
+
+void String_GetWord2(char* dest, char* str, s32 word) {
+	s32 iWord = 0;
+	s32 i = 0;
+	s32 j = 0;
+	
+	while (str[i] != '\0') {
+		j = 0;
+		if (str[i] != ' ' && str[i] != '\t') {
+			while (str[i + j] != ' ' && str[i + j] != '\t' && str[i + j] != '\0') {
+				j++;
+			}
+			
+			iWord++;
+			
+			if (iWord == word) {
+				break;
+			}
+			
+			i += j;
+		} else {
+			i++;
+		}
+	}
+	
+	memcpy(dest, &str[i], j);
+}
+
 void String_CaseToLow(char* s, s32 i) {
 	for (s32 k = 0; k < i; k++) {
 		if (s[k] >= 'A' && s[k] <= 'Z') {
