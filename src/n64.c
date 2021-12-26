@@ -890,6 +890,10 @@ static Vec4f bakeLights(Vec3f vtxPos, Vec3f vtxNor) {
 		final.z += color.z;
 	}
 	
+	final.x = CLAMP(final.x, 0.0f, 1.0f);
+	final.y = CLAMP(final.y, 0.0f, 1.0f);
+	final.z = CLAMP(final.z, 0.0f, 1.0f);
+	
 	return final;
 }
 
