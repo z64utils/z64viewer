@@ -19,6 +19,8 @@
 extern InputContext* __inputCtx;
 extern AppInfo* __appInfo;
 
+typedef void (* DropCallback)(GLFWwindow*,s32, char* path[]);
+
 void z64_FramebufferCallback(GLFWwindow* window, s32 width, s32 height);
 
 void z64_Init(
@@ -28,6 +30,7 @@ void z64_Init(
 	void* context,
 	CallbackFunc updateCall,
 	CallbackFunc drawCall,
+	DropCallback dropCallback,
 	u32 x,
 	u32 y,
 	u32 samples

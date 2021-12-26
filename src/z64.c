@@ -25,6 +25,7 @@ void z64_Init(
 	void* context,
 	CallbackFunc updateCall,
 	CallbackFunc drawCall,
+	DropCallback dropCallback,
 	u32 x,
 	u32 y,
 	u32 samples
@@ -68,6 +69,8 @@ void z64_Init(
 	glfwSetMouseButtonCallback(appInfo->mainWindow, Input_MouseClickCallback);
 	glfwSetKeyCallback(appInfo->mainWindow, Input_KeyCallback);
 	glfwSetScrollCallback(appInfo->mainWindow, Input_ScrollCallback);
+	if (dropCallback)
+		glfwSetDropCallback(appInfo->mainWindow, dropCallback);
 	
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
 		printf_error("Failed to initialize GLAD.");

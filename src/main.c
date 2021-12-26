@@ -16,6 +16,7 @@ int main(void) {
 		viewerCtx,
 		(CallbackFunc)Viewer_Update,
 		(CallbackFunc)Viewer_Draw,
+		NULL,
 		1400,
 		700,
 		0
