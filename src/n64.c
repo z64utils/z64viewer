@@ -196,114 +196,6 @@ static void* gSegment[SEGMENT_MAX] = { 0 };
 typedef void (* gbiFunc)(void* cmd);
 static VtxF gVbuf[VBUF_MAX];
 
-#define G_TX_MIRROR 1
-#define G_TX_CLAMP  2
-
-/* color combiner */
-#define G_CCMUX_COMBINED        0
-#define G_CCMUX_TEXEL0          1
-#define G_CCMUX_TEXEL1          2
-#define G_CCMUX_PRIMITIVE       3
-#define G_CCMUX_SHADE           4
-#define G_CCMUX_ENVIRONMENT     5
-#define G_CCMUX_1               6
-#define G_CCMUX_NOISE           7
-#define G_CCMUX_0               31
-#define G_CCMUX_CENTER          6
-#define G_CCMUX_K4              7
-#define G_CCMUX_SCALE           6
-#define G_CCMUX_COMBINED_ALPHA  7
-#define G_CCMUX_TEXEL0_ALPHA    8
-#define G_CCMUX_TEXEL1_ALPHA    9
-#define G_CCMUX_PRIMITIVE_ALPHA 10
-#define G_CCMUX_SHADE_ALPHA     11
-#define G_CCMUX_ENV_ALPHA       12
-#define G_CCMUX_LOD_FRACTION    13
-#define G_CCMUX_PRIM_LOD_FRAC   14
-#define G_CCMUX_K5              15
-#define G_ACMUX_COMBINED        0
-#define G_ACMUX_TEXEL0          1
-#define G_ACMUX_TEXEL1          2
-#define G_ACMUX_PRIMITIVE       3
-#define G_ACMUX_SHADE           4
-#define G_ACMUX_ENVIRONMENT     5
-#define G_ACMUX_1               6
-#define G_ACMUX_0               7
-#define G_ACMUX_LOD_FRACTION    0
-#define G_ACMUX_PRIM_LOD_FRAC   6
-
-#define G_ZBUFFER            0b00000000000000000000000000000001
-#define G_SHADE              0b00000000000000000000000000000100
-#define G_CULL_FRONT         0b00000000000000000000001000000000
-#define G_CULL_BACK          0b00000000000000000000010000000000
-#define G_FOG                0b00000000000000010000000000000000
-#define G_LIGHTING           0b00000000000000100000000000000000
-#define G_TEXTURE_GEN        0b00000000000001000000000000000000
-#define G_TEXTURE_GEN_LINEAR 0b00000000000010000000000000000000
-#define G_SHADING_SMOOTH     0b00000000001000000000000000000000
-#define G_CLIPPING           0b00000000100000000000000000000000
-
-/* commands for f3dex2 */
-#define F3DEX_GBI_2
-#if defined(F3DEX_GBI_2)
-# define G_NOOP           0x00
-# define G_VTX            0x01
-# define G_MODIFYVTX      0x02
-# define G_CULLDL         0x03
-# define G_BRANCH_Z       0x04
-# define G_TRI1           0x05
-# define G_TRI2           0x06
-# define G_QUAD           0x07
-# define G_LINE3D         0x08
-# define G_SPECIAL_3      0xD3
-# define G_SPECIAL_2      0xD4
-# define G_SPECIAL_1      0xD5
-# define G_DMA_IO         0xD6
-# define G_TEXTURE        0xD7
-# define G_POPMTX         0xD8
-# define G_GEOMETRYMODE   0xD9
-# define G_MTX            0xDA
-# define G_MOVEWORD       0xDB
-# define G_MOVEMEM        0xDC
-# define G_LOAD_UCODE     0xDD
-# define G_DL             0xDE
-# define G_ENDDL          0xDF
-# define G_SPNOOP         0xE0
-# define G_RDPHALF_1      0xE1
-# define G_SETOTHERMODE_L 0xE2
-# define G_SETOTHERMODE_H 0xE3
-# define G_RDPHALF_2      0xF1
-#endif
-
-/* rdp commands */
-#define G_TEXRECT         0xE4
-#define G_TEXRECTFLIP     0xE5
-#define G_RDPLOADSYNC     0xE6
-#define G_RDPPIPESYNC     0xE7
-#define G_RDPTILESYNC     0xE8
-#define G_RDPFULLSYNC     0xE9
-#define G_SETKEYGB        0xEA
-#define G_SETKEYR         0xEB
-#define G_SETCONVERT      0xEC
-#define G_SETSCISSOR      0xED
-#define G_SETPRIMDEPTH    0xEE
-#define G_RDPSETOTHERMODE 0xEF
-#define G_LOADTLUT        0xF0
-#define G_SETTILESIZE     0xF2
-#define G_LOADBLOCK       0xF3
-#define G_LOADTILE        0xF4
-#define G_SETTILE         0xF5
-#define G_FILLRECT        0xF6
-#define G_SETFILLCOLOR    0xF7
-#define G_SETFOGCOLOR     0xF8
-#define G_SETBLENDCOLOR   0xF9
-#define G_SETPRIMCOLOR    0xFA
-#define G_SETENVCOLOR     0xFB
-#define G_SETCOMBINE      0xFC
-#define G_SETTIMG         0xFD
-#define G_SETZIMG         0xFE
-#define G_SETCIMG         0xFF
-
 static ShaderList* ShaderList_new(void* addr, void* next) {
 	ShaderList* l = calloc(1, sizeof(*l));
 	
@@ -932,9 +824,13 @@ static void gbiFunc_vtx(void* cmd) {
 		
 		v->texcoord0.u *= gMatState.tile[0].shiftS_m;
 		v->texcoord0.v *= gMatState.tile[0].shiftT_m;
+		v->texcoord0.u -= gMatState.tile[0].uls / 128.0f; /* TODO hard-coded why? */
+		v->texcoord0.v -= gMatState.tile[0].ult / 128.0f; /* TODO hard-coded why? */
 		
 		v->texcoord1.u *= gMatState.tile[1].shiftS_m;
 		v->texcoord1.v *= gMatState.tile[1].shiftT_m;
+		v->texcoord1.u -= gMatState.tile[1].uls / 128.0f; /* TODO hard-coded why? */
+		v->texcoord1.v -= gMatState.tile[1].ult / 128.0f; /* TODO hard-coded why? */
 		
 		if (gVertexColors) {
 			v->color.x = u8r(vaddr + 12) * div_1_255;
@@ -1189,12 +1085,6 @@ static void gbiFunc_geometrymode(void* cmd) {
 }
 
 static void gbiFunc_mtx(void* cmd) {
-#define G_MTX_NOPUSH     0x00
-#define G_MTX_PUSH       0x01
-#define G_MTX_MUL        0x00
-#define G_MTX_LOAD       0x02
-#define G_MTX_MODELVIEW  0x00
-#define G_MTX_PROJECTION 0x04
 	uint8_t* b = cmd;
 	uint8_t params = b[3] ^ G_MTX_PUSH;
 	uint32_t mtxaddr = u32r(b + 4);
