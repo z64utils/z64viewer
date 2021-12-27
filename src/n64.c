@@ -1198,22 +1198,28 @@ static void gbiFunc_mtx(void* cmd) {
 	uint8_t* b = cmd;
 	uint8_t params = b[3] ^ G_MTX_PUSH;
 	uint32_t mtxaddr = u32r(b + 4);
-	Mtx* mtx = n64_virt2phys(mtxaddr);
+	Mtx* mtx;
 	MtxF mtxF;
 	
-	if (!mtx)
-		return;
-	
-	Mtx swap = *mtx;
-	
-	if ((mtxaddr & 0xFF000000) != 0x01000000 && (mtxaddr & 0xFF000000) != 0x0D000000) {
-		for (s32 i = 0; i < 0x40 / 2; i++) {
-			u16* ss = (u16*)&swap;
-			ByteSwap(&ss[i]);
+	if (mtxaddr == 0x8012DB20) /* XXX hard-coded gMtxClear */
+		memcpy(&mtxF, &gMtxFClear, sizeof(gMtxFClear));
+	else {
+		mtx = n64_virt2phys(mtxaddr);
+		
+		if (!mtx)
+			return;
+		
+		Mtx swap = *mtx;
+		
+		if ((mtxaddr & 0xFF000000) != 0x01000000 && (mtxaddr & 0xFF000000) != 0x0D000000) {
+			for (s32 i = 0; i < 0x40 / 2; i++) {
+				u16* ss = (u16*)&swap;
+				ByteSwap(&ss[i]);
+			}
 		}
+		
+		Matrix_MtxToMtxF(&swap, &mtxF);
 	}
-	
-	Matrix_MtxToMtxF(&swap, &mtxF);
 	
 	/* push matrix on stack */
 	if (params & G_MTX_PUSH) {
