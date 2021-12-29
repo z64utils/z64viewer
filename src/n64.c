@@ -45,6 +45,8 @@ static GLuint gIndices[6];
 
 static uint32_t gRdpHalf1;
 static uint32_t gRdpHalf2;
+static uintptr_t gPtrHi = 0;
+static bool gPtrHiSet = false;
 
 static Shader* gShader = 0;
 
@@ -1157,6 +1159,39 @@ static void gbiFunc_dl(void* cmd) {
 	n64_draw(n64_virt2phys(lo));
 }
 
+static void gbiFunc_setptrhi(void* cmd) {
+	if (sizeof(uintptr_t) == 8) {
+		uint8_t* b = cmd;
+		gPtrHi = u32r(b + 4);
+		gPtrHi <<= 32;
+	} else
+		gPtrHi = 0;
+	gPtrHiSet = true;
+}
+
+static void gbiFunc_moveword(void* cmd) {
+	uint8_t* b = cmd;
+	uint32_t hi = u32r(b);
+	uint32_t lo = u32r(b + 4);
+	uint8_t index = b[1];
+	uint16_t offset = hi & 0xffff;
+	void *data = n64_virt2phys(lo);
+	
+	switch (index) {
+		case G_MW_MATRIX: break; // TODO
+		case G_MW_NUMLIGHT: break; // TODO
+		case G_MW_CLIP: break; // TODO
+		case G_MW_SEGMENT:
+			gSegment[offset / 4] = data;
+			break;
+		case G_MW_FOG: break; // TODO
+		case G_MW_LIGHTCOL: break; // TODO
+		case G_MW_FORCEMTX: break; // TODO
+		case G_MW_PERSPNORM: break; // TODO
+		default: assert(0 && "moveword unknown index"); break;
+	}
+}
+
 static void gbiFunc_branch_z(void* cmd) {
 	uint8_t* b = cmd;
 	uint32_t hi = u32r(b);
@@ -1202,6 +1237,8 @@ static gbiFunc gGbi[256] = {
 	[G_MTX] = gbiFunc_mtx,
 	[G_POPMTX] = gbiFunc_popmtx,
 	[G_DL] = gbiFunc_dl,
+	[G_MOVEWORD] = gbiFunc_moveword,
+	[G_SETPTRHI] = gbiFunc_setptrhi,
 	[G_BRANCH_Z] = gbiFunc_branch_z,
 	[G_RDPHALF_1] = gbiFunc_rdphalf_1,
 	[G_RDPHALF_2] = gbiFunc_rdphalf_2
@@ -1221,6 +1258,12 @@ void n64_set_segment(int seg, void* data) {
 
 void* n64_virt2phys(unsigned int segaddr) {
 	uint8_t* b;
+	
+	if (gPtrHiSet) {
+		gPtrHiSet = false;
+		gPtrHi |= segaddr;
+		return (void*)gPtrHi;
+	}
 	
 	if (!segaddr)
 		return 0;
@@ -1369,6 +1412,17 @@ void n64_set_onlyZmode(enum n64_zmode zmode) {
 
 void n64_set_onlyGeoLayer(enum n64_geoLayer geoLayer) {
 	gOnlyThisGeoLayer = geoLayer;
+}
+
+void n64_swap(Gfx* g) {
+	uint8_t* cmd = (void*)g;
+	for (;;) {
+		*(uint32_t*)(cmd) = u32r(cmd);
+		*(uint32_t*)(cmd+4) = u32r(cmd+4);
+		if (*cmd == G_ENDDL)
+			break;
+		cmd += 8;
+	}
 }
 
 /* you'll generally want to run this during scene change; any time

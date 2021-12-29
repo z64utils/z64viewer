@@ -27,6 +27,12 @@ enum n64_geoLayer {
 	GEOLAYER_OVERLAY
 };
 
+typedef struct {
+	_Alignas(8)
+	uint32_t hi;
+	uint32_t lo;
+} Gfx;
+
 void n64_set_segment(int seg, void* data);
 void* n64_virt2phys(unsigned int segaddr);
 unsigned int n64_phys2virt(void* cmd);
@@ -44,21 +50,16 @@ void n64_clear_lights(void);
 bool n64_add_light(LightInfo* lightInfo);
 
 void n64_clearShaderCache(void);
+void n64_swap(Gfx* g);
 
 #define gxSPMatrix(mtx)           n64_setMatrix_model(mtx)
 #define gxSPDisplayListSeg(dl)    n64_draw(n64_virt2phys(dl))
 #define gxSPDisplayList(dl)       n64_draw(dl)
-#define gxSPSegment(sed, data)    n64_set_segment(sed, data)
+#define gxSPSegment(sed, data)    { Gfx wow[] = { gsSPSegment(sed, data), gsSPEndDisplayList() }; n64_swap(wow); n64_draw(wow); }
 #define SEGMENTED_TO_VIRTUAL(seg) n64_virt2phys(seg)
 
 #define n64_ClearSegments() for (int i = 0x8; i < 0x10; ++i) \
 	gxSPSegment(i, 0)
-
-typedef struct {
-	_Alignas(8)
-	uint32_t hi;
-	uint32_t lo;
-} Gfx;
 
 #if 0 // Bloated Assembly
 

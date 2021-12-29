@@ -73,6 +73,7 @@
 # define G_TRI2                       0x06
 # define G_QUAD                       0x07
 # define G_LINE3D                     0x08
+# define G_SETPTRHI                   0x09
 # define G_SPECIAL_3                  0xD3
 # define G_SPECIAL_2                  0xD4
 # define G_SPECIAL_1                  0xD5
@@ -1847,7 +1848,7 @@ gsDPSetTile(fmt,siz,line,tmem,      \
 #define gsSPLine3D(v0,v1,flag)        gsSPLineW3D(v0,v1,0,flag)
 #define gsSPLookAt(l)                 gsSPLookAtX(l),                         \
                                       gsSPLookAtY(gI_(l)+0x10)
-#define gsSPSegment(seg,base)         gsMoveWd(G_MW_SEGMENT,(seg)*4,base)
+#define gsSPSegment(seg,base)         gsMoveWdPtr(G_MW_SEGMENT,(seg)*4,base)
 #define gsSPSetLights0(lites)         gsSPNumLights(NUMLIGHTS_0),             \
                                       gsSPLight(&(lites).l[0],1),             \
                                       gsSPLight(&(lites).a,2)
@@ -2273,6 +2274,9 @@ gsSPSetOtherMode(opc,shift,length,  \
                                           gF_((length)-1,8,0),data)
 # define gsMoveWd(index,offset,data)  gO_(G_MOVEWORD,gF_(index,8,16)|         \
                                           gF_(offset,16,0),data)
+# define gsMoveWdPtr(index,offset,data)  gO_(G_SETPTRHI,0,((uintptr_t)data)>>32), \
+                                          gO_(G_MOVEWORD,gF_(index,8,16)|         \
+                                          gF_(offset,16,0),((uintptr_t)data)&0xffffffff)
 # define gsMoveMem(size,index,      \
                    offset,address)    gO_(G_MOVEMEM,gF_((size-1)/8,5,19)|     \
                                           gF_((offset)/8,8,8)|                \
