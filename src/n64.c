@@ -248,10 +248,23 @@ static void ShaderList_cleanup(void) {
 static void othermode(void) {
 	uint32_t lo = gMatState.othermode_low;
 	uint32_t indep = (lo & 0b1111111111111000) >> 3;
+	bool gForceBlOld = gForceBl;
 	
 	gCurrentZmode = (indep & 0b0000110000000) >> 7;
 	gForceBl = (indep & 0b0100000000000) >> 11;
 	gCvgXalpha = (indep & 0b0001000000000) >> 9;
+	
+	if (gForceBl != gForceBlOld) {
+		switch (gForceBl) {
+			case true:
+				glEnable(GL_BLEND);
+				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+				break;
+			case false:
+				glDisable(GL_BLEND);
+				break;
+		}
+	}
 	
 	gHideGeometry = false;
 	if (gOnlyThisZmode != ZMODE_ALL && gCurrentZmode != gOnlyThisZmode)
@@ -1260,9 +1273,6 @@ void n64_draw(void* dlist) {
 	
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
-	
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	
 	if (!gVAO)
 		glGenVertexArrays(1, &gVAO);
