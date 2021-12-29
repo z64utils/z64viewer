@@ -5,7 +5,7 @@ static u32 gS;
 void SkelAnime_Init(MemFile* memFile, SkelAnime* skelAnime, u32 skeleton, u32 animation, Vec3s* jointTable, Vec3s* morphTable) {
 	skelAnime->memFile = memFile;
 	
-	gSPSegment(0x6, memFile->data);
+	gxSPSegment(0x6, memFile->data);
 	SkeletonHeader* skel = SEGMENTED_TO_VIRTUAL(skeleton);
 	
 	skelAnime->skeleton = skeleton;
@@ -79,7 +79,7 @@ void SkelAnime_InterpFrameTable(s32 limbCount, Vec3s* dst, Vec3s* start, Vec3s* 
 }
 
 void SkelAnime_Update(SkelAnime* skelAnime) {
-	gSPSegment(0x6, skelAnime->memFile->data);
+	gxSPSegment(0x6, skelAnime->memFile->data);
 	
 	if (!Zelda64_20fpsLimiter())
 		return;
@@ -144,8 +144,8 @@ void SkelAnime_Limb(u32 skelSeg, u8 limbId, Mtx** mtx, Vec3s* jointTable) {
 		if (*mtx) {
 			Matrix_ToMtx((*mtx)++);
 		}
-		gSPMatrix(&mtxF);
-		gSPDisplayListSeg(ReadBE(limb->dList));
+		gxSPMatrix(&mtxF);
+		gxSPDisplayListSeg(ReadBE(limb->dList));
 	}
 	
 	limbList++;
@@ -167,9 +167,9 @@ void SkelAnime_Draw(SkelAnime* skelAnime, Mtx* mtx, Vec3s* jointTable) {
 	
 	Matrix_Push();
 	
-	gSPSegment(0x6, skelAnime->memFile->data);
+	gxSPSegment(0x6, skelAnime->memFile->data);
 	if (mtx)
-		gSPSegment(0xD, mtx);
+		gxSPSegment(0xD, mtx);
 	skel = SEGMENTED_TO_VIRTUAL(skelAnime->skeleton);
 	
 	SkelAnime_Limb(ReadBE(skel->segment), 0, &mtx, jointTable);

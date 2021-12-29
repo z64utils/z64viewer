@@ -45,14 +45,14 @@ bool n64_add_light(LightInfo* lightInfo);
 
 void n64_clearShaderCache(void);
 
-#define gSPMatrix(mtx)            n64_setMatrix_model(mtx)
-#define gSPDisplayListSeg(dl)     n64_draw(n64_virt2phys(dl))
-#define gSPDisplayList(dl)        n64_draw(dl)
-#define gSPSegment(sed, data)     n64_set_segment(sed, data)
+#define gxSPMatrix(mtx)           n64_setMatrix_model(mtx)
+#define gxSPDisplayListSeg(dl)    n64_draw(n64_virt2phys(dl))
+#define gxSPDisplayList(dl)       n64_draw(dl)
+#define gxSPSegment(sed, data)    n64_set_segment(sed, data)
 #define SEGMENTED_TO_VIRTUAL(seg) n64_virt2phys(seg)
 
 #define n64_ClearSegments() for (int i = 0x8; i < 0x10; ++i) \
-	gSPSegment(i, 0)
+	gxSPSegment(i, 0)
 
 typedef struct {
 	_Alignas(8)

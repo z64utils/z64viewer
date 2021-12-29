@@ -213,7 +213,7 @@ void View_Update(ViewContext* viewCtx, InputContext* inputCtx) {
 		    vm->mf[3][0] = vm->mf[3][1] = vm->mf[3][2] = 0.0f;
 		Matrix_Transpose(vm);
 		Matrix_MtxFToMtx(vm, &mtx[0]);
-		gSPSegment(0x1, mtx);
+		gxSPSegment(0x1, mtx);
 		
 		/* cylinder = spherical, with up vector reverted to identity */
 		memcpy(cyl, mtx, sizeof(*mtx));

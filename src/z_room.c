@@ -9,7 +9,7 @@ void Room_Draw(Room* room) {
 	gDPSetEnvColor(g++, 0x80, 0x80, 0x80, 0x80);
 	gSPEndDisplayList(g++);
 	
-	gSPSegment(0x03, room->file.data);
+	gxSPSegment(0x03, room->file.data);
 	n64_draw(gfx);
 	n64_set_onlyZmode(ZMODE_ALL);
 	
@@ -28,10 +28,10 @@ void Room_Draw(Room* room) {
 			    
 			    for (s32 i = 0; i < room->mesh->polygon.num; i++) {
 				    if (polyDL->opa) {
-					    gSPDisplayListSeg(ReadBE(polyDL->opa));
+					    gxSPDisplayListSeg(ReadBE(polyDL->opa));
 				    }
 				    if (polyDL->xlu) {
-					    gSPDisplayListSeg(ReadBE(polyDL->xlu));
+					    gxSPDisplayListSeg(ReadBE(polyDL->xlu));
 				    }
 				    
 				    polyDL++;
@@ -46,10 +46,10 @@ void Room_Draw(Room* room) {
 			    
 			    for (s32 i = 0; i < room->mesh->polygon.num; i++) {
 				    if (polyDL->opa) {
-					    gSPDisplayListSeg(ReadBE(polyDL->opa));
+					    gxSPDisplayListSeg(ReadBE(polyDL->opa));
 				    }
 				    if (polyDL->xlu) {
-					    gSPDisplayListSeg(ReadBE(polyDL->xlu));
+					    gxSPDisplayListSeg(ReadBE(polyDL->xlu));
 				    }
 				    
 				    polyDL++;

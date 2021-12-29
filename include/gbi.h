@@ -2429,7 +2429,7 @@ _gDPLoadTextureTileYuv(gdl,...)       gD_(gdl,_gsDPLoadTextureTileYuv,        \
 #define gSPBranchList(gdl,...)        gD_(gdl,gsSPBranchList,__VA_ARGS__)
 #define gSPClipRatio(gdl,...)         gD_(gdl,gsSPClipRatio,__VA_ARGS__)
 #define gSPCullDisplayList(gdl,...)   gD_(gdl,gsSPCullDisplayList,__VA_ARGS__)
-//#define gSPDisplayList(gdl,...)       gD_(gdl,gsSPDisplayList,__VA_ARGS__) // TODO
+#define gSPDisplayList(gdl,...)       gD_(gdl,gsSPDisplayList,__VA_ARGS__)
 #define gSPEndDisplayList(gdl)        gDisplayListPut(gdl,gsSPEndDisplayList())
 #define gSPFogPosition(gdl,...)       gD_(gdl,gsSPFogPosition,__VA_ARGS__)
 #define gSPForceMatrix(gdl,...)       gD_(gdl,gsSPForceMatrix,__VA_ARGS__)
@@ -2445,14 +2445,14 @@ _gDPLoadTextureTileYuv(gdl,...)       gD_(gdl,_gsDPLoadTextureTileYuv,        \
 #define gSPLookAtX(gdl,...)           gD_(gdl,gsSPLookAtX,__VA_ARGS__)
 #define gSPLookAtY(gdl,...)           gD_(gdl,gsSPLookAtY,__VA_ARGS__)
 #define gSPLookAt(gdl,...)            gD_(gdl,gsSPLookAt,__VA_ARGS__)
-//#define gSPMatrix(gdl,...)            gD_(gdl,gsSPMatrix,__VA_ARGS__) // TODO
+#define gSPMatrix(gdl,...)            gD_(gdl,gsSPMatrix,__VA_ARGS__)
 #define gSPModifyVertex(gdl,...)      gD_(gdl,gsSPModifyVertex,__VA_ARGS__)
 #define gSPPerspNormalize(gdl,...)    gD_(gdl,gsSPPerspNormalize,__VA_ARGS__)
 #define gSPPopMatrix(gdl,...)         gD_(gdl,gsSPPopMatrix,__VA_ARGS__)
 #if defined(F3DEX_GBI_2)
 # define gSPPopMatrixN(gdl,...)       gD_(gdl,gsSPPopMatrixN,__VA_ARGS__)
 #endif
-//#define gSPSegment(gdl,...)           gD_(gdl,gsSPSegment,__VA_ARGS__) // TODO
+#define gSPSegment(gdl,...)           gD_(gdl,gsSPSegment,__VA_ARGS__)
 #define gSPSetLights0(gdl,...)        gD_(gdl,gsSPSetLights0,__VA_ARGS__)
 #define gSPSetLights1(gdl,...)        gD_(gdl,gsSPSetLights1,__VA_ARGS__)
 #define gSPSetLights2(gdl,...)        gD_(gdl,gsSPSetLights2,__VA_ARGS__)

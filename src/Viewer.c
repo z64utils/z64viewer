@@ -18,7 +18,7 @@ void Viewer_Draw(ViewerContext* viewerCtx) {
 	static Mtx mtx[128];
 	
 	n64_ClearSegments();
-	gSPSegment(0x2, viewerCtx->scene.file.data);
+	gxSPSegment(0x2, viewerCtx->scene.file.data);
 	Light_BindEnvLights(&viewerCtx->scene, &viewerCtx->room[0]);
 	Room_Draw(&viewerCtx->room[0]);
 }
