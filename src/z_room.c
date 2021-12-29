@@ -4,9 +4,10 @@
 void Room_Draw(Room* room) {
 	s8 type = room->mesh->polygon.type;
 	Gfx gfx[2] = { 0 };
+	Gfx* g = gfx;
 	
-	gDPSetEnvColor(gfx, 0x80, 0x80, 0x80, 0x80);
-	gSPEndDisplayList(gfx + 1);
+	gDPSetEnvColor(g++, 0x80, 0x80, 0x80, 0x80);
+	gSPEndDisplayList(g++);
 	
 	gSPSegment(0x03, room->file.data);
 	n64_draw(gfx);

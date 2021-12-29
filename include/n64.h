@@ -254,11 +254,34 @@ typedef struct {
 #define gDPTileSync(gdl)          gDisplayListPut(gdl,gsDPTileSync())
 #define gDPPipeSync(gdl)          gDisplayListPut(gdl,gsDPPipeSync())
 #define gSPEndDisplayList(gdl)    gDisplayListPut(gdl,gsSPEndDisplayList())
-#define gDisplayListPut(gdl,...)  ({ Gfx Gdl__[] = { __VA_ARGS__ };            \
-				     for (size_t Gi__ = 0; Gi__<sizeof(Gdl__) / \
-				     sizeof(*Gdl__); ++Gi__)            \
-				     (*(Gfx*)(gdl)).hi = u32r(&Gdl__[Gi__].hi), \
-				     (*(Gfx*)(gdl)).lo = u32r(&Gdl__[Gi__].lo); \
-				     (void)0; })
+
+#if 0 // Bloated Assembly
+
+#define gDisplayListPut(gdl,...)                    \
+	({                                              \
+		Gfx Gdl__[] = { __VA_ARGS__ };              \
+		for (size_t Gi__ = 0; Gi__<sizeof(Gdl__) /  \
+		sizeof(*Gdl__); ++Gi__) {                   \
+			Gdl__[Gi__].hi = u32r(&Gdl__[Gi__].hi); \
+			Gdl__[Gi__].lo = u32r(&Gdl__[Gi__].lo); \
+			*(Gfx*)(gdl) = Gdl__[Gi__];             \
+		}                                           \
+		(void)0;                                    \
+	})
+#else // Bloated Assembly
+
+#define gDisplayListPut(gdl,...)                    \
+	({                                              \
+		Gfx Gdl__[] = { __VA_ARGS__ }, * wow = gdl; \
+		for (size_t Gi__ = 0; Gi__<sizeof(Gdl__) /  \
+		sizeof(*Gdl__); ++Gi__,++wow)               \
+		(*(Gfx*)(wow)).hi = u32r(&Gdl__[Gi__].hi),  \
+		(*(Gfx*)(wow)).lo = u32r(&Gdl__[Gi__].lo);  \
+		for (size_t Gi__ = 1; Gi__<sizeof(Gdl__) /  \
+		sizeof(*Gdl__); ++Gi__)                     \
+		gdl;                                        \
+		(void)0;                                    \
+	})
+#endif // Bloated Assembly
 
 #endif
