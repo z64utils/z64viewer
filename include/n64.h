@@ -279,9 +279,9 @@ typedef struct {
 		(*(Gfx*)(wow)).lo = u32r(&Gdl__[Gi__].lo);  \
 		for (size_t Gi__ = 1; Gi__<sizeof(Gdl__) /  \
 		sizeof(*Gdl__); ++Gi__)                     \
-		gdl;                                        \
+		(void)(gdl);                                \
 		(void)0;                                    \
 	})
-#endif // Bloated Assembly
+#endif
 
 #endif
