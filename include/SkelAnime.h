@@ -22,6 +22,7 @@ typedef struct {
 typedef struct {
 	s16 frameCount;
 } AnimationHeaderCommon;
+
 typedef struct {
 	AnimationHeaderCommon common;
 	u32 frameData;

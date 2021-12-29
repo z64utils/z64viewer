@@ -51,8 +51,6 @@ void n64_clearShaderCache(void);
 #define n64_ClearSegments() for (int i = 0x8; i < 0x10; ++i) \
 	gSPSegment(i, 0)
 
-
-
 #define G_TX_MIRROR 1
 #define G_TX_CLAMP  2
 
@@ -169,73 +167,98 @@ void n64_clearShaderCache(void);
 #define G_SETCIMG         0xFF
 
 /* data types and structures */
-typedef uint8_t   qu08_t;
-typedef uint16_t  qu016_t;
-typedef int16_t   qs48_t;
-typedef int16_t   qs510_t;
-typedef uint16_t  qu510_t;
-typedef int16_t   qs102_t;
-typedef uint16_t  qu102_t;
-typedef int16_t   qs105_t;
-typedef uint16_t  qu105_t;
-typedef int16_t   qs132_t;
-typedef int16_t   qs142_t;
-typedef int32_t   qs1516_t;
-typedef int32_t   qs1616_t;
-typedef int32_t   qs205_t;
+typedef uint8_t qu08_t;
+typedef uint16_t qu016_t;
+typedef int16_t qs48_t;
+typedef int16_t qs510_t;
+typedef uint16_t qu510_t;
+typedef int16_t qs102_t;
+typedef uint16_t qu102_t;
+typedef int16_t qs105_t;
+typedef uint16_t qu105_t;
+typedef int16_t qs132_t;
+typedef int16_t qs142_t;
+typedef int32_t qs1516_t;
+typedef int32_t qs1616_t;
+typedef int32_t qs205_t;
 
-typedef uint16_t  g_bglt_t;
-typedef uint8_t   g_ifmt_t;
-typedef uint8_t   g_isiz_t;
-typedef uint16_t  g_bgf_t;
-typedef uint8_t   g_objf_t;
-typedef uint32_t  g_objlt_t;
+typedef uint16_t g_bglt_t;
+typedef uint8_t g_ifmt_t;
+typedef uint8_t g_isiz_t;
+typedef uint16_t g_bgf_t;
+typedef uint8_t g_objf_t;
+typedef uint32_t g_objlt_t;
 
-typedef struct
-{
-  _Alignas(8)
-  uint32_t        hi;
-  uint32_t        lo;
+typedef struct {
+	_Alignas(8)
+	uint32_t hi;
+	uint32_t lo;
 } Gfx;
 
 /* fixed-point conversion macros */
-#define qu08(n)                       ((qu08_t)((n)*0x100))
-#define qu016(n)                      ((qu016_t)((n)*0x10000))
-#define qs48(n)                       ((qs48_t)((n)*0x0100))
-#define qs510(n)                      ((qs510_t)((n)*0x0400))
-#define qu510(n)                      ((qu510_t)((n)*0x0400))
-#define qs102(n)                      ((qs102_t)((n)*0x0004))
-#define qu102(n)                      ((qu102_t)((n)*0x0004))
-#define qs105(n)                      ((qs105_t)((n)*0x0020))
-#define qu105(n)                      ((qu105_t)((n)*0x0020))
-#define qs132(n)                      ((qs132_t)((n)*0x0004))
-#define qs142(n)                      ((qs142_t)((n)*0x0004))
-#define qs1516(n)                     ((qs1516_t)((n)*0x00010000))
-#define qs1616(n)                     ((qs1616_t)((n)*0x00010000))
-#define qs205(n)                      ((qs205_t)((n)*0x00000020))
-#define gI_(i)                        ((uint32_t)(i))
-#define gL_(l)                        ((uint64_t)(l))
-#define gF_(i,n,s)                    ((gI_(i)&((gI_(1)<<(n))-1))<<(s))
-#define gFL_(l,n,s)                   ((gL_(l)&((gL_(1)<<(n))-1))<<(s))
-#define gO_(opc,hi,lo)                ((Gfx){gF_(opc,8,24)|gI_(hi),gI_(lo)})
-#define gD_(gdl,m,...)                gDisplayListPut(gdl,m(__VA_ARGS__))
+#define qu08(n)   ((qu08_t)((n) * 0x100))
+#define qu016(n)  ((qu016_t)((n) * 0x10000))
+#define qs48(n)   ((qs48_t)((n) * 0x0100))
+#define qs510(n)  ((qs510_t)((n) * 0x0400))
+#define qu510(n)  ((qu510_t)((n) * 0x0400))
+#define qs102(n)  ((qs102_t)((n) * 0x0004))
+#define qu102(n)  ((qu102_t)((n) * 0x0004))
+#define qs105(n)  ((qs105_t)((n) * 0x0020))
+#define qu105(n)  ((qu105_t)((n) * 0x0020))
+#define qs132(n)  ((qs132_t)((n) * 0x0004))
+#define qs142(n)  ((qs142_t)((n) * 0x0004))
+#define qs1516(n) ((qs1516_t)((n) * 0x00010000))
+#define qs1616(n) ((qs1616_t)((n) * 0x00010000))
+#define qs205(n)  ((qs205_t)((n) * 0x00000020))
+
+#define gI_(i)         ((uint32_t)(i))
+#define gL_(l)         ((uint64_t)(l))
+#define gF_(i,n,s)     ((gI_(i) & ((gI_(1) << (n)) - 1)) << (s))
+#define gFL_(l,n,s)    ((gL_(l) & ((gL_(1) << (n)) - 1)) << (s))
+#define gO_(opc,hi,lo) ((Gfx) { gF_(opc,8,24) | gI_(hi),gI_(lo) })
+#define gD_(gdl,m,...) gDisplayListPut(gdl,m(__VA_ARGS__))
+
 #define gsDPSetTileSize(tile,uls,   \
-                     ult,lrs,lrt)  gO_(G_SETTILESIZE,                      \
-                                       gF_(uls,12,12)|gF_(ult,12,0),       \
-                                       gF_(tile,3,24)|gF_(lrs,12,12)|      \
-                                       gF_(lrt,12,0))
-#define gDPSetTileSize(gdl,...)       gD_(gdl,gsDPSetTileSize,__VA_ARGS__)
-#define gDPTileSync(gdl)              gDisplayListPut(gdl,gsDPTileSync())
-#define gDPPipeSync(gdl)              gDisplayListPut(gdl,gsDPPipeSync())
-#define gsDPTileSync()                gO_(G_RDPTILESYNC,0,0)
-#define gsDPPipeSync()                gO_(G_RDPPIPESYNC,0,0)
-#define gSPEndDisplayList(gdl)        gDisplayListPut(gdl,gsSPEndDisplayList())
-#define gsSPEndDisplayList()          gO_(G_ENDDL,0,0)
-#define gDisplayListPut(gdl,...)      ({Gfx Gdl__[]={__VA_ARGS__};            \
-                                        for(size_t Gi__=0;Gi__<sizeof(Gdl__)/ \
-                                            sizeof(*Gdl__);++Gi__)            \
-                                          (*(Gfx*)(gdl)).hi=u32r(&Gdl__[Gi__].hi),\
-                                          (*(Gfx*)(gdl)).lo=u32r(&Gdl__[Gi__].lo);\
-                                        (void)0;})
+	    ult,lrs,lrt) gO_( \
+		G_SETTILESIZE,                      \
+		gF_(uls,12,12) | gF_(ult,12,0),       \
+		gF_(tile,3,24) | gF_(lrs,12,12) |      \
+		gF_(lrt,12,0) \
+)
+#define gsDPSetEnvColor(r, g, b, a) \
+	gO_( \
+		G_SETENVCOLOR, \
+		0, \
+		gF_(r, 8, 24) | \
+		gF_(g, 8, 16) | \
+		gF_(b, 8, 8) | \
+		gF_(a, 8, 0) \
+	)
+#define gsDPSetPrimColor(m, l, r, g, b, a) \
+	gO_( \
+		G_SETPRIMCOLOR, \
+		gF_(m, 8, 8) | \
+		gF_(l, 8, 0), \
+		gF_(r, 8, 24) | \
+		gF_(g, 8, 16) | \
+		gF_(b, 8, 8) | \
+		gF_(a, 8, 0) \
+	)
+#define gsSPEndDisplayList() gO_(G_ENDDL,0,0)
+#define gsDPTileSync()       gO_(G_RDPTILESYNC,0,0)
+#define gsDPPipeSync()       gO_(G_RDPPIPESYNC,0,0)
+
+#define gDPSetTileSize(gdl,...)   gD_(gdl,gsDPSetTileSize,__VA_ARGS__)
+#define gDPSetEnvColor(gdl, ...)  gD_(gdl,gsDPSetEnvColor,__VA_ARGS__)
+#define gDPSetPrimColor(gdl, ...) gD_(gdl,gsDPSetPrimColor,__VA_ARGS__)
+#define gDPTileSync(gdl)          gDisplayListPut(gdl,gsDPTileSync())
+#define gDPPipeSync(gdl)          gDisplayListPut(gdl,gsDPPipeSync())
+#define gSPEndDisplayList(gdl)    gDisplayListPut(gdl,gsSPEndDisplayList())
+#define gDisplayListPut(gdl,...)  ({ Gfx Gdl__[] = { __VA_ARGS__ };            \
+				     for (size_t Gi__ = 0; Gi__<sizeof(Gdl__) / \
+				     sizeof(*Gdl__); ++Gi__)            \
+				     (*(Gfx*)(gdl)).hi = u32r(&Gdl__[Gi__].hi), \
+				     (*(Gfx*)(gdl)).lo = u32r(&Gdl__[Gi__].lo); \
+				     (void)0; })
 
 #endif

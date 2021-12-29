@@ -2,14 +2,14 @@
 #include <bigendian.h>
 
 void Room_Draw(Room* room) {
-	u8 setup[16] = {
-		0xfb, 0, 0, 0, 0x80, 0x80, 0x80, 0x80,
-		0xdf
-	};
 	s8 type = room->mesh->polygon.type;
+	Gfx gfx[2] = { 0 };
+	
+	gDPSetEnvColor(gfx, 0x80, 0x80, 0x80, 0x80);
+	gSPEndDisplayList(gfx + 1);
 	
 	gSPSegment(0x03, room->file.data);
-	n64_draw(setup);
+	n64_draw(gfx);
 	n64_set_onlyZmode(ZMODE_ALL);
 	
 	for (s32 z = 0; z < 2; z++) {
