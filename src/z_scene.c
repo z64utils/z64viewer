@@ -419,7 +419,7 @@ void Scene_ExecuteCommands(Scene* scene, Room* room) {
 		OsPrintfEx("Executing Scene Commands");
 		SceneCmd* sceneCmd = scene->file.data;
 		
-		gxSPSegment(0x2, scene->file.data);
+		n64_set_segment(0x2, scene->file.data);
 		
 		while (1) {
 			cmdCode = sceneCmd->base.code;
@@ -435,7 +435,7 @@ void Scene_ExecuteCommands(Scene* scene, Room* room) {
 		OsPrintfEx("Executing Room Commands");
 		SceneCmd* sceneCmd = room->file.data;
 		
-		gxSPSegment(0x3, room->file.data);
+		n64_set_segment(0x3, room->file.data);
 		
 		while (1) {
 			cmdCode = sceneCmd->base.code;

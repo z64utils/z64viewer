@@ -18,6 +18,21 @@
 #ifndef N64_GBI_H
 #define N64_GBI_H
 
+#include <bigendian.h>
+
+#define __INTERNAL_CHECK_POINTER(x) _Generic((x),\
+          int: 0,       unsigned int: 0,\
+         long: 0,      unsigned long: 0,\
+    long long: 0, unsigned long long: 0,\
+        float: 0,             double: 0,\
+  long double: 0,                       \
+      default: 1)
+
+/* compile-time pointer test
+ * XXX false positive: structs that are the same size as a pointer
+ */
+#define IS_PTR(x) ((sizeof(x) == sizeof(void*)) && __INTERNAL_CHECK_POINTER(x) ? 1 : 0)
+
 #include <string.h>
 #include <stdint.h>
 
@@ -73,7 +88,6 @@
 # define G_TRI2                       0x06
 # define G_QUAD                       0x07
 # define G_LINE3D                     0x08
-# define G_SETPTRHI                   0x09
 # define G_SPECIAL_3                  0xD3
 # define G_SPECIAL_2                  0xD4
 # define G_SPECIAL_1                  0xD5
@@ -95,6 +109,7 @@
 #endif
 
 /* rdp commands */
+#define G_SETPTRHI                    0x09
 #define G_TEXRECT                     0xE4
 #define G_TEXRECTFLIP                 0xE5
 #define G_RDPLOADSYNC                 0xE6
@@ -1092,6 +1107,9 @@
 #define GPACK_RGB24A8(rgb,a)          (gF_(rgb,24,8)|gF_(a,8,0))
 #define GPACK_ZDZ(z,dz)               (gF_(z,14,2)|gF_(dz,2,0))
 
+
+#define gsSetPtrHi(addr) IS_PTR(addr) ? gO_(G_SETPTRHI,0,((uintptr_t)addr)>>32) : gO_(G_NOOP, 0, 0)
+
 /* structure definition macros */
 #define gdSPDefMtx(xx,xy,xz,xw,     \
                    yx,yy,yz,yw,     \
@@ -1992,7 +2010,8 @@ gsSPScisTextureRectangleFlip(ulx,   \
                                       gsDPLoadTLUTCmd(G_TX_LOADTILE,          \
                                                       (count)-1),             \
                                       gsDPPipeSync()
-#define gsDisplayList(dl,branch)      gO_(G_DL,gF_(branch,8,16),dl)
+#define gsDisplayList(dl,branch)      gsSetPtrHi(dl), gO_(G_DL,gF_(branch,8,16),\
+                                                    ((uintptr_t)dl)&0xffffffff)
 #define gsDPLoadTile(tile,uls,ult,  \
                      lrs,lrt)         gO_(G_LOADTILE,                         \
                                           gF_(uls,12,12)|gF_(ult,12,0),       \
@@ -2060,8 +2079,8 @@ gsTexRectFlip(ulx,uly,lrx,lry,tile)   gO_(G_TEXRECTFLIP,                      \
 # define gsSPInsertMatrix(where,num)  gsMoveWd(G_MW_MATRIX,where,num)
 # define gsSPLookAtX(l)               gsMoveMem(sizeof(Light),G_MV_LOOKATX,l)
 # define gsSPLookAtY(l)               gsMoveMem(sizeof(Light),G_MV_LOOKATY,l)
-# define gsSPMatrix(matrix,param)     gO_(G_MTX,gF_(param,8,16)|              \
-                                          gF_(sizeof(Mtx),16,0),matrix)
+# define gsSPMatrix(matrix,param)     gsSetPtrHi(matrix), gO_(G_MTX,gF_(param,8,16)|              \
+                                          gF_(sizeof(Mtx),16,0),((uintptr_t)matrix)&0xffffffff)
 # define gsSPPopMatrix(param)         gO_(G_POPMTX,0,param)
 # define gsSPLight(l,n)               gsMoveMem(sizeof(Light),                \
                                                 G_MV_L0+((n)-1)*2,l)
@@ -2248,9 +2267,9 @@ gsSP1Quadrangle(v0,v1,v2,v3,flag)     gO_(G_QUAD,                             \
                                                 G_MVO_LOOKATX,l)
 # define gsSPLookAtY(l)               gsMoveMem(sizeof(Light),G_MV_LIGHT,     \
                                                 G_MVO_LOOKATY,l)
-# define gsSPMatrix(matrix,param)     gO_(G_MTX,gF_((sizeof(Mtx)-1)/8,5,19)|  \
+# define gsSPMatrix(matrix,param)     gsSetPtrHi(matrix), gO_(G_MTX,gF_((sizeof(Mtx)-1)/8,5,19)|  \
                                           gF_(gI_(param)^G_MTX_PUSH,8,0),     \
-                                          matrix)
+                                          ((uintptr_t)matrix)&0xffffffff)
 # define gsSPPopMatrix(param)         gsSPPopMatrixN(param,1)
 # define gsSPPopMatrixN(param,n)      gO_(G_POPMTX,                           \
                                           gF_((sizeof(Mtx)-1)/8,5,19)|        \
@@ -2274,7 +2293,7 @@ gsSPSetOtherMode(opc,shift,length,  \
                                           gF_((length)-1,8,0),data)
 # define gsMoveWd(index,offset,data)  gO_(G_MOVEWORD,gF_(index,8,16)|         \
                                           gF_(offset,16,0),data)
-# define gsMoveWdPtr(index,offset,data)  gO_(G_SETPTRHI,0,((uintptr_t)data)>>32), \
+# define gsMoveWdPtr(index,offset,data)  gsSetPtrHi(data), \
                                           gO_(G_MOVEWORD,gF_(index,8,16)|         \
                                           gF_(offset,16,0),((uintptr_t)data)&0xffffffff)
 # define gsMoveMem(size,index,      \

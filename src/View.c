@@ -189,6 +189,7 @@ void View_Update(ViewContext* viewCtx, InputContext* inputCtx) {
 	n64_setMatrix_projection(&viewCtx->projMtx);
 	
 	// Billboarding Matrices
+#if 0 /* TODO move inside draw */
 	Matrix_Push(); {
 		static Mtx mtx[2];
 		MtxF* vm = &viewCtx->viewMtx;
@@ -225,6 +226,7 @@ void View_Update(ViewContext* viewCtx, InputContext* inputCtx) {
 		cyl[0x2A / 2] = 0; /* y */
 		cyl[0x2C / 2] = 0; /* z */
 	} Matrix_Pop();
+#endif
 }
 
 void View_SetProjectionDimensions(ViewContext* viewCtx, Vec2s* dim) {

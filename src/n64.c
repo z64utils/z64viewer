@@ -56,6 +56,9 @@ static bool gFogEnabled = true;
 static bool gForceBl = false;
 static bool gCvgXalpha = false;
 
+Gfx OpaHead[4096];
+Gfx *OpaNow;
+
 static enum n64_geoLayer gOnlyThisGeoLayer;
 static enum n64_zmode gOnlyThisZmode;
 static enum n64_zmode gCurrentZmode;
@@ -1109,6 +1112,7 @@ static void gbiFunc_mtx(void* cmd) {
 	if (mtxaddr == 0x8012DB20) /* XXX hard-coded gMtxClear */
 		memcpy(&mtxF, &gMtxFClear, sizeof(gMtxFClear));
 	else {
+		bool wasDirectAddress = gPtrHiSet;
 		mtx = n64_virt2phys(mtxaddr);
 		
 		if (!mtx)
@@ -1116,7 +1120,7 @@ static void gbiFunc_mtx(void* cmd) {
 		
 		Mtx swap = *mtx;
 		
-		if ((mtxaddr & 0xFF000000) != 0x01000000 && (mtxaddr & 0xFF000000) != 0x0D000000) {
+		if (wasDirectAddress == false && (mtxaddr & 0xFF000000) != 0x01000000 && (mtxaddr & 0xFF000000) != 0x0D000000) {
 			for (s32 i = 0; i < 0x40 / 2; i++) {
 				u16* ss = (u16*)&swap;
 				ByteSwap(&ss[i]);
@@ -1419,7 +1423,7 @@ void n64_swap(Gfx* g) {
 	for (;;) {
 		*(uint32_t*)(cmd) = u32r(cmd);
 		*(uint32_t*)(cmd+4) = u32r(cmd+4);
-		if (*cmd == G_ENDDL)
+		if (*cmd == G_ENDDL || (*cmd == G_DL && cmd[1]))
 			break;
 		cmd += 8;
 	}
@@ -1431,4 +1435,17 @@ void n64_swap(Gfx* g) {
  */
 void n64_clearShaderCache(void) {
 	ShaderList_cleanup();
+}
+
+void* n64_graph_alloc(u32 sz) {
+	static u8 buf[1024 * 1024 * 8];
+	static u8* ptr;
+	u8* ret;
+	
+	if (!ptr || !sz)
+		ptr = buf;
+	
+	ret = ptr;
+	ptr += sz;
+	return ret;
 }

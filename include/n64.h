@@ -52,11 +52,16 @@ bool n64_add_light(LightInfo* lightInfo);
 void n64_clearShaderCache(void);
 void n64_swap(Gfx* g);
 
-#define gxSPMatrix(mtx)           n64_setMatrix_model(mtx)
-#define gxSPDisplayListSeg(dl)    n64_draw(n64_virt2phys(dl))
-#define gxSPDisplayList(dl)       n64_draw(dl)
-#define gxSPSegment(sed, data)    { Gfx wow[] = { gsSPSegment(sed, data), gsSPEndDisplayList() }; n64_swap(wow); n64_draw(wow); }
+void* n64_graph_alloc(u32 sz);
+
+extern Gfx OpaHead[4096];
+extern Gfx *OpaNow;
+
+#define gxSPMatrix(mtx)           { assert(OpaNow - OpaHead < ARRAY_COUNT(OpaHead)); gSPMatrix(OpaNow++, mtx, G_MTX_LOAD); }
+#define gxSPDisplayListSeg(dl)    gxSPDisplayList((dl))
 #define SEGMENTED_TO_VIRTUAL(seg) n64_virt2phys(seg)
+#define gxSPDisplayList(dl)       { assert(OpaNow - OpaHead < ARRAY_COUNT(OpaHead)); gDisplayList(OpaNow++, dl, 0); }
+#define gxSPSegment(sed, data)    { assert(OpaNow - OpaHead < ARRAY_COUNT(OpaHead)); gSPSegment(OpaNow++, sed, data); n64_set_segment(sed, data); }
 
 #define n64_ClearSegments() for (int i = 0x8; i < 0x10; ++i) \
 	gxSPSegment(i, 0)
