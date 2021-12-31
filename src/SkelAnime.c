@@ -168,6 +168,7 @@ void SkelAnime_Draw(SkelAnime* skelAnime, SkelanimeType type, Vec3s* jointTable)
 	if (type == SKELANIME_FLEX) {
 		mtx = Graph_Alloc(sizeof(Mtx) * skel->limbCount);
 		gSegment[0xD] = mtx;
+		gSPSegment(POLY_OPA_DISP++, 0xD, mtx);
 	}
 	
 	SkelAnime_Limb(ReadBE(skel->segment), 0, &mtx, jointTable);
