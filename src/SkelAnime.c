@@ -5,7 +5,6 @@ static u32 gS;
 void SkelAnime_Init(MemFile* memFile, SkelAnime* skelAnime, u32 skeleton, u32 animation, Vec3s* jointTable, Vec3s* morphTable) {
 	skelAnime->memFile = memFile;
 	
-	n64_set_segment(0x6, memFile->data);
 	SkeletonHeader* skel = SEGMENTED_TO_VIRTUAL(skeleton);
 	
 	skelAnime->skeleton = skeleton;
@@ -79,8 +78,6 @@ void SkelAnime_InterpFrameTable(s32 limbCount, Vec3s* dst, Vec3s* start, Vec3s* 
 }
 
 void SkelAnime_Update(SkelAnime* skelAnime) {
-	n64_set_segment(0x6, skelAnime->memFile->data);
-	
 	if (!Zelda64_20fpsLimiter())
 		return;
 	
@@ -139,13 +136,12 @@ void SkelAnime_Limb(u32 skelSeg, u8 limbId, Mtx** mtx, Vec3s* jointTable) {
 	Matrix_TranslateRotateZYX(&rpos, &rot);
 	
 	if (limb->dList) {
-		Mtx* thisMtx = n64_graph_alloc(sizeof(*thisMtx));
-		Matrix_ToMtx(thisMtx);
-		if (*mtx) {
-			Matrix_ToMtx((*mtx)++);
+		if (mtx && *mtx) {
+			Matrix_ToMtx((*mtx));
+			gSPMatrix(POLY_OPA_DISP++, (*mtx), G_MTX_LOAD);
+			(*mtx)++;
 		}
-		gxSPMatrix(thisMtx);
-		gxSPDisplayListSeg(ReadBE(limb->dList));
+		gSPDisplayList(POLY_OPA_DISP++, ReadBE(limb->dList));
 	}
 	
 	limbList++;
@@ -159,18 +155,20 @@ void SkelAnime_Limb(u32 skelSeg, u8 limbId, Mtx** mtx, Vec3s* jointTable) {
 		SkelAnime_Limb(skelSeg, limb->sibling, mtx, jointTable);
 }
 
-void SkelAnime_Draw(SkelAnime* skelAnime, Mtx* mtx, Vec3s* jointTable) {
+void SkelAnime_Draw(SkelAnime* skelAnime, SkelanimeType type, Vec3s* jointTable) {
 	StandardLimb* limb;
 	SkeletonHeader* skel;
+	Mtx* mtx = NULL;
 	
 	n64_set_onlyGeoLayer(GEOLAYER_ALL);
 	
 	Matrix_Push();
 	
-	gxSPSegment(0x6, skelAnime->memFile->data);
-	if (mtx)
-		gxSPSegment(0xD, mtx);
 	skel = SEGMENTED_TO_VIRTUAL(skelAnime->skeleton);
+	if (type == SKELANIME_FLEX) {
+		mtx = Graph_Alloc(sizeof(Mtx) * skel->limbCount);
+		gSegment[0xD] = mtx;
+	}
 	
 	SkelAnime_Limb(ReadBE(skel->segment), 0, &mtx, jointTable);
 	

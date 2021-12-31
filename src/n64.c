@@ -33,10 +33,6 @@
 #include <math.h>
 #include <stdbool.h>
 
-#define MATRIX_STACK_MAX 16
-#define SEGMENT_MAX      16
-#define VBUF_MAX         32
-
 static GLuint gVAO;
 static GLuint gVBO;
 static GLuint gEBO;
@@ -56,8 +52,8 @@ static bool gFogEnabled = true;
 static bool gForceBl = false;
 static bool gCvgXalpha = false;
 
-Gfx OpaHead[4096];
-Gfx *OpaNow;
+Gfx gPolyOpaHead[4096];
+Gfx* gPolyOpaDisp;
 
 static enum n64_geoLayer gOnlyThisGeoLayer;
 static enum n64_zmode gOnlyThisZmode;
@@ -197,7 +193,7 @@ typedef struct VtxF {
 	} norm;
 } VtxF;
 
-static void* gSegment[SEGMENT_MAX] = { 0 };
+void* gSegment[SEGMENT_MAX] = { 0 };
 typedef void (* gbiFunc)(void* cmd);
 static VtxF gVbuf[VBUF_MAX];
 

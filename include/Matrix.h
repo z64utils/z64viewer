@@ -54,6 +54,7 @@ void Matrix_Mult(MtxF* mf, MtxMode mode);
 void Matrix_MtxFCopy(MtxF* dest, MtxF* src);
 void Matrix_ToMtxF(MtxF* mtx);
 Mtx* Matrix_ToMtx(Mtx* dest);
+Mtx* Matrix_NewMtx();
 void Matrix_MtxToMtxF(Mtx* src, MtxF* dest);
 Mtx* Matrix_MtxFToMtx(MtxF* src, Mtx* dest);
 void Matrix_MtxFMtxFMult(MtxF* mfA, MtxF* mfB, MtxF* dest);

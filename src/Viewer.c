@@ -1,6 +1,7 @@
 #include <Viewer.h>
 
 void Viewer_Init(ViewerContext* viewerCtx) {
+	Rcp_Init();
 	View_Init(&viewerCtx->viewCtx, &viewerCtx->inputCtx);
 	viewerCtx->viewCtx.cameraControl = true;
 	
@@ -18,7 +19,7 @@ void Viewer_Draw(ViewerContext* viewerCtx) {
 	static Mtx mtx[128];
 	
 	n64_ClearSegments();
-	gxSPSegment(0x2, viewerCtx->scene.file.data);
+	gSegment[2] = viewerCtx->scene.file.data;
 	Light_BindEnvLights(&viewerCtx->scene, &viewerCtx->room[0]);
 	Room_Draw(&viewerCtx->room[0]);
 }

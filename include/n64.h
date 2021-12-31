@@ -8,6 +8,12 @@
 #ifndef Z64_N64_H_INCLUDED
 #define Z64_N64_H_INCLUDED
 
+#define MATRIX_STACK_MAX 16
+#define SEGMENT_MAX      16
+#define VBUF_MAX         32
+
+#define POLY_OPA_DISP gPolyOpaDisp
+
 #include <Light.h>
 
 #define F3DEX_GBI_2
@@ -33,6 +39,8 @@ typedef struct {
 	uint32_t lo;
 } Gfx;
 
+extern void* gSegment[SEGMENT_MAX];
+
 void n64_set_segment(int seg, void* data);
 void* n64_virt2phys(unsigned int segaddr);
 unsigned int n64_phys2virt(void* cmd);
@@ -54,14 +62,24 @@ void n64_swap(Gfx* g);
 
 void* n64_graph_alloc(u32 sz);
 
-extern Gfx OpaHead[4096];
-extern Gfx *OpaNow;
+extern Gfx gPolyOpaHead[4096];
+extern Gfx* gPolyOpaDisp;
 
-#define gxSPMatrix(mtx)           { assert(OpaNow - OpaHead < ARRAY_COUNT(OpaHead)); gSPMatrix(OpaNow++, mtx, G_MTX_LOAD); }
+#define gxSPMatrix(mtx)           { assert(gPolyOpaDisp - gPolyOpaHead < ARRAY_COUNT(gPolyOpaHead)); gSPMatrix(gPolyOpaDisp++, mtx, G_MTX_LOAD); }
 #define gxSPDisplayListSeg(dl)    gxSPDisplayList((dl))
 #define SEGMENTED_TO_VIRTUAL(seg) n64_virt2phys(seg)
-#define gxSPDisplayList(dl)       { assert(OpaNow - OpaHead < ARRAY_COUNT(OpaHead)); gDisplayList(OpaNow++, dl, 0); }
-#define gxSPSegment(sed, data)    { assert(OpaNow - OpaHead < ARRAY_COUNT(OpaHead)); gSPSegment(OpaNow++, sed, data); n64_set_segment(sed, data); }
+#define Graph_Alloc(size)         n64_graph_alloc(size)
+#define gxSPDisplayList(dl)    \
+	{ \
+		assert(gPolyOpaDisp - gPolyOpaHead < ARRAY_COUNT(gPolyOpaHead)); \
+		gDisplayList(gPolyOpaDisp++, dl, 0); \
+	}
+#define gxSPSegment(sed, data) \
+	{ \
+		assert(gPolyOpaDisp - gPolyOpaHead < ARRAY_COUNT(gPolyOpaHead)); \
+		gSPSegment(gPolyOpaDisp++, sed, data); \
+		n64_set_segment(sed, data); \
+	}
 
 #define n64_ClearSegments() for (int i = 0x8; i < 0x10; ++i) \
 	gxSPSegment(i, 0)

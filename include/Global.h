@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 #include <ExtLib.h>
 #include <Vector.h>
+#include <z_rcp.h>
 
 struct ViewerContext;
 struct Scene;

@@ -70,7 +70,7 @@ void z64_Init(
 	glfwSetKeyCallback(appInfo->mainWindow, Input_KeyCallback);
 	glfwSetScrollCallback(appInfo->mainWindow, Input_ScrollCallback);
 	if (dropCallback)
-		glfwSetDropCallback(appInfo->mainWindow, dropCallback);
+		glfwSetDropCallback(appInfo->mainWindow, (void*)dropCallback);
 	
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
 		printf_error("Failed to initialize GLAD.");

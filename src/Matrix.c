@@ -1,4 +1,5 @@
 #include <Viewer.h>
+#include <n64.h>
 
 #define    FTOFIX32(x) (long)((x) * (float)0x00010000)
 #define    FIX32TOF(x) ((float)(x) * (1.0f / (float)0x00010000))
@@ -509,6 +510,10 @@ Mtx* Matrix_MtxFToMtx(MtxF* src, Mtx* dest) {
 
 Mtx* Matrix_ToMtx(Mtx* dest) {
 	return Matrix_MtxFToMtx(gCurrentMatrix, dest);
+}
+
+Mtx* Matrix_NewMtx() {
+	return Matrix_ToMtx(Graph_Alloc(sizeof(Mtx)));
 }
 
 void Matrix_MtxFMtxFMult(MtxF* mfA, MtxF* mfB, MtxF* dest) {
