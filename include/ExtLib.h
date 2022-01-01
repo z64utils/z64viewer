@@ -163,80 +163,80 @@ void String_GetPath(char* dst, char* src);
 void String_GetBasename(char* dst, char* src);
 void String_GetFilename(char* dst, char* src);
 
-#define Node_Add(head, node) {             \
-		OsAssert(node != NULL)             \
-		typeof(node) lastNode = head;      \
-		s32 __nodePos = 0;                 \
-		if (lastNode == NULL) {            \
-			head = node;                   \
-		} else {                           \
-			while (lastNode->next) {       \
+#define Node_Add(head, node) { \
+		OsAssert(node != NULL) \
+		typeof(node) lastNode = head; \
+		s32 __nodePos = 0; \
+		if (lastNode == NULL) { \
+			head = node; \
+		} else { \
+			while (lastNode->next) { \
 				lastNode = lastNode->next; \
-				__nodePos++;               \
-			}                              \
-			lastNode->next = node;         \
-			node->prev = lastNode;         \
-		}                                  \
+				__nodePos++; \
+			} \
+			lastNode->next = node; \
+			node->prev = lastNode; \
+		} \
 }
 
-#define Node_Kill(head, node) {            \
-		OsAssert(node != NULL)             \
-		if (node->next) {                  \
+#define Node_Kill(head, node) { \
+		OsAssert(node != NULL) \
+		if (node->next) { \
 			node->next->prev = node->prev; \
-		}                                  \
-		if (node->prev) {                  \
+		} \
+		if (node->prev) { \
 			node->prev->next = node->next; \
-		} else {                           \
-			head = node->next;             \
-		}                                  \
-		free(node);                        \
-		node = NULL;                       \
+		} else { \
+			head = node->next; \
+		} \
+		free(node); \
+		node = NULL; \
 }
 
-#define Swap(a, b) {     \
+#define Swap(a, b) { \
 		typeof(a) y = a; \
-		a = b;           \
-		b = y;           \
+		a = b; \
+		b = y; \
 }
 
-#define WrapF(x, min, max) ({                       \
-		typeof(x) r = (x);                          \
-		typeof(x) range = (max) - (min) + 1;        \
-		if (r < (min)) {                            \
+#define WrapF(x, min, max) ({ \
+		typeof(x) r = (x); \
+		typeof(x) range = (max) - (min) + 1; \
+		if (r < (min)) { \
 			r += range * (((min) - r) / range + 1); \
-		}                                           \
-		(min) + fmod((r - (min)), range);           \
+		} \
+		(min) + fmod((r - (min)), range); \
 	})
 
-#define Wrap(x, min, max) ({                        \
-		typeof(x) r = (x);                          \
-		typeof(x) range = (max) - (min) + 1;        \
-		if (r < (min)) {                            \
+#define Wrap(x, min, max) ({ \
+		typeof(x) r = (x); \
+		typeof(x) range = (max) - (min) + 1; \
+		if (r < (min)) { \
 			r += range * (((min) - r) / range + 1); \
-		}                                           \
-		(min) + (r - (min)) % range;                \
+		} \
+		(min) + (r - (min)) % range; \
 	})
 
 // Checks endianess with tst & tstP
-#define ReadBE(in) ({               \
-		typeof(in) out;             \
-		s32 tst = 1;                \
-		u8* tstP = (u8*)&tst;       \
-		if (tstP[0] != 0) {         \
-			s32 size = sizeof(in);  \
-			u8* b = (u8*)&in;       \
-			if (size == 2) {        \
+#define ReadBE(in) ({ \
+		typeof(in) out; \
+		s32 tst = 1; \
+		u8* tstP = (u8*)&tst; \
+		if (tstP[0] != 0) { \
+			s32 size = sizeof(in); \
+			u8* b = (u8*)&in; \
+			if (size == 2) { \
 				out = (b[0] << 8) | b[1]; \
 			} else if (size == 4) { \
 				out = (b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3]; \
-			} else {                \
-				out = in;           \
-			}                       \
-		} else {                    \
-			out = in;               \
-		}                           \
-		out;                        \
-	}                               \
+			} else { \
+				out = in; \
+			} \
+		} else { \
+			out = in; \
+		} \
+		out; \
+	} \
 )
 
 #define WriteBE(dest, set) { \
@@ -244,19 +244,19 @@ void String_GetFilename(char* dst, char* src);
 		dest = ReadBE(get); \
 }
 
-#define ByteSwap(in) {                        \
-		s32 tst = 1;                          \
-		u8* tstP = (u8*)&tst;                 \
-		if (tstP[0] != 0) {                   \
-			typeof(*(in)) out;                \
-			s32 size = sizeof(*(in));         \
-			u8* ptrS = (u8*)in;               \
-			u8* ptrD = (u8*)&out;             \
-			for (s32 i = 0; i < size; i++) {  \
+#define ByteSwap(in) { \
+		s32 tst = 1; \
+		u8* tstP = (u8*)&tst; \
+		if (tstP[0] != 0) { \
+			typeof(*(in)) out; \
+			s32 size = sizeof(*(in)); \
+			u8* ptrS = (u8*)in; \
+			u8* ptrD = (u8*)&out; \
+			for (s32 i = 0; i < size; i++) { \
 				ptrD[size - i - 1] = ptrS[i]; \
-			}                                 \
-			*in = out;                        \
-		}                                     \
+			} \
+			*in = out; \
+		} \
 }
 
 #define Decr(x) (x -= (x > 0) ? 1 : 0)
@@ -282,7 +282,7 @@ extern PrintfSuppressLevel gPrintfSuppress;
 #define OsPrintfEx printf_debugExt
 
 #ifndef NDEBUG
-#define OsAssert(exp) if (!(exp)) {    \
+#define OsAssert(exp) if (!(exp)) { \
 		printf(PRNT_DGRY "[%s]: " PRNT_REDD "%s: " PRNT_GRAY "[%d]\n"PRNT_RSET, __FILE__, __FUNCTION__, __LINE__); \
 		printf_debug(PRNT_YELW "OsAssert(\a " PRNT_RSET # exp PRNT_YELW " );"); \
 		exit(EXIT_FAILURE); \
@@ -318,9 +318,9 @@ extern PrintfSuppressLevel gPrintfSuppress;
 #define String_Merge(dst, src)  strcat(dst, src)
 #define String_Generate(string) strdup(string)
 
-#define printf_debugExt(...) if (gPrintfSuppress <= PSL_DEBUG) {    \
+#define printf_debugExt(...) if (gPrintfSuppress <= PSL_DEBUG) { \
 		printf(PRNT_DGRY "[%s]: " PRNT_REDD "%s: " PRNT_GRAY "[%d]\n"PRNT_RSET, __FILE__, __FUNCTION__, __LINE__); \
-		printf_debug(__VA_ARGS__);                                  \
+		printf_debug(__VA_ARGS__); \
 }
 
 #define Main(y1, y2) main(y1, y2)

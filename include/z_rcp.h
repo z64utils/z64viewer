@@ -1,5 +1,6 @@
 #include <n64.h>
 
-extern Gfx gSetupDL[][6];
-
 void Rcp_Init();
+
+extern Gfx* gSetupDL;
+#define gSetupDList(x) & gSetupDL[6 * x]

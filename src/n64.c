@@ -257,14 +257,11 @@ static void othermode(void) {
 	gCvgXalpha = (indep & 0b0001000000000) >> 9;
 	
 	if (gForceBl != gForceBlOld) {
-		switch (gForceBl) {
-		    case true:
-			    glEnable(GL_BLEND);
-			    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			    break;
-		    case false:
-			    glDisable(GL_BLEND);
-			    break;
+		if (gForceBl == true) {
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		} else { /* false */
+			glDisable(GL_BLEND);
 		}
 	}
 	

@@ -215,12 +215,12 @@ void Rect_Set(Rect* dest, s32 x, s32 w, s32 y, s32 h);
 		(a.z * b.z); \
 	})
 
-#define Vec3_Cross(a, b) ({                    \
-		(typeof(*(a))) {                       \
+#define Vec3_Cross(a, b) ({ \
+		(typeof(*(a))) { \
 			a.y* b.z - b.y* a.z, \
 			a.z* b.x - b.z* a.x, \
-			a.x* b.y - b.x* a.y  \
-		};                                     \
+			a.x* b.y - b.x* a.y \
+		}; \
 	})
 
 #define Vec2_Magnitude(a) ({ \
@@ -238,29 +238,29 @@ void Rect_Set(Rect* dest, s32 x, s32 w, s32 y, s32 h);
 		); \
 	})
 
-#define Vec2_Normalize(a) ({         \
-		typeof(a) ret;            \
+#define Vec2_Normalize(a) ({ \
+		typeof(a) ret; \
 		f32 mgn = Vec2_Magnitude(a); \
-		if (mgn == 0) {              \
-			ret.x = ret.y = 0;       \
-		} else {                     \
-			ret.x = a.x / mgn;    \
-			ret.y = a.y / mgn;    \
-		}                            \
-		ret;                         \
+		if (mgn == 0) { \
+			ret.x = ret.y = 0; \
+		} else { \
+			ret.x = a.x / mgn; \
+			ret.y = a.y / mgn; \
+		} \
+		ret; \
 	})
 
-#define Vec3_Normalize(a) ({           \
-		typeof(a) ret;              \
+#define Vec3_Normalize(a) ({ \
+		typeof(a) ret; \
 		f32 mgn = Vec3_Magnitude(a); \
-		if (mgn == 0) {                  \
-			ret.x = ret.y = ret.z = 0;   \
-		} else {                         \
-			ret.x = a.x / mgn;      \
-			ret.y = a.y / mgn;      \
-			ret.z = a.z / mgn;      \
-		}                                \
-		ret;                             \
+		if (mgn == 0) { \
+			ret.x = ret.y = ret.z = 0; \
+		} else { \
+			ret.x = a.x / mgn; \
+			ret.y = a.y / mgn; \
+			ret.z = a.z / mgn; \
+		} \
+		ret; \
 	})
 
 #define SQ(x)        ((x) * (x))
