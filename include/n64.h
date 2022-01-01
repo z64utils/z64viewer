@@ -113,4 +113,7 @@ extern Gfx* gPolyOpaDisp;
 	})
 #endif
 
+Gfx n64_gbi_gfxhi(void* thing);
+Gfx n64_gbi_gfxlo(uint8_t branch);
+
 #endif

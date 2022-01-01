@@ -2010,8 +2010,7 @@ gsSPScisTextureRectangleFlip(ulx,   \
                                       gsDPLoadTLUTCmd(G_TX_LOADTILE,          \
                                                       (count)-1),             \
                                       gsDPPipeSync()
-#define gsDisplayList(dl,branch)      gsSetPtrHi(dl), gO_(G_DL,gF_(branch,8,16),\
-                                                    ((uintptr_t)dl)&0xffffffff)
+#define gsDisplayList(dl,branch)      ({n64_gbi_gfxhi(dl);}), ({n64_gbi_gfxlo(branch);})
 #define gsDPLoadTile(tile,uls,ult,  \
                      lrs,lrt)         gO_(G_LOADTILE,                         \
                                           gF_(uls,12,12)|gF_(ult,12,0),       \

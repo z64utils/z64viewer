@@ -54,6 +54,7 @@ static bool gCvgXalpha = false;
 
 Gfx gPolyOpaHead[4096];
 Gfx* gPolyOpaDisp;
+u8 gSegCheckBuf[64];
 
 static enum n64_geoLayer gOnlyThisGeoLayer;
 static enum n64_zmode gOnlyThisZmode;
@@ -257,13 +258,13 @@ static void othermode(void) {
 	
 	if (gForceBl != gForceBlOld) {
 		switch (gForceBl) {
-			case true:
-				glEnable(GL_BLEND);
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-				break;
-			case false:
-				glDisable(GL_BLEND);
-				break;
+		    case true:
+			    glEnable(GL_BLEND);
+			    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			    break;
+		    case false:
+			    glDisable(GL_BLEND);
+			    break;
 		}
 	}
 	
@@ -1175,20 +1176,20 @@ static void gbiFunc_moveword(void* cmd) {
 	uint32_t lo = u32r(b + 4);
 	uint8_t index = b[1];
 	uint16_t offset = hi & 0xffff;
-	void *data = n64_virt2phys(lo);
+	void* data = n64_virt2phys(lo);
 	
 	switch (index) {
-		case G_MW_MATRIX: break; // TODO
-		case G_MW_NUMLIGHT: break; // TODO
-		case G_MW_CLIP: break; // TODO
-		case G_MW_SEGMENT:
-			gSegment[offset / 4] = data;
-			break;
-		case G_MW_FOG: break; // TODO
-		case G_MW_LIGHTCOL: break; // TODO
-		case G_MW_FORCEMTX: break; // TODO
-		case G_MW_PERSPNORM: break; // TODO
-		default: assert(0 && "moveword unknown index"); break;
+	    case G_MW_MATRIX: break; // TODO
+	    case G_MW_NUMLIGHT: break; // TODO
+	    case G_MW_CLIP: break; // TODO
+	    case G_MW_SEGMENT:
+		    gSegment[offset / 4] = data;
+		    break;
+	    case G_MW_FOG: break; // TODO
+	    case G_MW_LIGHTCOL: break; // TODO
+	    case G_MW_FORCEMTX: break; // TODO
+	    case G_MW_PERSPNORM: break; // TODO
+	    default: assert(0 && "moveword unknown index"); break;
 	}
 }
 
@@ -1262,6 +1263,7 @@ void* n64_virt2phys(unsigned int segaddr) {
 	if (gPtrHiSet) {
 		gPtrHiSet = false;
 		gPtrHi |= segaddr;
+		
 		return (void*)gPtrHi;
 	}
 	
@@ -1416,9 +1418,10 @@ void n64_set_onlyGeoLayer(enum n64_geoLayer geoLayer) {
 
 void n64_swap(Gfx* g) {
 	uint8_t* cmd = (void*)g;
+	
 	for (;;) {
 		*(uint32_t*)(cmd) = u32r(cmd);
-		*(uint32_t*)(cmd+4) = u32r(cmd+4);
+		*(uint32_t*)(cmd + 4) = u32r(cmd + 4);
 		if (*cmd == G_ENDDL || (*cmd == G_DL && cmd[1]))
 			break;
 		cmd += 8;
@@ -1443,5 +1446,23 @@ void* n64_graph_alloc(u32 sz) {
 	
 	ret = ptr;
 	ptr += sz;
+	
 	return ret;
+}
+
+void* sStorePointer;
+
+Gfx n64_gbi_gfxhi(void* thing) {
+	uintptr_t wow = (uintptr_t)thing;
+	Gfx gfx = gsSetPtrHi(ReadBE(wow));
+	
+	sStorePointer = thing;
+	
+	return gfx;
+}
+
+Gfx n64_gbi_gfxlo(uint8_t branch) {
+	Gfx gfx = gO_(G_DL,gF_(branch,8,16), ((uintptr_t)sStorePointer) & 0xffffffff);
+	
+	return gfx;
 }
