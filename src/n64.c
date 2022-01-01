@@ -272,31 +272,31 @@ static void othermode(void) {
 	if (!gHideGeometry && gOnlyThisGeoLayer != GEOLAYER_ALL) {
 		int isOverlay = gForceBl || gCvgXalpha;
 		switch (gOnlyThisGeoLayer) {
-		    case GEOLAYER_OPAQUE:
-			    if (isOverlay)
-				    gHideGeometry = true;
-			    break;
-			    
-		    case GEOLAYER_OVERLAY:
-			    if (!isOverlay)
-				    gHideGeometry = true;
-			    break;
-			    
-		    case GEOLAYER_ALL:
-			    break;
+			case GEOLAYER_OPAQUE:
+				if (isOverlay)
+					gHideGeometry = true;
+				break;
+				
+			case GEOLAYER_OVERLAY:
+				if (!isOverlay)
+					gHideGeometry = true;
+				break;
+				
+			case GEOLAYER_ALL:
+				break;
 		}
 	}
 	
 	/* hack for eliminating z-fighting on decals */
 	switch (gCurrentZmode) {
-	    case ZMODE_DEC: /* ZMODE_DEC */
-		    glEnable(GL_POLYGON_OFFSET_FILL);
-		    glPolygonOffset(-1, -1);
-		    break;
-	    default:
-		    glDisable(GL_POLYGON_OFFSET_FILL);
-		    glPolygonOffset(0, 0);
-		    break;
+		case ZMODE_DEC: /* ZMODE_DEC */
+			glEnable(GL_POLYGON_OFFSET_FILL);
+			glPolygonOffset(-1, -1);
+			break;
+		default:
+			glDisable(GL_POLYGON_OFFSET_FILL);
+			glPolygonOffset(0, 0);
+			break;
 	}
 }
 
@@ -342,34 +342,34 @@ static const char* colorValueString(int idx, int v) {
 		return "vec3(0.0)";
 	
 	switch (v) {
-	    case 0x00: return "FragColor.rgb";
-	    case 0x01: return "texture(texture0, TexCoord0).rgb";
-	    case 0x02: return "texture(texture1, TexCoord1).rgb";
-	    case 0x03: return quickstr("vec3(%f,%f,%f)", gMatState.prim.r, gMatState.prim.g, gMatState.prim.b);
-	    case 0x04: return "shading.rgb";
-	    case 0x05: return quickstr("vec3(%f,%f,%f)", gMatState.env.r, gMatState.env.g, gMatState.env.b);
-	    case 0x06:
-		    switch (idx) {
-			case 0x00: return "vec3(1.0)";
-			case 0x01: return "vec3(1.0)"; // TODO CCMUX_CENTER
-			case 0x02: return "vec3(1.0)"; // TODO CCMUX_SCALE
-			case 0x03: return "vec3(1.0)";
-		    }
-	    case 0x07:
-		    switch (idx) {
-			case 0x00: return "vec3(1.0)"; // TODO CCMUX_NOISE
-			case 0x01: return quickstr("vec3(%f)", gMatState.k4);
-			case 0x02: return "vec3(FragColor.a)";
-			case 0x03: return "vec3(0.0)";
-		    }
-	    case 0x08: return "vec3(texture(texture0, TexCoord0).a)";
-	    case 0x09: return "vec3(texture(texture1, TexCoord1).a)";
-	    case 0x0A: return quickstr("vec3(%f)", gMatState.prim.alpha);
-	    case 0x0B: return "vec3(shading.a)";
-	    case 0x0C: return quickstr("vec3(%f)", gMatState.env.alpha);
-	    case 0x0D: return quickstr("vec3(%f)", gMatState.lodfrac);
-	    case 0x0E: return quickstr("vec3(%f)", gMatState.prim.lodfrac);
-	    case 0x0F: return quickstr("vec3(%f)", gMatState.k5);
+		case 0x00: return "FragColor.rgb";
+		case 0x01: return "texture(texture0, TexCoord0).rgb";
+		case 0x02: return "texture(texture1, TexCoord1).rgb";
+		case 0x03: return quickstr("vec3(%f,%f,%f)", gMatState.prim.r, gMatState.prim.g, gMatState.prim.b);
+		case 0x04: return "shading.rgb";
+		case 0x05: return quickstr("vec3(%f,%f,%f)", gMatState.env.r, gMatState.env.g, gMatState.env.b);
+		case 0x06:
+			switch (idx) {
+				case 0x00: return "vec3(1.0)";
+				case 0x01: return "vec3(1.0)"; // TODO CCMUX_CENTER
+				case 0x02: return "vec3(1.0)"; // TODO CCMUX_SCALE
+				case 0x03: return "vec3(1.0)";
+			}
+		case 0x07:
+			switch (idx) {
+				case 0x00: return "vec3(1.0)"; // TODO CCMUX_NOISE
+				case 0x01: return quickstr("vec3(%f)", gMatState.k4);
+				case 0x02: return "vec3(FragColor.a)";
+				case 0x03: return "vec3(0.0)";
+			}
+		case 0x08: return "vec3(texture(texture0, TexCoord0).a)";
+		case 0x09: return "vec3(texture(texture1, TexCoord1).a)";
+		case 0x0A: return quickstr("vec3(%f)", gMatState.prim.alpha);
+		case 0x0B: return "vec3(shading.a)";
+		case 0x0C: return quickstr("vec3(%f)", gMatState.env.alpha);
+		case 0x0D: return quickstr("vec3(%f)", gMatState.lodfrac);
+		case 0x0E: return quickstr("vec3(%f)", gMatState.prim.lodfrac);
+		case 0x0F: return quickstr("vec3(%f)", gMatState.k5);
 	}
 	
 	return "vec3(0.0)";
@@ -383,21 +383,21 @@ static const char* alphaValueString(int idx, int v) {
 	 */
 	
 	switch (v) {
-	    case 0x00:
-		    switch (idx) {
-			case 0x02: return quickstr("%f", gMatState.lodfrac);
-			default: return "FragColor.a";
-		    }
-	    case 0x01: return "texture(texture0, TexCoord0).a";
-	    case 0x02: return "texture(texture1, TexCoord1).a";
-	    case 0x03: return quickstr("%f", gMatState.prim.alpha);
-	    case 0x04: return "shading.a";
-	    case 0x05: return quickstr("%f", gMatState.env.alpha);
-	    case 0x06:
-		    switch (idx) {
-			case 0x02: return quickstr("%f", gMatState.prim.lodfrac);
-			default: return "1.0";
-		    }
+		case 0x00:
+			switch (idx) {
+				case 0x02: return quickstr("%f", gMatState.lodfrac);
+				default: return "FragColor.a";
+			}
+		case 0x01: return "texture(texture0, TexCoord0).a";
+		case 0x02: return "texture(texture1, TexCoord1).a";
+		case 0x03: return quickstr("%f", gMatState.prim.alpha);
+		case 0x04: return "shading.a";
+		case 0x05: return quickstr("%f", gMatState.env.alpha);
+		case 0x06:
+			switch (idx) {
+				case 0x02: return quickstr("%f", gMatState.prim.lodfrac);
+				default: return "1.0";
+			}
 	}
 	
 	return "0.0";
@@ -432,20 +432,20 @@ static void doMaterial(void* addr) {
 		gMatState.texHeight = height;
 		
 		switch (gMatState.tile[tile].cmT) {
-		    case G_TX_MIRROR:
-			    wrapT = GL_MIRRORED_REPEAT;
-			    break;
-		    case G_TX_CLAMP:
-			    wrapT = GL_CLAMP_TO_EDGE;
-			    break;
+			case G_TX_MIRROR:
+				wrapT = GL_MIRRORED_REPEAT;
+				break;
+			case G_TX_CLAMP:
+				wrapT = GL_CLAMP_TO_EDGE;
+				break;
 		}
 		switch (gMatState.tile[tile].cmS) {
-		    case G_TX_MIRROR:
-			    wrapS = GL_MIRRORED_REPEAT;
-			    break;
-		    case G_TX_CLAMP:
-			    wrapS = GL_CLAMP_TO_EDGE;
-			    break;
+			case G_TX_MIRROR:
+				wrapS = GL_MIRRORED_REPEAT;
+				break;
+			case G_TX_CLAMP:
+				wrapS = GL_CLAMP_TO_EDGE;
+				break;
 		}
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapS);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapT);
@@ -568,14 +568,14 @@ static void doMaterial(void* addr) {
 				uniform vec3 uFogColor;
 				
 				/*void main() // simple default for testing...
-				        {
-				             vec4 s = texture(texture0, TexCoord0);
-				             if (s.a < 0.5)
-				                     discard;
-				             FragColor = s * vColor;
+				                                {
+				                                                 vec4 s = texture(texture0, TexCoord0);
+				                                                 if (s.a < 0.5)
+				                                                                                 discard;
+				                                                 FragColor = s * vColor;
 
-				             FragColor.rgb = mix(FragColor.rgb * vLightColor, uFogColor, vFog);
-				        }*/
+				                                                 FragColor.rgb = mix(FragColor.rgb * vLightColor, uFogColor, vFog);
+				                                }*/
 			);
 			
 			/* construct fragment shader */
@@ -658,9 +658,9 @@ static void doMaterial(void* addr) {
 }
 
 static float shift_to_multiplier(const int shift) {
-	/* how many bits to shift texture coordinates       *
-	* if in range  1 <= n <= 10, texcoord >>= n        *
-	* if in range 11 <= n <= 15, texcoord <<= (16 - n) */
+	/* how many bits to shift texture coordinates	   *
+	 * if in range  1 <= n <= 10, texcoord >>= n		*
+	 * if in range 11 <= n <= 15, texcoord <<= (16 - n) */
 	if (!shift)
 		return 1;
 	
@@ -699,85 +699,85 @@ static Vec4f vec4color(RGB8 color) {
 static Vec4f bakeLight(Vec3f vtxPos, Vec3f vtxNor, LightInfo* light) {
 	assert(light);
 	switch (light->type) {
-	    case LIGHT_AMBIENT:
-		    return vec4color(light->params.amb.color);
-	    case LIGHT_DIRECTIONAL: {
-		    LightDirectional* params = &light->params.dir;
-		    Vec3f norm = { params->x / 127.0f, params->y / 127.0f, params->z / 127.0f };
-		    Vec4f color = vec4color(params->color);
-		    norm = Vec3_Normalize(norm);
-		    f32 mod = CLAMP(Vec3_Dot(vtxNor, norm), 0.0, 1.0);
-		    Vec3_Mult(color, mod);
-		    
-		    return color;
-	    }
-	    case LIGHT_POINT_GLOW:
-	    case LIGHT_POINT_NOGLOW: {
-		    LightPoint* params = &light->params.point;
-		    
-		    #if 0 // TODO: Does not work, fix pls
-		    
-		    Vec4f color = {
-			    params->color.r / 255.0f,
-			    params->color.g / 255.0f,
-			    params->color.b / 255.0f,
-			    1.0f
-		    };
-		    Vec3f lPos = {
-			    params->x - vtxPos.x,
-			    params->y - vtxPos.y,
-			    params->z - vtxPos.z
-		    };
-		    f32 radius = (f32)params->radius / 255;
-		    f32 k, ks, ksf, v, d, l;
-		    f32 instensity;
-		    Vec3f lPosInv = { 0 };
-		    
-		    radius = 255.0f - 255.0f * (radius * radius);
-		    l = 255;
-		    k = Vec3_Dot(lPos, lPos) * 2.0f;
-		    ks = sqrtf(k);
-		    
-		    Matrix_OrientVec3f(&lPos, &lPosInv, gMatrix.modelNow);
-		    
-		    for (u32 i = 0; i < 3; ++i) {
-			    lPosInv.s[i] = (4.0f * lPosInv.s[i] / ks);
-			    if (lPosInv.s[i] < -1.0f)
-				    lPosInv.s[i] = -1.0f;
-			    if (lPosInv.s[i] > 1.0f)
-				    lPosInv.s[i] = 1.0f;
-		    }
-		    
-		    v = Vec3_Dot(lPosInv, vtxNor);
-		    v = CLAMP(v, -1.0, 1.0);
-		    ksf = floorf(ks);
-		    d = (ksf * l * 2.0f + SQ(ksf) * radius / 8.0f) * 1.52587890625e-05f + 1.0f;
-		    instensity = v / d;
-		    Vec4_Mult(color, instensity);
-		    
-		    return color;
-		    
-		    #else
-		    
-		    Vec3f pos = { params->x, params->y, params->z };
-		    /* https://csawesome.runestone.academy/runestone/books/published/learnwebgl2/10_lights/07_lights_attenuation.html */
-		    f32 dist = Vec_Vec3f_DistXYZ(&pos, &vtxPos) / 100;
-		    float constant = 1.0 / 255.0;
-		    float linear = 1.0f;
-		    float quadratic = 1.0f - 1.0f * SQ((f32)params->radius / 255.0);
-		    f32 attenuation = 1.0 / (constant + linear * dist + quadratic * (dist * dist));
-		    Vec3f dir;
-		    Vec3_Substract(dir, pos, vtxPos);
-		    Vec3f norm = Vec3_Normalize(dir);
-		    Vec4f color = vec4color(params->color);
-		    f32 mod = CLAMP(Vec3_Dot(vtxNor, norm), 0.0, 1.0);
-		    mod *= attenuation;
-		    Vec3_Mult(color, mod);
-		    
-		    return color;
-		    
-		    #endif
-	    }
+		case LIGHT_AMBIENT:
+			return vec4color(light->params.amb.color);
+		case LIGHT_DIRECTIONAL: {
+			LightDirectional* params = &light->params.dir;
+			Vec3f norm = { params->x / 127.0f, params->y / 127.0f, params->z / 127.0f };
+			Vec4f color = vec4color(params->color);
+			norm = Vec3_Normalize(norm);
+			f32 mod = CLAMP(Vec3_Dot(vtxNor, norm), 0.0, 1.0);
+			Vec3_Mult(color, mod);
+			
+			return color;
+		}
+		case LIGHT_POINT_GLOW:
+		case LIGHT_POINT_NOGLOW: {
+			LightPoint* params = &light->params.point;
+			
+			#if 0 // TODO: Does not work, fix pls
+				
+				Vec4f color = {
+					params->color.r / 255.0f,
+					params->color.g / 255.0f,
+					params->color.b / 255.0f,
+					1.0f
+				};
+				Vec3f lPos = {
+					params->x - vtxPos.x,
+					params->y - vtxPos.y,
+					params->z - vtxPos.z
+				};
+				f32 radius = (f32)params->radius / 255;
+				f32 k, ks, ksf, v, d, l;
+				f32 instensity;
+				Vec3f lPosInv = { 0 };
+				
+				radius = 255.0f - 255.0f * (radius * radius);
+				l = 255;
+				k = Vec3_Dot(lPos, lPos) * 2.0f;
+				ks = sqrtf(k);
+				
+				Matrix_OrientVec3f(&lPos, &lPosInv, gMatrix.modelNow);
+				
+				for (u32 i = 0; i < 3; ++i) {
+					lPosInv.s[i] = (4.0f * lPosInv.s[i] / ks);
+					if (lPosInv.s[i] < -1.0f)
+						lPosInv.s[i] = -1.0f;
+					if (lPosInv.s[i] > 1.0f)
+						lPosInv.s[i] = 1.0f;
+				}
+				
+				v = Vec3_Dot(lPosInv, vtxNor);
+				v = CLAMP(v, -1.0, 1.0);
+				ksf = floorf(ks);
+				d = (ksf * l * 2.0f + SQ(ksf) * radius / 8.0f) * 1.52587890625e-05f + 1.0f;
+				instensity = v / d;
+				Vec4_Mult(color, instensity);
+				
+				return color;
+				
+			#else
+				
+				Vec3f pos = { params->x, params->y, params->z };
+				/* https://csawesome.runestone.academy/runestone/books/published/learnwebgl2/10_lights/07_lights_attenuation.html */
+				f32 dist = Vec_Vec3f_DistXYZ(&pos, &vtxPos) / 100;
+				float constant = 1.0 / 255.0;
+				float linear = 1.0f;
+				float quadratic = 1.0f - 1.0f * SQ((f32)params->radius / 255.0);
+				f32 attenuation = 1.0 / (constant + linear * dist + quadratic * (dist * dist));
+				Vec3f dir;
+				Vec3_Substract(dir, pos, vtxPos);
+				Vec3f norm = Vec3_Normalize(dir);
+				Vec4f color = vec4color(params->color);
+				f32 mod = CLAMP(Vec3_Dot(vtxNor, norm), 0.0, 1.0);
+				mod *= attenuation;
+				Vec3_Mult(color, mod);
+				
+				return color;
+				
+			#endif
+		}
 	}
 	
 	return (Vec4f) { 0 };
@@ -1081,18 +1081,18 @@ static void gbiFunc_geometrymode(void* cmd) {
 	/* backface/frontface culling */
 	glEnable(GL_CULL_FACE);
 	switch (gMatState.geometrymode & (G_CULL_FRONT | G_CULL_BACK)) {
-	    case G_CULL_FRONT | G_CULL_BACK:
-		    glCullFace(GL_FRONT_AND_BACK);
-		    break;
-	    case G_CULL_FRONT:
-		    glCullFace(GL_FRONT);
-		    break;
-	    case G_CULL_BACK:
-		    glCullFace(GL_BACK);
-		    break;
-	    default:
-		    glDisable(GL_CULL_FACE);
-		    break;
+		case G_CULL_FRONT | G_CULL_BACK:
+			glCullFace(GL_FRONT_AND_BACK);
+			break;
+		case G_CULL_FRONT:
+			glCullFace(GL_FRONT);
+			break;
+		case G_CULL_BACK:
+			glCullFace(GL_BACK);
+			break;
+		default:
+			glDisable(GL_CULL_FACE);
+			break;
 	}
 }
 
@@ -1176,17 +1176,17 @@ static void gbiFunc_moveword(void* cmd) {
 	void* data = n64_virt2phys(lo);
 	
 	switch (index) {
-	    case G_MW_MATRIX: break; // TODO
-	    case G_MW_NUMLIGHT: break; // TODO
-	    case G_MW_CLIP: break; // TODO
-	    case G_MW_SEGMENT:
-		    gSegment[offset / 4] = data;
-		    break;
-	    case G_MW_FOG: break; // TODO
-	    case G_MW_LIGHTCOL: break; // TODO
-	    case G_MW_FORCEMTX: break; // TODO
-	    case G_MW_PERSPNORM: break; // TODO
-	    default: assert(0 && "moveword unknown index"); break;
+		case G_MW_MATRIX: break; // TODO
+		case G_MW_NUMLIGHT: break; // TODO
+		case G_MW_CLIP: break; // TODO
+		case G_MW_SEGMENT:
+			gSegment[offset / 4] = data;
+			break;
+		case G_MW_FOG: break; // TODO
+		case G_MW_LIGHTCOL: break; // TODO
+		case G_MW_FORCEMTX: break; // TODO
+		case G_MW_PERSPNORM: break; // TODO
+		default: assert(0 && "moveword unknown index"); break;
 	}
 }
 
