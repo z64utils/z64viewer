@@ -18,6 +18,7 @@ void Room_Draw(Room* room) {
 	#endif
 	
 	gSegment[3] = room->file.data;
+	gSPSegment(POLY_OPA_DISP++, 0x3, room->file.data);
 	n64_set_onlyZmode(ZMODE_ALL);
 	n64_set_onlyGeoLayer(GEOLAYER_ALL);
 	

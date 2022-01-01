@@ -1450,19 +1450,18 @@ void* n64_graph_alloc(u32 sz) {
 	return ret;
 }
 
-void* sStorePointer;
+uintptr_t gStorePointer;
 
-Gfx n64_gbi_gfxhi(void* thing) {
-	uintptr_t wow = (uintptr_t)thing;
-	Gfx gfx = gsSetPtrHi(ReadBE(wow));
+Gfx n64_gbi_gfxhi_ptr(void* ptr) {
+	gStorePointer = (uintptr_t)ptr;
+	// gStorePointer = ReadBE(gStorePointer);
 	
-	sStorePointer = thing;
-	
-	return gfx;
+	return gO_(G_SETPTRHI,0,gStorePointer >> 32);
 }
 
-Gfx n64_gbi_gfxlo(uint8_t branch) {
-	Gfx gfx = gO_(G_DL,gF_(branch,8,16), ((uintptr_t)sStorePointer) & 0xffffffff);
+Gfx n64_gbi_gfxhi_seg(u32 seg) {
+	gStorePointer = seg;
+	// gStorePointer = ReadBE(gStorePointer);
 	
-	return gfx;
+	return gO_(G_NOOP, 0, 0);
 }

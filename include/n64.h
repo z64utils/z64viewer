@@ -113,7 +113,8 @@ extern Gfx* gPolyOpaDisp;
 	})
 #endif
 
-Gfx n64_gbi_gfxhi(void* thing);
-Gfx n64_gbi_gfxlo(uint8_t branch);
+extern uintptr_t gStorePointer;
+Gfx n64_gbi_gfxhi_ptr(void* ptr);
+Gfx n64_gbi_gfxhi_seg(u32 seg);
 
 #endif
