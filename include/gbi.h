@@ -1468,9 +1468,12 @@
 extern uintptr_t gStorePointer;
 #define gsGeneric(addr) _Generic( \
 		(addr), \
-		u32: n64_gbi_gfxhi_seg((u32)addr), \
-	    default: n64_gbi_gfxhi_ptr((void*)addr) \
-)
+		u64: n64_gbi_gfxhi_seg, \
+		s64: n64_gbi_gfxhi_seg, \
+		s32: n64_gbi_gfxhi_seg, \
+		u32: n64_gbi_gfxhi_seg, \
+		default: n64_gbi_gfxhi_ptr \
+)(addr)
 
 /* structure definition macros */
 #define gdSPDefMtx(xx,xy,xz,xw, \
