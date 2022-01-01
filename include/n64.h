@@ -11,6 +11,7 @@
 #define MATRIX_STACK_MAX 16
 #define SEGMENT_MAX      16
 #define VBUF_MAX         32
+#define GRAPH_INIT       0
 
 #define POLY_OPA_DISP gPolyOpaDisp
 
