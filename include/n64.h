@@ -14,6 +14,7 @@
 #define GRAPH_INIT       0
 
 #define POLY_OPA_DISP gPolyOpaDisp
+#define POLY_XLU_DISP gPolyOpaDisp
 
 #include <Light.h>
 
@@ -68,6 +69,11 @@ void* n64_graph_alloc(u32 sz);
 Gfx n64_gbi_gfxhi_ptr(void* ptr);
 Gfx n64_gbi_gfxhi_seg(u32 seg);
 
+Gfx* Gfx_TwoTexScroll(s32 t1, u16 x1, u16 y1, s16 w1, s16 h1, s32 t2, u16 x2, u16 y2, s16 w2, s16 h2);
+Gfx* Gfx_TexScroll(u32 x, u32 y, s32 width, s32 height);
+Gfx* Gfx_TwoTexScrollEnvColor(s32 tile1, u32 x1, u32 y1, s32 width1, s32 height1, s32 tile2, u32 x2, u32 y2, s32 width2, s32 height2, s32 r, s32 g, s32 b, s32 a);
+Gfx* Gfx_TwoTexScrollPrimColor(s32 tile1, u32 x1, u32 y1, s32 width1, s32 height1, s32 tile2, u32 x2, u32 y2, s32 width2, s32 height2, s32 r, s32 g, s32 b, s32 a);
+
 extern uintptr_t gStorePointer;
 extern Gfx gPolyOpaHead[4096];
 extern Gfx* gPolyOpaDisp;
@@ -97,7 +103,7 @@ void* Graph_Alloc(u32 sz) {
 
 #if 0 // Bloated Assembly
 
-#define gDisplayListPut(gdl,...) \
+#define gDisplayListPut(gdl, ...) \
 	({ \
 		Gfx Gdl__[] = { __VA_ARGS__ }; \
 		for (size_t Gi__ = 0; Gi__<sizeof(Gdl__) / \
@@ -110,11 +116,11 @@ void* Graph_Alloc(u32 sz) {
 	})
 #else // Bloated Assembly
 
-#define gDisplayListPut(gdl,...) \
+#define gDisplayListPut(gdl, ...) \
 	({ \
 		Gfx Gdl__[] = { __VA_ARGS__ }, * wow = gdl; \
 		for (size_t Gi__ = 0; Gi__<sizeof(Gdl__) / \
-		sizeof(*Gdl__); ++Gi__,++wow) \
+		sizeof(*Gdl__); ++Gi__, ++wow) \
 		(*(Gfx*)(wow)).hi = u32r(&Gdl__[Gi__].hi), \
 		(*(Gfx*)(wow)).lo = u32r(&Gdl__[Gi__].lo); \
 		for (size_t Gi__ = 1; Gi__<sizeof(Gdl__) / \

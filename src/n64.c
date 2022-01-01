@@ -487,7 +487,7 @@ static void doMaterial(void* addr) {
 	if (gHideGeometry)
 		return;
 	
-#define SHADER_SOURCE(...) "#version 330 core\n" # __VA_ARGS__
+	#define SHADER_SOURCE(...) "#version 330 core\n" # __VA_ARGS__
 	/* TODO track state changes; if no states changed, don't compile new shader */
 	if (1) {
 		bool isNew = false;
@@ -584,8 +584,8 @@ static void doMaterial(void* addr) {
 				uint32_t hi = gMatState.setcombine.hi;
 				uint32_t lo = gMatState.setcombine.lo;
 				
-#define ADD(X)    f = strcatt(f, X)
-#define ADDF(...) f = strcattf(f, __VA_ARGS__)
+				#define ADD(X)    f = strcatt(f, X)
+				#define ADDF(...) f = strcattf(f, __VA_ARGS__)
 				
 				ADD("void main(){");
 				
@@ -635,8 +635,8 @@ static void doMaterial(void* addr) {
 				
 				ADD("}");
 				
-#undef ADD
-#undef ADDF
+				#undef ADD
+				#undef ADDF
 			}
 			
 			Shader_update(shader, vtx, frag);
@@ -1453,7 +1453,7 @@ Gfx n64_gbi_gfxhi_ptr(void* ptr) {
 	gStorePointer = (uintptr_t)ptr;
 	// gStorePointer = ReadBE(gStorePointer);
 	
-	return gO_(G_SETPTRHI,0,gStorePointer >> 32);
+	return gO_(G_SETPTRHI, 0, gStorePointer >> 32);
 }
 
 Gfx n64_gbi_gfxhi_seg(u32 seg) {
@@ -1461,4 +1461,70 @@ Gfx n64_gbi_gfxhi_seg(u32 seg) {
 	// gStorePointer = ReadBE(gStorePointer);
 	
 	return gO_(G_NOOP, 0, 0);
+}
+
+Gfx* Gfx_TwoTexScroll(s32 t1, u16 x1, u16 y1, s16 w1, s16 h1, s32 t2, u16 x2, u16 y2, s16 w2, s16 h2) {
+	Gfx* displayList = Graph_Alloc(5 * sizeof(Gfx));
+	
+	x1 %= 2048;
+	y1 %= 2048;
+	x2 %= 2048;
+	y2 %= 2048;
+	
+	gDPTileSync(displayList);
+	gDPSetTileSize(displayList + 1, t1, x1, y1, (x1 + ((w1 - 1) << 2)), (y1 + ((h1 - 1) << 2)));
+	gDPTileSync(displayList + 2);
+	gDPSetTileSize(displayList + 3, t2, x2, y2, (x2 + ((w2 - 1) << 2)), (y2 + ((h2 - 1) << 2)));
+	gSPEndDisplayList(displayList + 4);
+	
+	return displayList;
+}
+
+Gfx* Gfx_TexScroll(u32 x, u32 y, s32 width, s32 height) {
+	Gfx* displayList = Graph_Alloc(3 * sizeof(Gfx));
+	
+	x %= 2048;
+	y %= 2048;
+	
+	gDPTileSync(displayList);
+	gDPSetTileSize(displayList + 1, 0, x, y, (x + ((width - 1) << 2)), (y + ((height - 1) << 2)));
+	gSPEndDisplayList(displayList + 2);
+	
+	return displayList;
+}
+
+Gfx* Gfx_TwoTexScrollEnvColor(s32 tile1, u32 x1, u32 y1, s32 width1, s32 height1, s32 tile2, u32 x2, u32 y2, s32 width2, s32 height2, s32 r, s32 g, s32 b, s32 a) {
+	Gfx* displayList = Graph_Alloc(6 * sizeof(Gfx));
+	
+	x1 %= 2048;
+	y1 %= 2048;
+	x2 %= 2048;
+	y2 %= 2048;
+	
+	gDPTileSync(displayList);
+	gDPSetTileSize(displayList + 1, tile1, x1, y1, (x1 + ((width1 - 1) << 2)), (y1 + ((height1 - 1) << 2)));
+	gDPTileSync(displayList + 2);
+	gDPSetTileSize(displayList + 3, tile2, x2, y2, (x2 + ((width2 - 1) << 2)), (y2 + ((height2 - 1) << 2)));
+	gDPSetEnvColor(displayList + 4, r, g, b, a);
+	gSPEndDisplayList(displayList + 5);
+	
+	return displayList;
+}
+
+Gfx* Gfx_TwoTexScrollPrimColor(s32 tile1, u32 x1, u32 y1, s32 width1, s32 height1, s32 tile2, u32 x2, u32 y2, s32 width2, s32 height2, s32 r, s32 g, s32 b, s32 a) {
+	Gfx* displayList = Graph_Alloc(10 * sizeof(Gfx));
+	
+	x1 %= 2048;
+	y1 %= 2048;
+	x2 %= 2048;
+	y2 %= 2048;
+	
+	gDPTileSync(displayList);
+	gDPSetTileSize(displayList + 1, tile1, x1, y1, (x1 + ((width1 - 1) << 2)), (y1 + ((height1 - 1) << 2)));
+	gDPTileSync(displayList + 2);
+	gDPSetTileSize(displayList + 3, tile2, x2, y2, (x2 + ((width2 - 1) << 2)), (y2 + ((height2 - 1) << 2)));
+	gDPSetPrimColor(displayList + 4, 0, 0, r, g, b, a);
+	gSPEndDisplayList(displayList + 5);
+	
+	return displayList;
 }

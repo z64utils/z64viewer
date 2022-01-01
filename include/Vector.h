@@ -97,6 +97,9 @@ typedef struct {
 	s32 y2;
 } CRect;
 
+s16 sins(u16 x);
+s16 coss(u16 angle);
+
 s16 Math_Atan2S(f32 x, f32 y);
 f32 Vec_Vec3f_DistXZ(Vec3f* a, Vec3f* b);
 f32 Vec_Vec3f_DistXYZ(Vec3f* a, Vec3f* b);

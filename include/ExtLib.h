@@ -288,7 +288,7 @@ extern PrintfSuppressLevel gPrintfSuppress;
 		exit(EXIT_FAILURE); \
 }
 
-#ifndef __EXTLIB_C__
+    #ifndef __EXTLIB_C__
 
 #define Lib_Malloc(data, size) Lib_Malloc(data, size); \
 	OsPrintfEx("Lib_Malloc: size [0x%X]", size);
@@ -296,7 +296,7 @@ extern PrintfSuppressLevel gPrintfSuppress;
 #define Lib_Calloc(data, size) Lib_Calloc(data, size); \
 	OsPrintfEx("Lib_Calloc: size [0x%X]", size);
 
-#endif
+    #endif
 
 #else
 #define OsAssert(exp) if (0) {}
