@@ -127,7 +127,7 @@ void printf_info(const char* fmt, ...) {
 
 void printf_WinFix() {
 	#ifdef _WIN32
-	system("\0");
+		system("\0");
 	#endif
 }
 
@@ -258,6 +258,13 @@ void* Lib_Realloc(void* data, s32 size) {
 	}
 	
 	return data;
+}
+
+void* Lib_Free(void* data) {
+	if (data)
+		free(data);
+	
+	return NULL;
 }
 
 s32 Lib_ParseArguments(char* argv[], char* arg, u32* parArg) {
@@ -527,12 +534,14 @@ s32 String_GetLineCount(char* str) {
 }
 
 char* String_GetLine(char* str, s32 line) {
-	static char buffer[1024] = { 0 };
-	s32 iLine = 0;
+	#define __EXT_STR_MAX 16
+	#define __EXT_BUFFER(a) buffer[Wrap(index + a, 0, __EXT_STR_MAX - 1)]
+	static char* buffer[__EXT_STR_MAX];
+	static s32 index;
+	s32 iLine = -1;
 	s32 i = 0;
 	s32 j = 0;
-	
-	memset(buffer, 0, 1024);
+	char* ret;
 	
 	while (str[i] != '\0') {
 		j = 0;
@@ -553,23 +562,31 @@ char* String_GetLine(char* str, s32 line) {
 		}
 	}
 	
-	memcpy(buffer, &str[i], j);
+	__EXT_BUFFER(0) = Lib_Calloc(0, j * 2);
+	memcpy(__EXT_BUFFER(0), &str[i], j);
+	Lib_Free(__EXT_BUFFER(-(__EXT_STR_MAX / 2)));
+	ret = __EXT_BUFFER(0);
+	index = Wrap(index + 1, 0, __EXT_STR_MAX - 1);
 	
-	return buffer;
+	return ret;
+	#undef __EXT_BUFFER
+	#undef __EXT_STR_MAX
 }
 
 char* String_GetWord(char* str, s32 word) {
-	static char buffer[1024] = { 0 };
-	s32 iWord = 0;
+	#define __EXT_STR_MAX 16
+	#define __EXT_BUFFER(a) buffer[Wrap(index + a, 0, __EXT_STR_MAX - 1)]
+	static char* buffer[__EXT_STR_MAX];
+	static s32 index;
+	s32 iWord = -1;
 	s32 i = 0;
 	s32 j = 0;
-	
-	memset(buffer, 0, 1024);
+	char* ret;
 	
 	while (str[i] != '\0') {
 		j = 0;
-		if (str[i] != ' ' && str[i] != '\t') {
-			while (str[i + j] != ' ' && str[i + j] != '\t' && str[i + j] != '\0') {
+		if (str[i + j] > ' ') {
+			while (str[i + j] > ' ') {
 				j++;
 			}
 			
@@ -585,9 +602,15 @@ char* String_GetWord(char* str, s32 word) {
 		}
 	}
 	
-	memcpy(buffer, &str[i], j);
+	__EXT_BUFFER(0) = Lib_Calloc(0, j * 2);
+	memcpy(__EXT_BUFFER(0), &str[i], j);
+	Lib_Free(__EXT_BUFFER(-(__EXT_STR_MAX / 2)));
+	ret = __EXT_BUFFER(0);
+	index = Wrap(index + 1, 0, __EXT_STR_MAX - 1);
 	
-	return buffer;
+	return ret;
+	#undef __EXT_BUFFER
+	#undef __EXT_STR_MAX
 }
 
 void String_GetLine2(char* dest, char* str, s32 line) {

@@ -54,6 +54,7 @@ static bool gCvgXalpha = false;
 
 Gfx gPolyOpaHead[4096];
 Gfx* gPolyOpaDisp;
+u8 gSegCheckBuf[64];
 
 static enum n64_geoLayer gOnlyThisGeoLayer;
 static enum n64_zmode gOnlyThisZmode;
@@ -256,14 +257,11 @@ static void othermode(void) {
 	gCvgXalpha = (indep & 0b0001000000000) >> 9;
 	
 	if (gForceBl != gForceBlOld) {
-		switch (gForceBl) {
-			case true:
-				glEnable(GL_BLEND);
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-				break;
-			case false:
-				glDisable(GL_BLEND);
-				break;
+		if (gForceBl == true) {
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		} else { /* false */
+			glDisable(GL_BLEND);
 		}
 	}
 	
@@ -274,31 +272,31 @@ static void othermode(void) {
 	if (!gHideGeometry && gOnlyThisGeoLayer != GEOLAYER_ALL) {
 		int isOverlay = gForceBl || gCvgXalpha;
 		switch (gOnlyThisGeoLayer) {
-		    case GEOLAYER_OPAQUE:
-			    if (isOverlay)
-				    gHideGeometry = true;
-			    break;
-			    
-		    case GEOLAYER_OVERLAY:
-			    if (!isOverlay)
-				    gHideGeometry = true;
-			    break;
-			    
-		    case GEOLAYER_ALL:
-			    break;
+			case GEOLAYER_OPAQUE:
+				if (isOverlay)
+					gHideGeometry = true;
+				break;
+				
+			case GEOLAYER_OVERLAY:
+				if (!isOverlay)
+					gHideGeometry = true;
+				break;
+				
+			case GEOLAYER_ALL:
+				break;
 		}
 	}
 	
 	/* hack for eliminating z-fighting on decals */
 	switch (gCurrentZmode) {
-	    case ZMODE_DEC: /* ZMODE_DEC */
-		    glEnable(GL_POLYGON_OFFSET_FILL);
-		    glPolygonOffset(-1, -1);
-		    break;
-	    default:
-		    glDisable(GL_POLYGON_OFFSET_FILL);
-		    glPolygonOffset(0, 0);
-		    break;
+		case ZMODE_DEC: /* ZMODE_DEC */
+			glEnable(GL_POLYGON_OFFSET_FILL);
+			glPolygonOffset(-1, -1);
+			break;
+		default:
+			glDisable(GL_POLYGON_OFFSET_FILL);
+			glPolygonOffset(0, 0);
+			break;
 	}
 }
 
@@ -344,34 +342,34 @@ static const char* colorValueString(int idx, int v) {
 		return "vec3(0.0)";
 	
 	switch (v) {
-	    case 0x00: return "FragColor.rgb";
-	    case 0x01: return "texture(texture0, TexCoord0).rgb";
-	    case 0x02: return "texture(texture1, TexCoord1).rgb";
-	    case 0x03: return quickstr("vec3(%f,%f,%f)", gMatState.prim.r, gMatState.prim.g, gMatState.prim.b);
-	    case 0x04: return "shading.rgb";
-	    case 0x05: return quickstr("vec3(%f,%f,%f)", gMatState.env.r, gMatState.env.g, gMatState.env.b);
-	    case 0x06:
-		    switch (idx) {
-			case 0x00: return "vec3(1.0)";
-			case 0x01: return "vec3(1.0)"; // TODO CCMUX_CENTER
-			case 0x02: return "vec3(1.0)"; // TODO CCMUX_SCALE
-			case 0x03: return "vec3(1.0)";
-		    }
-	    case 0x07:
-		    switch (idx) {
-			case 0x00: return "vec3(1.0)"; // TODO CCMUX_NOISE
-			case 0x01: return quickstr("vec3(%f)", gMatState.k4);
-			case 0x02: return "vec3(FragColor.a)";
-			case 0x03: return "vec3(0.0)";
-		    }
-	    case 0x08: return "vec3(texture(texture0, TexCoord0).a)";
-	    case 0x09: return "vec3(texture(texture1, TexCoord1).a)";
-	    case 0x0A: return quickstr("vec3(%f)", gMatState.prim.alpha);
-	    case 0x0B: return "vec3(shading.a)";
-	    case 0x0C: return quickstr("vec3(%f)", gMatState.env.alpha);
-	    case 0x0D: return quickstr("vec3(%f)", gMatState.lodfrac);
-	    case 0x0E: return quickstr("vec3(%f)", gMatState.prim.lodfrac);
-	    case 0x0F: return quickstr("vec3(%f)", gMatState.k5);
+		case 0x00: return "FragColor.rgb";
+		case 0x01: return "texture(texture0, TexCoord0).rgb";
+		case 0x02: return "texture(texture1, TexCoord1).rgb";
+		case 0x03: return quickstr("vec3(%f,%f,%f)", gMatState.prim.r, gMatState.prim.g, gMatState.prim.b);
+		case 0x04: return "shading.rgb";
+		case 0x05: return quickstr("vec3(%f,%f,%f)", gMatState.env.r, gMatState.env.g, gMatState.env.b);
+		case 0x06:
+			switch (idx) {
+				case 0x00: return "vec3(1.0)";
+				case 0x01: return "vec3(1.0)"; // TODO CCMUX_CENTER
+				case 0x02: return "vec3(1.0)"; // TODO CCMUX_SCALE
+				case 0x03: return "vec3(1.0)";
+			}
+		case 0x07:
+			switch (idx) {
+				case 0x00: return "vec3(1.0)"; // TODO CCMUX_NOISE
+				case 0x01: return quickstr("vec3(%f)", gMatState.k4);
+				case 0x02: return "vec3(FragColor.a)";
+				case 0x03: return "vec3(0.0)";
+			}
+		case 0x08: return "vec3(texture(texture0, TexCoord0).a)";
+		case 0x09: return "vec3(texture(texture1, TexCoord1).a)";
+		case 0x0A: return quickstr("vec3(%f)", gMatState.prim.alpha);
+		case 0x0B: return "vec3(shading.a)";
+		case 0x0C: return quickstr("vec3(%f)", gMatState.env.alpha);
+		case 0x0D: return quickstr("vec3(%f)", gMatState.lodfrac);
+		case 0x0E: return quickstr("vec3(%f)", gMatState.prim.lodfrac);
+		case 0x0F: return quickstr("vec3(%f)", gMatState.k5);
 	}
 	
 	return "vec3(0.0)";
@@ -385,21 +383,21 @@ static const char* alphaValueString(int idx, int v) {
 	 */
 	
 	switch (v) {
-	    case 0x00:
-		    switch (idx) {
-			case 0x02: return quickstr("%f", gMatState.lodfrac);
-			default: return "FragColor.a";
-		    }
-	    case 0x01: return "texture(texture0, TexCoord0).a";
-	    case 0x02: return "texture(texture1, TexCoord1).a";
-	    case 0x03: return quickstr("%f", gMatState.prim.alpha);
-	    case 0x04: return "shading.a";
-	    case 0x05: return quickstr("%f", gMatState.env.alpha);
-	    case 0x06:
-		    switch (idx) {
-			case 0x02: return quickstr("%f", gMatState.prim.lodfrac);
-			default: return "1.0";
-		    }
+		case 0x00:
+			switch (idx) {
+				case 0x02: return quickstr("%f", gMatState.lodfrac);
+				default: return "FragColor.a";
+			}
+		case 0x01: return "texture(texture0, TexCoord0).a";
+		case 0x02: return "texture(texture1, TexCoord1).a";
+		case 0x03: return quickstr("%f", gMatState.prim.alpha);
+		case 0x04: return "shading.a";
+		case 0x05: return quickstr("%f", gMatState.env.alpha);
+		case 0x06:
+			switch (idx) {
+				case 0x02: return quickstr("%f", gMatState.prim.lodfrac);
+				default: return "1.0";
+			}
 	}
 	
 	return "0.0";
@@ -434,20 +432,20 @@ static void doMaterial(void* addr) {
 		gMatState.texHeight = height;
 		
 		switch (gMatState.tile[tile].cmT) {
-		    case G_TX_MIRROR:
-			    wrapT = GL_MIRRORED_REPEAT;
-			    break;
-		    case G_TX_CLAMP:
-			    wrapT = GL_CLAMP_TO_EDGE;
-			    break;
+			case G_TX_MIRROR:
+				wrapT = GL_MIRRORED_REPEAT;
+				break;
+			case G_TX_CLAMP:
+				wrapT = GL_CLAMP_TO_EDGE;
+				break;
 		}
 		switch (gMatState.tile[tile].cmS) {
-		    case G_TX_MIRROR:
-			    wrapS = GL_MIRRORED_REPEAT;
-			    break;
-		    case G_TX_CLAMP:
-			    wrapS = GL_CLAMP_TO_EDGE;
-			    break;
+			case G_TX_MIRROR:
+				wrapS = GL_MIRRORED_REPEAT;
+				break;
+			case G_TX_CLAMP:
+				wrapS = GL_CLAMP_TO_EDGE;
+				break;
 		}
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapS);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapT);
@@ -489,7 +487,7 @@ static void doMaterial(void* addr) {
 	if (gHideGeometry)
 		return;
 	
-#define SHADER_SOURCE(...) "#version 330 core\n" # __VA_ARGS__
+	#define SHADER_SOURCE(...) "#version 330 core\n" # __VA_ARGS__
 	/* TODO track state changes; if no states changed, don't compile new shader */
 	if (1) {
 		bool isNew = false;
@@ -570,14 +568,14 @@ static void doMaterial(void* addr) {
 				uniform vec3 uFogColor;
 				
 				/*void main() // simple default for testing...
-				        {
-				             vec4 s = texture(texture0, TexCoord0);
-				             if (s.a < 0.5)
-				                     discard;
-				             FragColor = s * vColor;
+				                                {
+				                                                 vec4 s = texture(texture0, TexCoord0);
+				                                                 if (s.a < 0.5)
+				                                                                                 discard;
+				                                                 FragColor = s * vColor;
 
-				             FragColor.rgb = mix(FragColor.rgb * vLightColor, uFogColor, vFog);
-				        }*/
+				                                                 FragColor.rgb = mix(FragColor.rgb * vLightColor, uFogColor, vFog);
+				                                }*/
 			);
 			
 			/* construct fragment shader */
@@ -586,8 +584,8 @@ static void doMaterial(void* addr) {
 				uint32_t hi = gMatState.setcombine.hi;
 				uint32_t lo = gMatState.setcombine.lo;
 				
-#define ADD(X)    f = strcatt(f, X)
-#define ADDF(...) f = strcattf(f, __VA_ARGS__)
+				#define ADD(X)    f = strcatt(f, X)
+				#define ADDF(...) f = strcattf(f, __VA_ARGS__)
 				
 				ADD("void main(){");
 				
@@ -637,8 +635,8 @@ static void doMaterial(void* addr) {
 				
 				ADD("}");
 				
-#undef ADD
-#undef ADDF
+				#undef ADD
+				#undef ADDF
 			}
 			
 			Shader_update(shader, vtx, frag);
@@ -660,9 +658,9 @@ static void doMaterial(void* addr) {
 }
 
 static float shift_to_multiplier(const int shift) {
-	/* how many bits to shift texture coordinates       *
-	* if in range  1 <= n <= 10, texcoord >>= n        *
-	* if in range 11 <= n <= 15, texcoord <<= (16 - n) */
+	/* how many bits to shift texture coordinates	   *
+	 * if in range  1 <= n <= 10, texcoord >>= n		*
+	 * if in range 11 <= n <= 15, texcoord <<= (16 - n) */
 	if (!shift)
 		return 1;
 	
@@ -701,85 +699,85 @@ static Vec4f vec4color(RGB8 color) {
 static Vec4f bakeLight(Vec3f vtxPos, Vec3f vtxNor, LightInfo* light) {
 	assert(light);
 	switch (light->type) {
-	    case LIGHT_AMBIENT:
-		    return vec4color(light->params.amb.color);
-	    case LIGHT_DIRECTIONAL: {
-		    LightDirectional* params = &light->params.dir;
-		    Vec3f norm = { params->x / 127.0f, params->y / 127.0f, params->z / 127.0f };
-		    Vec4f color = vec4color(params->color);
-		    norm = Vec3_Normalize(norm);
-		    f32 mod = CLAMP(Vec3_Dot(vtxNor, norm), 0.0, 1.0);
-		    Vec3_Mult(color, mod);
-		    
-		    return color;
-	    }
-	    case LIGHT_POINT_GLOW:
-	    case LIGHT_POINT_NOGLOW: {
-		    LightPoint* params = &light->params.point;
-		    
-		    #if 0 // TODO: Does not work, fix pls
-		    
-		    Vec4f color = {
-			    params->color.r / 255.0f,
-			    params->color.g / 255.0f,
-			    params->color.b / 255.0f,
-			    1.0f
-		    };
-		    Vec3f lPos = {
-			    params->x - vtxPos.x,
-			    params->y - vtxPos.y,
-			    params->z - vtxPos.z
-		    };
-		    f32 radius = (f32)params->radius / 255;
-		    f32 k, ks, ksf, v, d, l;
-		    f32 instensity;
-		    Vec3f lPosInv = { 0 };
-		    
-		    radius = 255.0f - 255.0f * (radius * radius);
-		    l = 255;
-		    k = Vec3_Dot(lPos, lPos) * 2.0f;
-		    ks = sqrtf(k);
-		    
-		    Matrix_OrientVec3f(&lPos, &lPosInv, gMatrix.modelNow);
-		    
-		    for (u32 i = 0; i < 3; ++i) {
-			    lPosInv.s[i] = (4.0f * lPosInv.s[i] / ks);
-			    if (lPosInv.s[i] < -1.0f)
-				    lPosInv.s[i] = -1.0f;
-			    if (lPosInv.s[i] > 1.0f)
-				    lPosInv.s[i] = 1.0f;
-		    }
-		    
-		    v = Vec3_Dot(lPosInv, vtxNor);
-		    v = CLAMP(v, -1.0, 1.0);
-		    ksf = floorf(ks);
-		    d = (ksf * l * 2.0f + SQ(ksf) * radius / 8.0f) * 1.52587890625e-05f + 1.0f;
-		    instensity = v / d;
-		    Vec4_Mult(color, instensity);
-		    
-		    return color;
-		    
-		    #else
-		    
-		    Vec3f pos = { params->x, params->y, params->z };
-		    /* https://csawesome.runestone.academy/runestone/books/published/learnwebgl2/10_lights/07_lights_attenuation.html */
-		    f32 dist = Vec_Vec3f_DistXYZ(&pos, &vtxPos) / 100;
-		    float constant = 1.0 / 255.0;
-		    float linear = 1.0f;
-		    float quadratic = 1.0f - 1.0f * SQ((f32)params->radius / 255.0);
-		    f32 attenuation = 1.0 / (constant + linear * dist + quadratic * (dist * dist));
-		    Vec3f dir;
-		    Vec3_Substract(dir, pos, vtxPos);
-		    Vec3f norm = Vec3_Normalize(dir);
-		    Vec4f color = vec4color(params->color);
-		    f32 mod = CLAMP(Vec3_Dot(vtxNor, norm), 0.0, 1.0);
-		    mod *= attenuation;
-		    Vec3_Mult(color, mod);
-		    
-		    return color;
-		    
-		    #endif
-	    }
+		case LIGHT_AMBIENT:
+			return vec4color(light->params.amb.color);
+		case LIGHT_DIRECTIONAL: {
+			LightDirectional* params = &light->params.dir;
+			Vec3f norm = { params->x / 127.0f, params->y / 127.0f, params->z / 127.0f };
+			Vec4f color = vec4color(params->color);
+			norm = Vec3_Normalize(norm);
+			f32 mod = CLAMP(Vec3_Dot(vtxNor, norm), 0.0, 1.0);
+			Vec3_Mult(color, mod);
+			
+			return color;
+		}
+		case LIGHT_POINT_GLOW:
+		case LIGHT_POINT_NOGLOW: {
+			LightPoint* params = &light->params.point;
+			
+			#if 0 // TODO: Does not work, fix pls
+				
+				Vec4f color = {
+					params->color.r / 255.0f,
+					params->color.g / 255.0f,
+					params->color.b / 255.0f,
+					1.0f
+				};
+				Vec3f lPos = {
+					params->x - vtxPos.x,
+					params->y - vtxPos.y,
+					params->z - vtxPos.z
+				};
+				f32 radius = (f32)params->radius / 255;
+				f32 k, ks, ksf, v, d, l;
+				f32 instensity;
+				Vec3f lPosInv = { 0 };
+				
+				radius = 255.0f - 255.0f * (radius * radius);
+				l = 255;
+				k = Vec3_Dot(lPos, lPos) * 2.0f;
+				ks = sqrtf(k);
+				
+				Matrix_OrientVec3f(&lPos, &lPosInv, gMatrix.modelNow);
+				
+				for (u32 i = 0; i < 3; ++i) {
+					lPosInv.s[i] = (4.0f * lPosInv.s[i] / ks);
+					if (lPosInv.s[i] < -1.0f)
+						lPosInv.s[i] = -1.0f;
+					if (lPosInv.s[i] > 1.0f)
+						lPosInv.s[i] = 1.0f;
+				}
+				
+				v = Vec3_Dot(lPosInv, vtxNor);
+				v = CLAMP(v, -1.0, 1.0);
+				ksf = floorf(ks);
+				d = (ksf * l * 2.0f + SQ(ksf) * radius / 8.0f) * 1.52587890625e-05f + 1.0f;
+				instensity = v / d;
+				Vec4_Mult(color, instensity);
+				
+				return color;
+				
+			#else
+				
+				Vec3f pos = { params->x, params->y, params->z };
+				/* https://csawesome.runestone.academy/runestone/books/published/learnwebgl2/10_lights/07_lights_attenuation.html */
+				f32 dist = Vec_Vec3f_DistXYZ(&pos, &vtxPos) / 100;
+				float constant = 1.0 / 255.0;
+				float linear = 1.0f;
+				float quadratic = 1.0f - 1.0f * SQ((f32)params->radius / 255.0);
+				f32 attenuation = 1.0 / (constant + linear * dist + quadratic * (dist * dist));
+				Vec3f dir;
+				Vec3_Substract(dir, pos, vtxPos);
+				Vec3f norm = Vec3_Normalize(dir);
+				Vec4f color = vec4color(params->color);
+				f32 mod = CLAMP(Vec3_Dot(vtxNor, norm), 0.0, 1.0);
+				mod *= attenuation;
+				Vec3_Mult(color, mod);
+				
+				return color;
+				
+			#endif
+		}
 	}
 	
 	return (Vec4f) { 0 };
@@ -1083,18 +1081,18 @@ static void gbiFunc_geometrymode(void* cmd) {
 	/* backface/frontface culling */
 	glEnable(GL_CULL_FACE);
 	switch (gMatState.geometrymode & (G_CULL_FRONT | G_CULL_BACK)) {
-	    case G_CULL_FRONT | G_CULL_BACK:
-		    glCullFace(GL_FRONT_AND_BACK);
-		    break;
-	    case G_CULL_FRONT:
-		    glCullFace(GL_FRONT);
-		    break;
-	    case G_CULL_BACK:
-		    glCullFace(GL_BACK);
-		    break;
-	    default:
-		    glDisable(GL_CULL_FACE);
-		    break;
+		case G_CULL_FRONT | G_CULL_BACK:
+			glCullFace(GL_FRONT_AND_BACK);
+			break;
+		case G_CULL_FRONT:
+			glCullFace(GL_FRONT);
+			break;
+		case G_CULL_BACK:
+			glCullFace(GL_BACK);
+			break;
+		default:
+			glDisable(GL_CULL_FACE);
+			break;
 	}
 }
 
@@ -1175,7 +1173,7 @@ static void gbiFunc_moveword(void* cmd) {
 	uint32_t lo = u32r(b + 4);
 	uint8_t index = b[1];
 	uint16_t offset = hi & 0xffff;
-	void *data = n64_virt2phys(lo);
+	void* data = n64_virt2phys(lo);
 	
 	switch (index) {
 		case G_MW_MATRIX: break; // TODO
@@ -1262,6 +1260,7 @@ void* n64_virt2phys(unsigned int segaddr) {
 	if (gPtrHiSet) {
 		gPtrHiSet = false;
 		gPtrHi |= segaddr;
+		
 		return (void*)gPtrHi;
 	}
 	
@@ -1416,9 +1415,10 @@ void n64_set_onlyGeoLayer(enum n64_geoLayer geoLayer) {
 
 void n64_swap(Gfx* g) {
 	uint8_t* cmd = (void*)g;
+	
 	for (;;) {
 		*(uint32_t*)(cmd) = u32r(cmd);
-		*(uint32_t*)(cmd+4) = u32r(cmd+4);
+		*(uint32_t*)(cmd + 4) = u32r(cmd + 4);
 		if (*cmd == G_ENDDL || (*cmd == G_DL && cmd[1]))
 			break;
 		cmd += 8;
@@ -1443,5 +1443,88 @@ void* n64_graph_alloc(u32 sz) {
 	
 	ret = ptr;
 	ptr += sz;
+	
 	return ret;
+}
+
+uintptr_t gStorePointer;
+
+Gfx n64_gbi_gfxhi_ptr(void* ptr) {
+	gStorePointer = (uintptr_t)ptr;
+	// gStorePointer = ReadBE(gStorePointer);
+	
+	return gO_(G_SETPTRHI, 0, gStorePointer >> 32);
+}
+
+Gfx n64_gbi_gfxhi_seg(u32 seg) {
+	gStorePointer = seg;
+	// gStorePointer = ReadBE(gStorePointer);
+	
+	return gO_(G_NOOP, 0, 0);
+}
+
+Gfx* Gfx_TwoTexScroll(s32 t1, u16 x1, u16 y1, s16 w1, s16 h1, s32 t2, u16 x2, u16 y2, s16 w2, s16 h2) {
+	Gfx* displayList = Graph_Alloc(5 * sizeof(Gfx));
+	
+	x1 %= 2048;
+	y1 %= 2048;
+	x2 %= 2048;
+	y2 %= 2048;
+	
+	gDPTileSync(displayList);
+	gDPSetTileSize(displayList + 1, t1, x1, y1, (x1 + ((w1 - 1) << 2)), (y1 + ((h1 - 1) << 2)));
+	gDPTileSync(displayList + 2);
+	gDPSetTileSize(displayList + 3, t2, x2, y2, (x2 + ((w2 - 1) << 2)), (y2 + ((h2 - 1) << 2)));
+	gSPEndDisplayList(displayList + 4);
+	
+	return displayList;
+}
+
+Gfx* Gfx_TexScroll(u32 x, u32 y, s32 width, s32 height) {
+	Gfx* displayList = Graph_Alloc(3 * sizeof(Gfx));
+	
+	x %= 2048;
+	y %= 2048;
+	
+	gDPTileSync(displayList);
+	gDPSetTileSize(displayList + 1, 0, x, y, (x + ((width - 1) << 2)), (y + ((height - 1) << 2)));
+	gSPEndDisplayList(displayList + 2);
+	
+	return displayList;
+}
+
+Gfx* Gfx_TwoTexScrollEnvColor(s32 tile1, u32 x1, u32 y1, s32 width1, s32 height1, s32 tile2, u32 x2, u32 y2, s32 width2, s32 height2, s32 r, s32 g, s32 b, s32 a) {
+	Gfx* displayList = Graph_Alloc(6 * sizeof(Gfx));
+	
+	x1 %= 2048;
+	y1 %= 2048;
+	x2 %= 2048;
+	y2 %= 2048;
+	
+	gDPTileSync(displayList);
+	gDPSetTileSize(displayList + 1, tile1, x1, y1, (x1 + ((width1 - 1) << 2)), (y1 + ((height1 - 1) << 2)));
+	gDPTileSync(displayList + 2);
+	gDPSetTileSize(displayList + 3, tile2, x2, y2, (x2 + ((width2 - 1) << 2)), (y2 + ((height2 - 1) << 2)));
+	gDPSetEnvColor(displayList + 4, r, g, b, a);
+	gSPEndDisplayList(displayList + 5);
+	
+	return displayList;
+}
+
+Gfx* Gfx_TwoTexScrollPrimColor(s32 tile1, u32 x1, u32 y1, s32 width1, s32 height1, s32 tile2, u32 x2, u32 y2, s32 width2, s32 height2, s32 r, s32 g, s32 b, s32 a) {
+	Gfx* displayList = Graph_Alloc(10 * sizeof(Gfx));
+	
+	x1 %= 2048;
+	y1 %= 2048;
+	x2 %= 2048;
+	y2 %= 2048;
+	
+	gDPTileSync(displayList);
+	gDPSetTileSize(displayList + 1, tile1, x1, y1, (x1 + ((width1 - 1) << 2)), (y1 + ((height1 - 1) << 2)));
+	gDPTileSync(displayList + 2);
+	gDPSetTileSize(displayList + 3, tile2, x2, y2, (x2 + ((width2 - 1) << 2)), (y2 + ((height2 - 1) << 2)));
+	gDPSetPrimColor(displayList + 4, 0, 0, r, g, b, a);
+	gSPEndDisplayList(displayList + 5);
+	
+	return displayList;
 }

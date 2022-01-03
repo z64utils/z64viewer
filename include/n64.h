@@ -11,12 +11,16 @@
 #define MATRIX_STACK_MAX 16
 #define SEGMENT_MAX      16
 #define VBUF_MAX         32
+#define GRAPH_INIT       0
 
 #define POLY_OPA_DISP gPolyOpaDisp
+#define POLY_XLU_DISP gPolyOpaDisp
 
 #include <Light.h>
 
+#ifndef F3DEX_GBI_2
 #define F3DEX_GBI_2
+#endif
 #include "gbi.h"
 
 enum n64_zmode {
@@ -62,54 +66,67 @@ void n64_swap(Gfx* g);
 
 void* n64_graph_alloc(u32 sz);
 
+Gfx n64_gbi_gfxhi_ptr(void* ptr);
+Gfx n64_gbi_gfxhi_seg(u32 seg);
+
+Gfx* Gfx_TwoTexScroll(s32 t1, u16 x1, u16 y1, s16 w1, s16 h1, s32 t2, u16 x2, u16 y2, s16 w2, s16 h2);
+Gfx* Gfx_TexScroll(u32 x, u32 y, s32 width, s32 height);
+Gfx* Gfx_TwoTexScrollEnvColor(s32 tile1, u32 x1, u32 y1, s32 width1, s32 height1, s32 tile2, u32 x2, u32 y2, s32 width2, s32 height2, s32 r, s32 g, s32 b, s32 a);
+Gfx* Gfx_TwoTexScrollPrimColor(s32 tile1, u32 x1, u32 y1, s32 width1, s32 height1, s32 tile2, u32 x2, u32 y2, s32 width2, s32 height2, s32 r, s32 g, s32 b, s32 a);
+
+extern uintptr_t gStorePointer;
 extern Gfx gPolyOpaHead[4096];
 extern Gfx* gPolyOpaDisp;
 
-#define gxSPMatrix(mtx)           { assert(gPolyOpaDisp - gPolyOpaHead < ARRAY_COUNT(gPolyOpaHead)); gSPMatrix(gPolyOpaDisp++, mtx, G_MTX_LOAD); }
+static inline
+void* Graph_Alloc(u32 sz) {
+	return n64_graph_alloc(sz);
+}
+
+#define gxSPMatrix(mtx)           { OsAssert(gPolyOpaDisp - gPolyOpaHead < ARRAY_COUNT(gPolyOpaHead)); gSPMatrix(gPolyOpaDisp++, mtx, G_MTX_LOAD); }
 #define gxSPDisplayListSeg(dl)    gxSPDisplayList((dl))
 #define SEGMENTED_TO_VIRTUAL(seg) n64_virt2phys(seg)
-#define Graph_Alloc(size)         n64_graph_alloc(size)
-#define gxSPDisplayList(dl)    \
+#define gxSPDisplayList(dl) \
 	{ \
-		assert(gPolyOpaDisp - gPolyOpaHead < ARRAY_COUNT(gPolyOpaHead)); \
+		OsAssert(gPolyOpaDisp - gPolyOpaHead < ARRAY_COUNT(gPolyOpaHead)); \
 		gDisplayList(gPolyOpaDisp++, dl, 0); \
 	}
-#define gxSPSegment(sed, data) \
+#define gxSPSegment(disp, sed, data) \
 	{ \
-		assert(gPolyOpaDisp - gPolyOpaHead < ARRAY_COUNT(gPolyOpaHead)); \
-		gSPSegment(gPolyOpaDisp++, sed, data); \
-		n64_set_segment(sed, data); \
+		OsAssert(gPolyOpaDisp - gPolyOpaHead < ARRAY_COUNT(gPolyOpaHead)); \
+		gSPSegment(disp, sed, data); \
+		gSegment[sed] = data; \
 	}
 
 #define n64_ClearSegments() for (int i = 0x8; i < 0x10; ++i) \
-	gxSPSegment(i, 0)
+	gSegment[i] = NULL
 
 #if 0 // Bloated Assembly
 
-#define gDisplayListPut(gdl,...)                    \
-	({                                              \
-		Gfx Gdl__[] = { __VA_ARGS__ };              \
-		for (size_t Gi__ = 0; Gi__<sizeof(Gdl__) /  \
-		sizeof(*Gdl__); ++Gi__) {                   \
+#define gDisplayListPut(gdl, ...) \
+	({ \
+		Gfx Gdl__[] = { __VA_ARGS__ }; \
+		for (size_t Gi__ = 0; Gi__<sizeof(Gdl__) / \
+		sizeof(*Gdl__); ++Gi__) { \
 			Gdl__[Gi__].hi = u32r(&Gdl__[Gi__].hi); \
 			Gdl__[Gi__].lo = u32r(&Gdl__[Gi__].lo); \
-			*(Gfx*)(gdl) = Gdl__[Gi__];             \
-		}                                           \
-		(void)0;                                    \
+			*(Gfx*)(gdl) = Gdl__[Gi__]; \
+		} \
+		(void)0; \
 	})
 #else // Bloated Assembly
 
-#define gDisplayListPut(gdl,...)                    \
-	({                                              \
+#define gDisplayListPut(gdl, ...) \
+	({ \
 		Gfx Gdl__[] = { __VA_ARGS__ }, * wow = gdl; \
-		for (size_t Gi__ = 0; Gi__<sizeof(Gdl__) /  \
-		sizeof(*Gdl__); ++Gi__,++wow)               \
-		(*(Gfx*)(wow)).hi = u32r(&Gdl__[Gi__].hi),  \
-		(*(Gfx*)(wow)).lo = u32r(&Gdl__[Gi__].lo);  \
-		for (size_t Gi__ = 1; Gi__<sizeof(Gdl__) /  \
-		sizeof(*Gdl__); ++Gi__)                     \
-		(void)(gdl);                                \
-		(void)0;                                    \
+		for (size_t Gi__ = 0; Gi__<sizeof(Gdl__) / \
+		sizeof(*Gdl__); ++Gi__, ++wow) \
+		(*(Gfx*)(wow)).hi = u32r(&Gdl__[Gi__].hi), \
+		(*(Gfx*)(wow)).lo = u32r(&Gdl__[Gi__].lo); \
+		for (size_t Gi__ = 1; Gi__<sizeof(Gdl__) / \
+		sizeof(*Gdl__); ++Gi__) \
+		(void)(gdl); \
+		(void)0; \
 	})
 #endif
 
