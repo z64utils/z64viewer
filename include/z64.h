@@ -14,6 +14,7 @@
 #include <Vector.h>
 #include <Light.h>
 #include <SkelAnime.h>
+#include <Collider.h>
 #include <Rand.h>
 
 extern InputContext* __inputCtx;

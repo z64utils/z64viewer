@@ -12,6 +12,7 @@
 #define SEGMENT_MAX      16
 #define VBUF_MAX         32
 #define GRAPH_INIT       0
+#define TRI_INIT         0
 
 #define POLY_OPA_DISP gPolyOpaDisp
 #define POLY_XLU_DISP gPolyOpaDisp
@@ -19,9 +20,51 @@
 #include <Light.h>
 
 #ifndef F3DEX_GBI_2
-#define F3DEX_GBI_2
+	#define F3DEX_GBI_2
 #endif
 #include "gbi.h"
+
+typedef struct Vtx {
+	int16_t x;
+	int16_t y;
+	int16_t z;
+	int16_t pad;
+	int16_t u;
+	int16_t v;
+	union {
+		struct {
+			uint8_t r;
+			uint8_t g;
+			uint8_t b;
+			uint8_t a;
+		} color;
+		struct {
+			int8_t  x;
+			int8_t  y;
+			int8_t  z;
+			uint8_t alpha;
+		} normal;
+	} ext;
+} Vtx;
+
+typedef struct VtxF {
+	Vec4f pos;
+	struct {
+		f32 u;
+		f32 v;
+	} texcoord0, texcoord1;
+	Vec4f color;
+	struct {
+		f32 x;
+		f32 y;
+		f32 z;
+	} norm;
+} VtxF;
+
+typedef struct {
+	Vec3f p[3];
+	Vec3f n[3];
+} Tri;
 
 enum n64_zmode {
 	ZMODE_OPA,
@@ -65,6 +108,7 @@ void n64_clearShaderCache(void);
 void n64_swap(Gfx* g);
 
 void* n64_graph_alloc(u32 sz);
+void n64_assign_triangle(s32 flag);
 
 Gfx n64_gbi_gfxhi_ptr(void* ptr);
 Gfx n64_gbi_gfxhi_seg(u32 seg);
@@ -77,6 +121,8 @@ Gfx* Gfx_TwoTexScrollPrimColor(s32 tile1, u32 x1, u32 y1, s32 width1, s32 height
 extern uintptr_t gStorePointer;
 extern Gfx gPolyOpaHead[4096];
 extern Gfx* gPolyOpaDisp;
+extern Tri gTriHead[1024 * 256];
+extern u32 gTriCur;
 
 static inline
 void* Graph_Alloc(u32 sz) {
@@ -102,9 +148,9 @@ void* Graph_Alloc(u32 sz) {
 	gSegment[i] = NULL
 
 #if 0 // Bloated Assembly
-
-#define gDisplayListPut(gdl, ...) \
-	({ \
+	
+	#define gDisplayListPut(gdl, ...) \
+		({ \
 		Gfx Gdl__[] = { __VA_ARGS__ }; \
 		for (size_t Gi__ = 0; Gi__<sizeof(Gdl__) / \
 		sizeof(*Gdl__); ++Gi__) { \
@@ -115,9 +161,9 @@ void* Graph_Alloc(u32 sz) {
 		(void)0; \
 	})
 #else // Bloated Assembly
-
-#define gDisplayListPut(gdl, ...) \
-	({ \
+	
+	#define gDisplayListPut(gdl, ...) \
+		({ \
 		Gfx Gdl__[] = { __VA_ARGS__ }, * wow = gdl; \
 		for (size_t Gi__ = 0; Gi__<sizeof(Gdl__) / \
 		sizeof(*Gdl__); ++Gi__, ++wow) \

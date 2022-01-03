@@ -52,6 +52,8 @@ static bool gFogEnabled = true;
 static bool gForceBl = false;
 static bool gCvgXalpha = false;
 
+Tri gTriHead[1024 * 256];
+u32 gTriCur;
 Gfx gPolyOpaHead[4096];
 Gfx* gPolyOpaDisp;
 u8 gSegCheckBuf[64];
@@ -151,48 +153,6 @@ static struct {
 	float    k5;
 	uint32_t geometrymode;
 } gMatState; /* material state magic */
-
-/*
- *
- * private
- *
- */
-typedef struct Vtx {
-	int16_t x;
-	int16_t y;
-	int16_t z;
-	int16_t pad;
-	int16_t u;
-	int16_t v;
-	union {
-		struct {
-			uint8_t r;
-			uint8_t g;
-			uint8_t b;
-			uint8_t a;
-		} color;
-		struct {
-			int8_t  x;
-			int8_t  y;
-			int8_t  z;
-			uint8_t alpha;
-		} normal;
-	} ext;
-} Vtx;
-
-typedef struct VtxF {
-	Vec4f pos;
-	struct {
-		GLfloat u;
-		GLfloat v;
-	} texcoord0, texcoord1;
-	Vec4f color;
-	struct {
-		GLfloat x;
-		GLfloat y;
-		GLfloat z;
-	} norm;
-} VtxF;
 
 void* gSegment[SEGMENT_MAX] = { 0 };
 typedef void (* gbiFunc)(void* cmd);
@@ -885,6 +845,7 @@ static void gbiFunc_tri1(void* cmd) {
 	gIndices[1] = b[2] / 2;
 	gIndices[2] = b[3] / 2;
 	
+	n64_assign_triangle(1);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gEBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(gIndices), gIndices, GL_DYNAMIC_DRAW);
 	
@@ -905,6 +866,7 @@ static void gbiFunc_tri2(void* cmd) {
 	gIndices[4] = b[6] / 2;
 	gIndices[5] = b[7] / 2;
 	
+	n64_assign_triangle(2);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gEBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(gIndices), gIndices, GL_DYNAMIC_DRAW);
 	
@@ -1445,6 +1407,55 @@ void* n64_graph_alloc(u32 sz) {
 	ptr += sz;
 	
 	return ret;
+}
+
+void n64_assign_triangle(s32 flag) {
+	if (flag == 0) {
+		gTriCur = 0;
+		
+		return;
+	}
+	
+	for (s32 i = 0; i < flag; i++) {
+		s32 j = 3 * i;
+		
+		gTriHead[gTriCur++] = (Tri) {
+			.p = {
+				{
+					gVbuf[gIndices[0 + j]].pos.x,
+					gVbuf[gIndices[0 + j]].pos.y,
+					gVbuf[gIndices[0 + j]].pos.z,
+				},
+				{
+					gVbuf[gIndices[1 + j]].pos.x,
+					gVbuf[gIndices[1 + j]].pos.y,
+					gVbuf[gIndices[1 + j]].pos.z,
+				},
+				{
+					gVbuf[gIndices[2 + j]].pos.x,
+					gVbuf[gIndices[2 + j]].pos.y,
+					gVbuf[gIndices[2 + j]].pos.z,
+				}
+			},
+			.n = {
+				{
+					gVbuf[gIndices[0 + j]].norm.x,
+					gVbuf[gIndices[0 + j]].norm.y,
+					gVbuf[gIndices[0 + j]].norm.z,
+				},
+				{
+					gVbuf[gIndices[1 + j]].norm.x,
+					gVbuf[gIndices[1 + j]].norm.y,
+					gVbuf[gIndices[1 + j]].norm.z,
+				},
+				{
+					gVbuf[gIndices[2 + j]].norm.x,
+					gVbuf[gIndices[2 + j]].norm.y,
+					gVbuf[gIndices[2 + j]].norm.z,
+				}
+			}
+		};
+	}
 }
 
 uintptr_t gStorePointer;
