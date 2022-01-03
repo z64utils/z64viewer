@@ -14,39 +14,39 @@ void Room_Draw(Room* room) {
 	
 	for (s32 z = 0; z < 2; z++) {
 		switch (type) {
-		    case 0: {
-			    PolygonDlist0* polyDL = SEGMENTED_TO_VIRTUAL(
-				    ReadBE(room->mesh->polygon.start)
-			    );
-			    
-			    for (s32 i = 0; i < room->mesh->polygon.num; i++) {
-				    if (z == 0 && polyDL->opa) {
-					    gSPDisplayList(POLY_OPA_DISP++, ReadBE(polyDL->opa));
-				    } else if (z == 1 && polyDL->xlu) {
-					    gSPDisplayList(POLY_OPA_DISP++, ReadBE(polyDL->xlu));
-				    }
-				    
-				    polyDL++;
-			    }
-			    
-			    break;
-		    }
-		    case 2: {
-			    PolygonDlist2* polyDL = SEGMENTED_TO_VIRTUAL(
-				    ReadBE(room->mesh->polygon.start)
-			    );
-			    
-			    for (s32 i = 0; i < room->mesh->polygon.num; i++) {
-				    if (z == 0 && polyDL->opa) {
-					    gSPDisplayList(POLY_OPA_DISP++, ReadBE(polyDL->opa));
-				    } else if (z == 1 && polyDL->xlu) {
-					    gSPDisplayList(POLY_OPA_DISP++, ReadBE(polyDL->xlu));
-				    }
-				    
-				    polyDL++;
-			    }
-			    break;
-		    }
+			case 0: {
+				PolygonDlist0* polyDL = SEGMENTED_TO_VIRTUAL(
+					ReadBE(room->mesh->polygon.start)
+				);
+				
+				for (s32 i = 0; i < room->mesh->polygon.num; i++) {
+					if (z == 0 && polyDL->opa) {
+						gSPDisplayList(POLY_OPA_DISP++, ReadBE(polyDL->opa));
+					} else if (z == 1 && polyDL->xlu) {
+						gSPDisplayList(POLY_OPA_DISP++, ReadBE(polyDL->xlu));
+					}
+					
+					polyDL++;
+				}
+				
+				break;
+			}
+			case 2: {
+				PolygonDlist2* polyDL = SEGMENTED_TO_VIRTUAL(
+					ReadBE(room->mesh->polygon.start)
+				);
+				
+				for (s32 i = 0; i < room->mesh->polygon.num; i++) {
+					if (z == 0 && polyDL->opa) {
+						gSPDisplayList(POLY_OPA_DISP++, ReadBE(polyDL->opa));
+					} else if (z == 1 && polyDL->xlu) {
+						gSPDisplayList(POLY_OPA_DISP++, ReadBE(polyDL->xlu));
+					}
+					
+					polyDL++;
+				}
+				break;
+			}
 		}
 	}
 }

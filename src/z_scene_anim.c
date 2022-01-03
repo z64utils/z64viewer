@@ -10,31 +10,14 @@ Gfx sEmptyDL[] = {
 	gsSPEndDisplayList(),
 };
 
-#define NIGHT_FLAG (scene->lightCtx.curEnvId == 3 || scene->lightCtx.curEnvId == 0)
-
-void Scene_Init() {
-	memcpy(
-		sDefaultDisplayList,
-		(Gfx[24]) {
-		gsSPSegment(0x08, sEmptyDL),
-		gsSPSegment(0x09, sEmptyDL),
-		gsSPSegment(0x0A, sEmptyDL),
-		gsSPSegment(0x0B, sEmptyDL),
-		gsSPSegment(0x0C, sEmptyDL),
-		gsSPSegment(0x0D, sEmptyDL),
-		gsDPPipeSync(),
-		gsDPSetPrimColor(0, 0, 128, 128, 128, 128),
-		gsDPSetEnvColor(128, 128, 128, 128),
-		gsSPEndDisplayList(),
-	},
-		sizeof(Gfx) * 24
-	);
-}
+#define NIGHT_FLAG (scene->lightCtx.curEnvId == 3)
 
 void Scene_DrawConfig_00(Scene* scene) {
-	gSPDisplayList(POLY_OPA_DISP++, sDefaultDisplayList);
-	gSPDisplayList(POLY_XLU_DISP++, sDefaultDisplayList);
+	gDPPipeSync(POLY_OPA_DISP++);
+	gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, 128, 128, 128, 128);
+	gDPSetEnvColor(POLY_OPA_DISP++, 128, 128, 128, 128);
 }
+
 void Scene_DrawConfig_01(Scene* scene) {
 	Gfx* displayListHead;
 	
@@ -1003,23 +986,23 @@ void Scene_DrawConfig_21(Scene* scene) {
 			func_800AA7AC(&globalCtx->view, 0.95f);
 			
 			switch (gRoomUnk[0]) {
-			    case 0:
-				    break;
-			    case 1:
-				    if (gRoomUnk[1] < 1200) {
-					    gRoomUnk[1] += 200;
-				    } else {
-					    gRoomUnk[0]++;
-				    }
-				    break;
-			    case 2:
-				    if (gRoomUnk[1] > 0) {
-					    gRoomUnk[1] -= 30;
-				    } else {
-					    gRoomUnk[1] = 0;
-					    gRoomUnk[0] = 0;
-				    }
-				    break;
+				case 0:
+					break;
+				case 1:
+					if (gRoomUnk[1] < 1200) {
+						gRoomUnk[1] += 200;
+					} else {
+						gRoomUnk[0]++;
+					}
+					break;
+				case 2:
+					if (gRoomUnk[1] > 0) {
+						gRoomUnk[1] -= 30;
+					} else {
+						gRoomUnk[1] = 0;
+						gRoomUnk[0] = 0;
+					}
+					break;
 			}
 			
 			D_8012A398 += 0.15f + (gRoomUnk[1] * 0.001f);

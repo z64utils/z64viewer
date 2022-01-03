@@ -380,7 +380,6 @@ extern s16 gRoomUnk[2];
 extern SceneID gSceneNum;
 extern SceneDrawConf gSceneDrawConf[53];
 
-void Scene_Init();
 void Scene_ExecuteCommands(Scene* scene, Room* room);
 
 #endif

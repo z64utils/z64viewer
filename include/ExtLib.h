@@ -129,6 +129,7 @@ void* Lib_MemMemIgnCase(const void* haystack, size_t haystackSize, const void* n
 void* Lib_Malloc(void* data, s32 size);
 void* Lib_Calloc(void* data, s32 size);
 void* Lib_Realloc(void* data, s32 size);
+void* Lib_Free(void* data);
 void Lib_ByteSwap(void* src, s32 size);
 
 void* File_Load(void* destSize, char* filepath);
@@ -149,6 +150,7 @@ s32 MemFile_LoadFile_ReqExt(MemFile* memFile, char* filepath, const char* ext);
 s32 MemFile_SaveFile_ReqExt(MemFile* memFile, char* filepath, s32 size, const char* ext);
 void MemFile_Free(MemFile* memFile);
 
+#define String_MemMem(src, comp) Lib_MemMem(src, strlen(src), comp, strlen(comp))
 u32 String_HexStrToInt(char* string);
 u32 String_NumStrToInt(char* string);
 f64 String_NumStrToF64(char* string);
@@ -282,25 +284,25 @@ extern PrintfSuppressLevel gPrintfSuppress;
 #define OsPrintfEx printf_debugExt
 
 #ifndef NDEBUG
-#define OsAssert(exp) if (!(exp)) { \
-		printf(PRNT_DGRY "[%s]: " PRNT_REDD "%s: " PRNT_GRAY "[%d]\n"PRNT_RSET, __FILE__, __FUNCTION__, __LINE__); \
-		printf_debug(PRNT_YELW "OsAssert(\a " PRNT_RSET # exp PRNT_YELW " );"); \
-		exit(EXIT_FAILURE); \
-}
-
+	#define OsAssert(exp) if (!(exp)) { \
+			printf(PRNT_DGRY "[%s]: " PRNT_REDD "%s: " PRNT_GRAY "[%d]\n"PRNT_RSET, __FILE__, __FUNCTION__, __LINE__); \
+			printf_debug(PRNT_YELW "OsAssert(\a " PRNT_RSET # exp PRNT_YELW " );"); \
+			exit(EXIT_FAILURE); \
+	}
+	
     #ifndef __EXTLIB_C__
-
-#define Lib_Malloc(data, size) Lib_Malloc(data, size); \
-	OsPrintfEx("Lib_Malloc: size [0x%X]", size);
-
-#define Lib_Calloc(data, size) Lib_Calloc(data, size); \
-	OsPrintfEx("Lib_Calloc: size [0x%X]", size);
-
+		
+		#define Lib_Malloc(data, size) Lib_Malloc(data, size); \
+			OsPrintfEx("Lib_Malloc: size [0x%X]", size);
+		
+		#define Lib_Calloc(data, size) Lib_Calloc(data, size); \
+			OsPrintfEx("Lib_Calloc: size [0x%X]", size);
+		
     #endif
-
+	
 #else
-#define OsAssert(exp) if (0) {}
-
+	#define OsAssert(exp) if (0) {}
+	
 #endif
 
 #define MAX(a, b)            ((a) > (b) ? (a) : (b))
