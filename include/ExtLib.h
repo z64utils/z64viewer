@@ -21,6 +21,8 @@ typedef signed long long int s64;
 typedef unsigned long long int u64;
 typedef float f32;
 typedef double f64;
+typedef uintptr_t uPtr;
+typedef intptr_t sPtr;
 
 typedef struct {
 	u8 hue;
@@ -155,6 +157,8 @@ u32 String_HexStrToInt(char* string);
 u32 String_NumStrToInt(char* string);
 f64 String_NumStrToF64(char* string);
 s32 String_GetLineCount(char* str);
+char* String_Line(char* str, s32 line);
+char* String_Word(char* str, s32 word);
 char* String_GetLine(char* str, s32 line);
 char* String_GetWord(char* str, s32 word);
 void String_GetLine2(char* dest, char* str, s32 line);
@@ -164,6 +168,8 @@ void String_CaseToUp(char* s, s32 i);
 void String_GetPath(char* dst, char* src);
 void String_GetBasename(char* dst, char* src);
 void String_GetFilename(char* dst, char* src);
+void String_Insert(char* point, char* insert);
+void String_Remove(char* point, s32 amount);
 
 #define Node_Add(head, node) { \
 		OsAssert(node != NULL) \

@@ -613,6 +613,62 @@ char* String_GetWord(char* str, s32 word) {
 	#undef __EXT_STR_MAX
 }
 
+char* String_Line(char* str, s32 line) {
+	s32 iLine = -1;
+	s32 i = 0;
+	s32 j = 0;
+	char* ret;
+	
+	while (str[i] != '\0') {
+		j = 0;
+		if (str[i] != '\n') {
+			while (str[i + j] != '\n' && str[i + j] != '\0') {
+				j++;
+			}
+			
+			iLine++;
+			
+			if (iLine == line) {
+				break;
+			}
+			
+			i += j;
+		} else {
+			i++;
+		}
+	}
+	
+	return &str[i];
+}
+
+char* String_Word(char* str, s32 word) {
+	s32 iWord = -1;
+	s32 i = 0;
+	s32 j = 0;
+	char* ret;
+	
+	while (str[i] != '\0') {
+		j = 0;
+		if (str[i + j] > ' ') {
+			while (str[i + j] > ' ') {
+				j++;
+			}
+			
+			iWord++;
+			
+			if (iWord == word) {
+				break;
+			}
+			
+			i += j;
+		} else {
+			i++;
+		}
+	}
+	
+	return &str[i];
+}
+
 void String_GetLine2(char* dest, char* str, s32 line) {
 	s32 iLine = 0;
 	s32 i = 0;
@@ -734,4 +790,22 @@ void String_GetFilename(char* dst, char* src) {
 	
 	memset(dst, 0, strlen(src) - slash);
 	memcpy(dst, &src[slash + 1], strlen(src) - slash - 1);
+}
+
+void String_Insert(char* point, char* insert) {
+	s32 insLen = strlen(insert);
+	char* insEnd = point + insLen;
+	s32 remLen = strlen(point);
+	
+	memmove(insEnd, point, remLen);
+	insEnd[remLen] = 0;
+	memcpy(point, insert, insLen);
+}
+
+void String_Remove(char* point, s32 amount) {
+	char* get = point + amount;
+	s32 len = strlen(get);
+	
+	memcpy(point, get, strlen(get));
+	point[len] = 0;
 }
