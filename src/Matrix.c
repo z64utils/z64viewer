@@ -14,7 +14,7 @@ const MtxF gMtxFClear = {
 };
 
 void Matrix_Init() {
-	gCurrentMatrix = Lib_Malloc(gCurrentMatrix, 20 * sizeof(MtxF));
+	gCurrentMatrix = Malloc(gCurrentMatrix, 20 * sizeof(MtxF));
 	gMatrixStack = gCurrentMatrix;
 }
 
@@ -47,12 +47,12 @@ void Matrix_Pop(void) {
 }
 
 void Matrix_Get(MtxF* dest) {
-	OsAssert(dest != NULL);
+	Assert(dest != NULL);
 	Matrix_MtxFCopy(dest, gCurrentMatrix);
 }
 
 void Matrix_Put(MtxF* src) {
-	OsAssert(src != NULL);
+	Assert(src != NULL);
 	Matrix_MtxFCopy(gCurrentMatrix, src);
 }
 

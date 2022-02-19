@@ -14,7 +14,7 @@ void Light_SetFog(Scene* scene, ViewContext* viewCtx) {
 	s16 fogOffset;
 	
 	envLight = &lightCtx->envLight[Wrap(lightCtx->curEnvId, 0, lightCtx->envListNum)];
-	OsAssert(envLight != NULL);
+	Assert(envLight != NULL);
 	near = (ReadBE(envLight->fogNear) & 0x3FF);
 	
 	if (near >= 1000) {
@@ -45,7 +45,7 @@ void Light_SetFog(Scene* scene, ViewContext* viewCtx) {
 }
 
 void Light_BindEnvLights(Scene* scene, Room* currentRoom) {
-	OsAssert(scene->lightCtx.envLight != NULL);
+	Assert(scene->lightCtx.envLight != NULL);
 	LightContext* lightCtx = &scene->lightCtx;
 	EnvLight* envLight = &lightCtx->envLight[Wrap(lightCtx->curEnvId, 0, lightCtx->envListNum)];
 	Vec3c dirA = {
@@ -91,7 +91,7 @@ void Light_BindEnvLights(Scene* scene, Room* currentRoom) {
 	if (lightCtx->state & LIGHT_STATE_CHANGED) {
 		lightCtx->state &= ~LIGHT_STATE_CHANGED;
 		
-		OsPrintfEx("LightID:    %6X", lightCtx->curEnvId);
+		printf_debugExt("LightID:    %6X", lightCtx->curEnvId);
 	}
 	
 	n64_clear_lights();

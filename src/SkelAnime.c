@@ -17,10 +17,10 @@ void SkelAnime_Init(MemFile* memFile, SkelAnime* skelAnime, u32 skeleton, u32 an
 void SkelAnime_GetFrameData(u32 animation, s32 frame, s32 limbCount, Vec3s* frameTable) {
 	AnimationHeader animHeader = *((AnimationHeader*)SEGMENTED_TO_VIRTUAL(animation));
 	
-	ByteSwap(&animHeader.jointIndices);
-	ByteSwap(&animHeader.frameData);
-	ByteSwap(&animHeader.common.frameCount);
-	ByteSwap(&animHeader.staticIndexMax);
+	SwapBE(animHeader.jointIndices);
+	SwapBE(animHeader.frameData);
+	SwapBE(animHeader.common.frameCount);
+	SwapBE(animHeader.staticIndexMax);
 	
 	JointIndex* jointIndices = SEGMENTED_TO_VIRTUAL(animHeader.jointIndices);
 	s16* frameData = SEGMENTED_TO_VIRTUAL(animHeader.frameData);
@@ -35,9 +35,9 @@ void SkelAnime_GetFrameData(u32 animation, s32 frame, s32 limbCount, Vec3s* fram
 			jointIndices->y,
 			jointIndices->z
 		};
-		ByteSwap(&swapInd.x);
-		ByteSwap(&swapInd.y);
-		ByteSwap(&swapInd.z);
+		SwapBE(swapInd.x);
+		SwapBE(swapInd.y);
+		SwapBE(swapInd.z);
 		frameTable->x =
 		    (swapInd.x >= staticIndexMax) ? dynamicData[swapInd.x] : staticData[swapInd.x];
 		frameTable->y =
@@ -45,9 +45,9 @@ void SkelAnime_GetFrameData(u32 animation, s32 frame, s32 limbCount, Vec3s* fram
 		frameTable->z =
 		    (swapInd.z >= staticIndexMax) ? dynamicData[swapInd.z] : staticData[swapInd.z];
 		
-		ByteSwap(&frameTable->x);
-		ByteSwap(&frameTable->y);
-		ByteSwap(&frameTable->z);
+		SwapBE(frameTable->x);
+		SwapBE(frameTable->y);
+		SwapBE(frameTable->z);
 	}
 }
 
@@ -83,10 +83,10 @@ void SkelAnime_Update(SkelAnime* skelAnime) {
 	
 	AnimationHeader animHeader = *((AnimationHeader*)SEGMENTED_TO_VIRTUAL(skelAnime->animation));
 	
-	ByteSwap(&animHeader.jointIndices);
-	ByteSwap(&animHeader.frameData);
-	ByteSwap(&animHeader.common.frameCount);
-	ByteSwap(&animHeader.staticIndexMax);
+	SwapBE(animHeader.jointIndices);
+	SwapBE(animHeader.frameData);
+	SwapBE(animHeader.common.frameCount);
+	SwapBE(animHeader.staticIndexMax);
 	
 	skelAnime->endFrame = animHeader.common.frameCount - 1;
 	SkelAnime_GetFrameData(skelAnime->animation, floor(skelAnime->curFrame), skelAnime->limbCount, skelAnime->jointTable);

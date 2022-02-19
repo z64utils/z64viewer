@@ -1079,7 +1079,7 @@ static void gbiFunc_mtx(void* cmd) {
 		if (wasDirectAddress == false && (mtxaddr & 0xFF000000) != 0x01000000 && (mtxaddr & 0xFF000000) != 0x0D000000) {
 			for (s32 i = 0; i < 0x40 / 2; i++) {
 				u16* ss = (u16*)&swap;
-				ByteSwap(&ss[i]);
+				SwapBE(ss[i]);
 			}
 		}
 		

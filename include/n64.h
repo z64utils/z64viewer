@@ -129,17 +129,17 @@ void* Graph_Alloc(u32 sz) {
 	return n64_graph_alloc(sz);
 }
 
-#define gxSPMatrix(mtx)           { OsAssert(gPolyOpaDisp - gPolyOpaHead < ARRAY_COUNT(gPolyOpaHead)); gSPMatrix(gPolyOpaDisp++, mtx, G_MTX_LOAD); }
+#define gxSPMatrix(mtx)           { Assert(gPolyOpaDisp - gPolyOpaHead < ARRAY_COUNT(gPolyOpaHead)); gSPMatrix(gPolyOpaDisp++, mtx, G_MTX_LOAD); }
 #define gxSPDisplayListSeg(dl)    gxSPDisplayList((dl))
 #define SEGMENTED_TO_VIRTUAL(seg) n64_virt2phys(seg)
 #define gxSPDisplayList(dl) \
 	{ \
-		OsAssert(gPolyOpaDisp - gPolyOpaHead < ARRAY_COUNT(gPolyOpaHead)); \
+		Assert(gPolyOpaDisp - gPolyOpaHead < ARRAY_COUNT(gPolyOpaHead)); \
 		gDisplayList(gPolyOpaDisp++, dl, 0); \
 	}
 #define gxSPSegment(disp, sed, data) \
 	{ \
-		OsAssert(gPolyOpaDisp - gPolyOpaHead < ARRAY_COUNT(gPolyOpaHead)); \
+		Assert(gPolyOpaDisp - gPolyOpaHead < ARRAY_COUNT(gPolyOpaHead)); \
 		gSPSegment(disp, sed, data); \
 		gSegment[sed] = data; \
 	}

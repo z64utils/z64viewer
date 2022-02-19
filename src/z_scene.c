@@ -151,7 +151,7 @@ void Scene_LoadCmd_0x0B(Scene* scene, Room* room, SceneCmd* cmd) {
 }
 // Light List
 void Scene_LoadCmd_0x0C(Scene* scene, Room* room, SceneCmd* cmd) {
-	OsAssert(scene != NULL && room != NULL);
+	Assert(scene != NULL && room != NULL);
 	scene->lightCtx.room[room->num].lightNum = cmd->lightList.num;
 	scene->lightCtx.room[room->num].lightList =
 	    SEGMENTED_TO_VIRTUAL(ReadBE(cmd->lightList.segment));
@@ -171,7 +171,7 @@ void Scene_LoadCmd_0x0E(Scene* scene, Room* room, SceneCmd* cmd) {
 }
 // Light Setting List
 void Scene_LoadCmd_0x0F(Scene* scene, Room* room, SceneCmd* cmd) {
-	OsAssert(scene != NULL);
+	Assert(scene != NULL);
 	scene->lightCtx.envLight = SEGMENTED_TO_VIRTUAL(ReadBE(cmd->lightSettingList.segment));
 	scene->lightCtx.envListNum = cmd->lightSettingList.num;
 }
@@ -403,10 +403,10 @@ void Scene_DebugOsPrintf(u8 code, u8* flag) {
 	}
 	
 	if (!*flag) {
-		OsPrintfEx("%s%-30s 0x%02X" PRNT_RSET, sColorPrint[color], sCommandNameTable[code], code);
+		printf_debugExt("%s%-30s 0x%02X" PRNT_RSET, sColorPrint[color], sCommandNameTable[code], code);
 		(*flag)++;
 	} else {
-		OsPrintf("%s%-30s 0x%02X" PRNT_RSET, sColorPrint[color], sCommandNameTable[code], code);
+		printf_debug("%s%-30s 0x%02X" PRNT_RSET, sColorPrint[color], sCommandNameTable[code], code);
 	}
 }
 
@@ -416,14 +416,14 @@ void Scene_ExecuteCommands(Scene* scene, Room* room) {
 	
 	// Process scene commands separately
 	if (room == NULL) {
-		OsPrintfEx("Executing Scene Commands");
+		printf_debugExt("Executing Scene Commands");
 		SceneCmd* sceneCmd = scene->file.data;
 		
 		n64_set_segment(0x2, scene->file.data);
 		
 		while (1) {
 			cmdCode = sceneCmd->base.code;
-			OsAssert(cmdCode <= 0x19);
+			Assert(cmdCode <= 0x19);
 			Scene_DebugOsPrintf(cmdCode, &printFlag);
 			if (cmdCode == 0x14) {
 				break;
@@ -432,14 +432,14 @@ void Scene_ExecuteCommands(Scene* scene, Room* room) {
 			sceneCmd++;
 		}
 	} else {
-		OsPrintfEx("Executing Room Commands");
+		printf_debugExt("Executing Room Commands");
 		SceneCmd* sceneCmd = room->file.data;
 		
 		n64_set_segment(0x3, room->file.data);
 		
 		while (1) {
 			cmdCode = sceneCmd->base.code;
-			OsAssert(cmdCode <= 0x19);
+			Assert(cmdCode <= 0x19);
 			Scene_DebugOsPrintf(cmdCode, &printFlag);
 			if (cmdCode == 0x14) {
 				break;
