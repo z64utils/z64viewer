@@ -9,7 +9,7 @@ int main(void) {
 	printf_SetSuppressLevel(PSL_DEBUG);
 	viewerCtx = Malloc(0, sizeof(ViewerContext));
 	memset(viewerCtx, 0, sizeof(ViewerContext));
-	z64_Init(
+	Zelda64_Init(
 		"z64viewer",
 		&viewerCtx->appInfo,
 		&viewerCtx->inputCtx,
@@ -23,7 +23,7 @@ int main(void) {
 	);
 	
 	Viewer_Init(viewerCtx);
-	z64_Update();
+	Zelda64_Update();
 	glfwTerminate();
 }
 

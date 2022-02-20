@@ -2074,7 +2074,8 @@ void String_Remove(char* point, s32 amount) {
 	char* get = point + amount;
 	s32 len = strlen(get);
 	
-	memcpy(point, get, strlen(get));
+	if (len)
+		memcpy(point, get, strlen(get));
 	point[len] = 0;
 }
 

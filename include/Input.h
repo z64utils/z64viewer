@@ -142,25 +142,30 @@ typedef struct {
 	Vec2s vel;
 	Vec2s jumpVelComp;
 	f64   scrollY;
-	InputType  clickL;
-	InputType  clickR;
-	InputType  clickMid;
-	InputType  click;
+	InputType clickL;
+	InputType clickR;
+	InputType clickMid;
+	InputType click;
 	bool cursorAction;
 } MouseInput;
 
 typedef struct {
 	MouseInput mouse;
 	InputType  key[KEY_MAX];
+	char buffer[512];
 } InputContext;
 
 void Input_KeyCallback(GLFWwindow* window, s32 key, s32 scancode, s32 action, s32 mods);
 void Input_CursorCallback(GLFWwindow* window, f64 xpos, f64 ypos);
 void Input_MouseClickCallback(GLFWwindow* window, s32 button, s32 action, s32 mods);
 void Input_ScrollCallback(GLFWwindow* window, f64 x, f64 y);
+void Input_TextCallback(GLFWwindow* window, u32 scancode);
 
 void Input_Init(InputContext* input);
 void Input_Update(InputContext* input, AppInfo* app);
 void Input_End(InputContext* input);
+
+const char* Input_GetClipboardStr();
+void Input_SetClipboardStr(char* str);
 
 #endif

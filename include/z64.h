@@ -22,9 +22,9 @@ extern AppInfo* __appInfo;
 
 typedef void (* DropCallback)(GLFWwindow*,s32, char* path[]);
 
-void z64_FramebufferCallback(GLFWwindow* window, s32 width, s32 height);
+void Zelda64_FramebufferCallback(GLFWwindow* window, s32 width, s32 height);
 
-void z64_Init(
+void Zelda64_Init(
 	const char* title,
 	AppInfo* appInfo,
 	InputContext* inputCtx,
@@ -36,8 +36,8 @@ void z64_Init(
 	u32 y,
 	u32 samples
 );
-void z64_Draw();
-void z64_Update();
+void Zelda64_Draw();
+void Zelda64_Update();
 
 bool Zelda64_20fpsLimiter();
 s8 Zelda64_EyeBlink(s16* frame);

@@ -3,7 +3,7 @@
 InputContext* __inputCtx;
 AppInfo* __appInfo;
 
-void z64_FramebufferCallback(GLFWwindow* window, s32 width, s32 height) {
+void Zelda64_FramebufferCallback(GLFWwindow* window, s32 width, s32 height) {
 	// make sure the viewport matches the new window dimensions; note that width and
 	// height will be significantly larger than specified on retina displays.
 	glViewport(0, 0, width, height);
@@ -13,12 +13,12 @@ void z64_FramebufferCallback(GLFWwindow* window, s32 width, s32 height) {
 	__appInfo->winDim.y = height;
 	__appInfo->isResizeCallback = true;
 	
-	z64_Draw();
+	Zelda64_Draw();
 }
 
 /* / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / */
 
-void z64_Init(
+void Zelda64_Init(
 	const char* title,
 	AppInfo* appInfo,
 	InputContext* inputCtx,
@@ -49,7 +49,7 @@ void z64_Init(
 		glfwWindowHint(GLFW_SAMPLES, samples);
 	
 	#ifdef __APPLE__
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 	#endif
 	
 	appInfo->mainWindow = glfwCreateWindow(
@@ -64,10 +64,11 @@ void z64_Init(
 	}
 	glfwMakeContextCurrent(appInfo->mainWindow);
 	
-	glfwSetFramebufferSizeCallback(appInfo->mainWindow, z64_FramebufferCallback);
+	glfwSetFramebufferSizeCallback(appInfo->mainWindow, Zelda64_FramebufferCallback);
 	glfwSetCursorPosCallback(appInfo->mainWindow, Input_CursorCallback);
 	glfwSetMouseButtonCallback(appInfo->mainWindow, Input_MouseClickCallback);
 	glfwSetKeyCallback(appInfo->mainWindow, Input_KeyCallback);
+	glfwSetCharCallback(appInfo->mainWindow, Input_TextCallback);
 	glfwSetScrollCallback(appInfo->mainWindow, Input_ScrollCallback);
 	if (dropCallback)
 		glfwSetDropCallback(appInfo->mainWindow, (void*)dropCallback);
@@ -81,7 +82,7 @@ void z64_Init(
 	glfwSetTime(2);
 }
 
-void z64_Draw() {
+void Zelda64_Draw() {
 	Input_Update(__inputCtx, __appInfo);
 	__appInfo->updateCall(__appInfo->context);
 	
@@ -113,17 +114,17 @@ bool Zelda64_20fpsLimiter() {
 	return 1;
 }
 
-void z64_20fpsUpdate() {
+void Zelda64_20fpsUpdate() {
 	if (curTime - prevTime < 1.0 / 20.0)
 		return;
 	prevTime = curTime;
 }
 
-void z64_Update() {
+void Zelda64_Update() {
 	while (!glfwWindowShouldClose(__appInfo->mainWindow)) {
 		glfwPollEvents();
-		z64_Draw();
-		z64_20fpsUpdate();
+		Zelda64_Draw();
+		Zelda64_20fpsUpdate();
 	}
 }
 

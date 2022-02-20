@@ -1,6 +1,7 @@
 #include <z64.h>
 
 InputContext* __pInput;
+AppInfo* __pAppInfo;
 
 void Input_Init(InputContext* input) {
 	__pInput = input;
@@ -9,6 +10,7 @@ void Input_Init(InputContext* input) {
 void Input_Update(InputContext* input, AppInfo* app) {
 	MouseInput* mouse = &input->mouse;
 	
+	__pAppInfo = app;
 	{
 		static double last = 0;
 		double cur = glfwGetTime();
@@ -17,7 +19,7 @@ void Input_Update(InputContext* input, AppInfo* app) {
 	}
 	
 	for (s32 i = 0; i < KEY_MAX; i++) {
-		input->key[i].press = (input->key[i].prev == 0 && input->key[i].hold);
+		input->key[i].press = (input->key[i].prev == 0 && input->key[i].hold != 0);
 		input->key[i].prev = input->key[i].hold;
 	}
 	
@@ -73,6 +75,18 @@ void Input_KeyCallback(GLFWwindow* window, s32 key, s32 scancode, s32 action, s3
 	input->key[key].hold = hold;
 }
 
+void Input_TextCallback(GLFWwindow* window, u32 scancode) {
+	InputContext* input = __pInput;
+	
+	if (!(scancode & 0xFFFFFF00)) {
+		if (scancode > 0x7F) {
+			printf("\a");
+		} else {
+			strcat(input->buffer, Tmp_Printf("%c", (char)scancode));
+		}
+	}
+}
+
 void Input_CursorCallback(GLFWwindow* window, f64 xpos, f64 ypos) {
 	InputContext* input = __pInput;
 	MouseInput* mouse = &input->mouse;
@@ -88,15 +102,15 @@ void Input_MouseClickCallback(GLFWwindow* window, s32 button, s32 action, s32 mo
 	s32 hold = action == GLFW_PRESS;
 	
 	switch (button) {
-	    case GLFW_MOUSE_BUTTON_RIGHT:
-		    mouse->clickR.hold = hold;
-		    break;
-		    
-	    case GLFW_MOUSE_BUTTON_LEFT:
-		    mouse->clickL.hold = hold;
-		    break;
-	    case GLFW_MOUSE_BUTTON_MIDDLE:
-		    mouse->clickMid.hold = hold;
+		case GLFW_MOUSE_BUTTON_RIGHT:
+			mouse->clickR.hold = hold;
+			break;
+			
+		case GLFW_MOUSE_BUTTON_LEFT:
+			mouse->clickL.hold = hold;
+			break;
+		case GLFW_MOUSE_BUTTON_MIDDLE:
+			mouse->clickMid.hold = hold;
 	}
 }
 
@@ -106,6 +120,19 @@ void Input_ScrollCallback(GLFWwindow* window, f64 x, f64 y) {
 
 void Input_End(InputContext* input) {
 	MouseInput* mouse = &input->mouse;
+	s32 i = 0;
 	
 	mouse->scrollY = 0;
+	
+	while (input->buffer[i] != '\0') {
+		input->buffer[i++] = '\0';
+	}
+}
+
+const char* Input_GetClipboardStr() {
+	return glfwGetClipboardString(__pAppInfo->mainWindow);
+}
+
+void Input_SetClipboardStr(char* str) {
+	glfwSetClipboardString(__pAppInfo->mainWindow, str);
 }
