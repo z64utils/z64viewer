@@ -171,7 +171,7 @@ void LogPrint();
 void Time_Start(void);
 f32 Time_Get(void);
 
-enum {
+typedef enum {
 	SORT_NO        = 0,
 	SORT_NUMERICAL = 1,
 	IS_FILE        = 0,
@@ -415,6 +415,7 @@ extern PrintfSuppressLevel gPrintfSuppress;
 #define CLAMP_MIN(val, min)  ((val) < (min) ? (min) : (val))
 #define CLAMP_MAX(val, max)  ((val) > (max) ? (max) : (val))
 #define ArrayCount(arr)      (u32)(sizeof(arr) / sizeof(arr[0]))
+#define Lerp(x, min, max)    ((min) + ((max) - (min)) * (x))
 
 #define BinToMb(x)        ((f32)(x) / (f32)0x100000)
 #define BinToKb(x)        ((f32)(x) / (f32)0x400)

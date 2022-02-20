@@ -129,6 +129,13 @@ s16 Vec_Yaw(Vec3f* a, Vec3f* b) {
 	return Math_Atan2S(dz, dx);
 }
 
+s16 Vec_Vec2f_Yaw(Vec2f* a, Vec2f* b) {
+	f32 dx = b->x - a->x;
+	f32 dz = b->y - a->y;
+	
+	return Math_Atan2S(dz, dx);
+}
+
 s16 Vec_Pitch(Vec3f* a, Vec3f* b) {
 	return Math_Atan2S(Vec_Vec3f_DistXZ(a, b), a->y - b->y);
 }
@@ -236,16 +243,16 @@ Vec3f* Vec_CalcUpFromPitchYawRoll(Vec3f* dest, s16 pitch, s16 yaw, s16 roll) {
 	temp_f6 = (cosPitchcosYaw * cosPitchSinYaw) * temp_f14;
 	temp_f10_2 = sinPitch * sinNegRoll;
 	spA4.x = ((negSinPitchSinYaw * temp_f4_2) + (cosPitch * (sp4C - cosPitchCosYawSinRoll))) +
-	    (negSinPitchCosYaw * (temp_f6 + temp_f10_2));
+		(negSinPitchCosYaw * (temp_f6 + temp_f10_2));
 	sp54 = SQ(sinPitch);
 	temp_f4_2 = (sinPitch * cosPitchcosYaw) * temp_f14;
 	temp_f8_3 = cosPitchSinYaw * sinNegRoll;
 	temp_f8 = sp4C + cosPitchCosYawSinRoll;
 	spA4.y = ((negSinPitchSinYaw * temp_f8) + (cosPitch * (((1.0f - sp54) * cosNegRoll) + sp54))) +
-	    (negSinPitchCosYaw * (temp_f4_2 - temp_f8_3));
+		(negSinPitchCosYaw * (temp_f4_2 - temp_f8_3));
 	temp_f8_2 = temp_f6 - temp_f10_2;
 	spA4.z = ((negSinPitchSinYaw * temp_f8_2) + (cosPitch * (temp_f4_2 + temp_f8_3))) +
-	    (negSinPitchCosYaw * (((1.0f - SQ(cosPitchcosYaw)) * cosNegRoll) + SQ(cosPitchcosYaw)));
+		(negSinPitchCosYaw * (((1.0f - SQ(cosPitchcosYaw)) * cosNegRoll) + SQ(cosPitchcosYaw)));
 	*dest = spA4;
 	
 	return dest;

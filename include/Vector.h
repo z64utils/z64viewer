@@ -108,6 +108,7 @@ f32 Vec_Vec3s_DistXYZ(Vec3s* a, Vec3s* b);
 f32 Vec_Vec2f_DistXZ(Vec2f* a, Vec2f* b);
 f32 Vec_Vec2s_DistXZ(Vec2s* a, Vec2s* b);
 s16 Vec_Yaw(Vec3f* a, Vec3f* b);
+s16 Vec_Vec2f_Yaw(Vec2f* a, Vec2f* b);
 s16 Vec_Pitch(Vec3f* a, Vec3f* b);
 void Vec_VecSphToVec3f(Vec3f* dest, VecSph* sph);
 void Vec_AddVecSphToVec3f(Vec3f* dest, VecSph* sph);
