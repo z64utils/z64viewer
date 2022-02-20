@@ -130,6 +130,13 @@ typedef enum {
 	KEY_MAX
 } KeyMap;
 
+typedef enum {
+	MOUSE_L,
+	MOUSE_R,
+	MOUSE_M,
+	MOUSE_ANY,
+} MouseMap;
+
 typedef struct {
 	u8 press : 1;
 	u8 hold  : 1;
@@ -167,5 +174,9 @@ void Input_End(InputContext* input);
 
 const char* Input_GetClipboardStr();
 void Input_SetClipboardStr(char* str);
+
+InputType* Input_GetKey(KeyMap key);
+InputType* Input_GetMouse(MouseMap type);
+s32 Input_GetShortcut(KeyMap mod, KeyMap key);
 
 #endif

@@ -136,3 +136,21 @@ const char* Input_GetClipboardStr() {
 void Input_SetClipboardStr(char* str) {
 	glfwSetClipboardString(__pAppInfo->mainWindow, str);
 }
+
+InputType* Input_GetKey(KeyMap key) {
+	return &__pInput->key[key];
+}
+
+InputType* Input_GetMouse(MouseMap type) {
+	InputType* it = &__pInput->mouse.clickL;
+	
+	return &it[type];
+}
+
+s32 Input_GetShortcut(KeyMap mod, KeyMap key) {
+	if (__pInput->key[mod].hold && __pInput->key[key].press) {
+		return 1;
+	}
+	
+	return 0;
+}
