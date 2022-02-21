@@ -1724,6 +1724,11 @@ s32 String_GetInt(char* string) {
 }
 
 f32 String_GetFloat(char* string) {
+	if (StrStr(string, ",")) {
+		string = Tmp_String(string);
+		String_Replace(string, ",", ".");
+	}
+	
 	return strtod(string, NULL);
 }
 
