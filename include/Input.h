@@ -138,9 +138,10 @@ typedef enum {
 } MouseMap;
 
 typedef struct {
-	u8 press : 1;
-	u8 hold  : 1;
-	u8 prev  : 1;
+	u8 press   : 1;
+	u8 hold    : 1;
+	u8 prev    : 1;
+	u8 release : 1;
 } InputType;
 
 typedef struct {
@@ -149,10 +150,15 @@ typedef struct {
 	Vec2s vel;
 	Vec2s jumpVelComp;
 	f64   scrollY;
-	InputType clickL;
-	InputType clickR;
-	InputType clickMid;
-	InputType click;
+	union {
+		struct {
+			InputType clickL;
+			InputType clickR;
+			InputType clickMid;
+			InputType click;
+		};
+		InputType clickArray[4];
+	};
 	bool cursorAction;
 } MouseInput;
 
@@ -178,5 +184,7 @@ void Input_SetClipboardStr(char* str);
 InputType* Input_GetKey(KeyMap key);
 InputType* Input_GetMouse(MouseMap type);
 s32 Input_GetShortcut(KeyMap mod, KeyMap key);
+void Input_SetMousePos(s32 x, s32 y);
+#define MOUSE_KEEP_AXIS 0xD0D0CAFE
 
 #endif

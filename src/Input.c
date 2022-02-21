@@ -19,16 +19,16 @@ void Input_Update(InputContext* input, AppInfo* app) {
 	}
 	
 	for (s32 i = 0; i < KEY_MAX; i++) {
-		input->key[i].press = (input->key[i].prev == 0 && input->key[i].hold != 0);
+		input->key[i].press = (input->key[i].prev == 0 && input->key[i].hold);
+		input->key[i].release = (input->key[i].prev && input->key[i].hold == 0);
 		input->key[i].prev = input->key[i].hold;
 	}
 	
-	mouse->clickL.press = (mouse->clickL.prev == 0 && mouse->clickL.hold);
-	mouse->clickL.prev = mouse->clickL.hold;
-	mouse->clickR.press = (mouse->clickR.prev == 0 && mouse->clickR.hold);
-	mouse->clickR.prev = mouse->clickR.hold;
-	mouse->clickMid.press = (mouse->clickMid.prev == 0 && mouse->clickMid.hold);
-	mouse->clickMid.prev = mouse->clickMid.hold;
+	for (s32 i = 0; i < 3; i++) {
+		mouse->clickArray[i].press = (mouse->clickArray[i].prev == 0 && mouse->clickArray[i].hold);
+		mouse->clickArray[i].release = (mouse->clickArray[i].prev && mouse->clickArray[i].hold == 0);
+		mouse->clickArray[i].prev = mouse->clickArray[i].hold;
+	}
 	
 	mouse->click.press = (
 		mouse->clickL.press ||
@@ -40,6 +40,12 @@ void Input_Update(InputContext* input, AppInfo* app) {
 		mouse->clickL.hold ||
 		mouse->clickR.hold ||
 		mouse->clickMid.hold
+	);
+	
+	mouse->click.release = (
+		mouse->clickL.release ||
+		mouse->clickR.release ||
+		mouse->clickMid.release
 	);
 	
 	mouse->cursorAction = (
@@ -142,9 +148,7 @@ InputType* Input_GetKey(KeyMap key) {
 }
 
 InputType* Input_GetMouse(MouseMap type) {
-	InputType* it = &__pInput->mouse.clickL;
-	
-	return &it[type];
+	return &__pInput->mouse.clickArray[type];
 }
 
 s32 Input_GetShortcut(KeyMap mod, KeyMap key) {
@@ -153,4 +157,22 @@ s32 Input_GetShortcut(KeyMap mod, KeyMap key) {
 	}
 	
 	return 0;
+}
+
+void Input_SetMousePos(s32 x, s32 y) {
+	if (x == MOUSE_KEEP_AXIS) {
+		x = __pInput->mouse.pos.x;
+	} else {
+		__pInput->mouse.jumpVelComp.x = __pInput->mouse.pos.x - x;
+	}
+	
+	if (y == MOUSE_KEEP_AXIS) {
+		y = __pInput->mouse.pos.y;
+	} else {
+		__pInput->mouse.jumpVelComp.y = __pInput->mouse.pos.y - y;
+	}
+	
+	glfwSetCursorPos(__pAppInfo->mainWindow, x, y);
+	__pInput->mouse.pos.x = x;
+	__pInput->mouse.pos.y = y;
 }
