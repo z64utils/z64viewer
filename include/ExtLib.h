@@ -279,6 +279,7 @@ char* String_GetFilename(const char* src);
 s32 String_GetPathNum(const char* src);
 char* String_GetFolder(const char* src, s32 num);
 void String_Insert(char* point, char* insert);
+void String_InsertExt(char* origin, char* insert, s32 pos, s32 size);
 void String_Remove(char* point, s32 amount);
 s32 String_Replace(char* src, char* word, char* replacement);
 void String_SwapExtension(char* dest, char* src, const char* ext);

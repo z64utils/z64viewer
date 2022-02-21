@@ -2070,6 +2070,20 @@ void String_Insert(char* point, char* insert) {
 	memcpy(point, insert, insLen);
 }
 
+void String_InsertExt(char* origin, char* insert, s32 pos, s32 size) {
+	s32 inslen = strlen(insert);
+	
+	if (pos >= size)
+		return;
+	
+	if (size - pos - inslen > 0)
+		memmove(&origin[pos + inslen], &origin[pos], size - pos - inslen);
+	
+	for (s32 j = 0; j < inslen; pos++, j++) {
+		origin[pos] = insert[j];
+	}
+}
+
 void String_Remove(char* point, s32 amount) {
 	char* get = point + amount;
 	s32 len = strlen(get);
