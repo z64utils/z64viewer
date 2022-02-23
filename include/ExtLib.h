@@ -37,7 +37,10 @@ typedef struct {
 	f32 h;
 	f32 s;
 	f32 l;
-	u8  alpha;
+	union {
+		u8 alpha;
+		u8 a;
+	};
 } HSLA8;
 
 typedef struct {
