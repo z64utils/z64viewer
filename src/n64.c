@@ -15,23 +15,91 @@
  *
  */
 
-#include <n64.h>
-#include <n64texconv.h>
-#include <bigendian.h>
-#include <shader.h>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
-#include <Matrix.h>
-#include <Vector.h>
-#include <ExtLib.h>
 #include <assert.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
 #include <math.h>
-#include <stdbool.h>
+
+typedef float MtxF_t[4][4];
+typedef union {
+	MtxF_t mf;
+	struct {
+		float xx, yx, zx, wx,
+			xy, yy, zy, wy,
+			xz, yz, zz, wz,
+			xw, yw, zw, ww;
+	};
+} MtxF;
+
+typedef union {
+	int32_t m[4][4];
+	struct {
+		uint16_t intPart[4][4];
+		uint16_t fracPart[4][4];
+	};
+} Mtx;
+
+typedef struct {
+	uint8_t r, g, b, a;
+} RGBA8;
+
+typedef struct {
+	uint8_t r, g, b;
+} RGB8;
+
+typedef struct {
+	float x, y, z, w;
+} Vec4f;
+
+typedef struct {
+	float x, y, z;
+} Vec3f;
+
+typedef struct VtxS {
+	int16_t x;
+	int16_t y;
+	int16_t z;
+	int16_t pad;
+	int16_t u;
+	int16_t v;
+	union {
+		struct {
+			uint8_t r;
+			uint8_t g;
+			uint8_t b;
+			uint8_t a;
+		} color;
+		struct {
+			int8_t  x;
+			int8_t  y;
+			int8_t  z;
+			uint8_t alpha;
+		} normal;
+	} ext;
+} VtxS;
+
+typedef struct VtxF {
+	Vec4f pos;
+	struct {
+		float u;
+		float v;
+	} texcoord0, texcoord1;
+	Vec4f color;
+	struct {
+		float x;
+		float y;
+		float z;
+	} norm;
+} VtxF;
+
+#include <n64.h>
+#include <n64texconv.h>
+#include <bigendian.h>
+#include <shader.h>
+#include <glad/glad.h>
 
 static GLuint gVAO;
 static GLuint gVBO;
@@ -53,10 +121,10 @@ static bool gForceBl = false;
 static bool gCvgXalpha = false;
 
 Tri gTriHead[1024 * 256];
-u32 gTriCur;
+uint32_t gTriCur;
 Gfx gPolyOpaHead[4096];
 Gfx* gPolyOpaDisp;
-u8 gSegCheckBuf[64];
+uint8_t gSegCheckBuf[64];
 
 static enum n64_geoLayer gOnlyThisGeoLayer;
 static enum n64_zmode gOnlyThisZmode;
@@ -78,10 +146,8 @@ static struct {
 	MtxF* modelNow;
 } gMatrix;
 
-static unsigned gLightNum;
-static LightInfo gLight[LIGHT_MAX];
-
-static float gLights[16];
+static unsigned sLightNum;
+static Lights7 sLights;
 
 static struct {
 	float fog[2];
@@ -155,8 +221,15 @@ static struct {
 } gMatState; /* material state magic */
 
 void* gSegment[SEGMENT_MAX] = { 0 };
-typedef void (* gbiFunc)(void* cmd);
 static VtxF gVbuf[VBUF_MAX];
+const MtxF sClearMtx = {
+	1.0f, 0.0f, 0.0f, 0.0f,
+	0.0f, 1.0f, 0.0f, 0.0f,
+	0.0f, 0.0f, 1.0f, 0.0f,
+	0.0f, 0.0f, 0.0f, 1.0f,
+};
+
+typedef void (* gbiFunc)(void* cmd);
 
 static ShaderList* ShaderList_new(void* addr, void* next) {
 	ShaderList* l = calloc(1, sizeof(*l));
@@ -480,7 +553,6 @@ static void doMaterial(void* addr) {
 				uniform mat4 view;
 				uniform mat4 projection;
 				uniform vec2 uFog;
-				uniform mat4 uLights;
 				
 				float fog_linear(const float dist, const float start, const float end) {
 				float s = clamp((end - dist) / (end - start), 0.0, 1.0);
@@ -595,8 +667,8 @@ static void doMaterial(void* addr) {
 				
 				ADD("}");
 				
-				#undef ADD
-				#undef ADDF
+#undef ADD
+#undef ADDF
 			}
 			
 			Shader_update(shader, vtx, frag);
@@ -609,7 +681,6 @@ static void doMaterial(void* addr) {
 		//Shader_setMat4(shader, "model", gMatrix.model);
 		Shader_setMat4(shader, "view", gMatrix.view);
 		Shader_setMat4(shader, "projection", gMatrix.projection);
-		Shader_setMat4(shader, "uLights", gLights);
 		Shader_setVec3(shader, "uFogColor", gFog.color[0], gFog.color[1], gFog.color[2]);
 		Shader_setVec2(shader, "uFog", gFog.fog[0], gFog.fog[1]);
 		Shader_setInt(shader, "texture0", 0);
@@ -633,6 +704,7 @@ static float shift_to_multiplier(const int shift) {
 	return pow(2, 16 - shift);
 }
 
+#if 0
 static inline Vec3f vec3_mul_mat44f(void* v_, void* mat_) {
 	Vec3f* v = v_;
 	
@@ -649,6 +721,35 @@ static inline Vec3f vec3_mul_mat44f(void* v_, void* mat_) {
 		       .z = v->x * mat->x.z + v->y * mat->y.z + v->z * mat->z.z + 1 * mat->w.z
 	};
 }
+#endif
+
+static void MtxF_MultVec4fExt(Vec4f* src, Vec4f* dest, MtxF* mf) {
+	dest->x = mf->xw + (mf->xx * src->x + mf->xy * src->y + mf->xz * src->z);
+	dest->y = mf->yw + (mf->yx * src->x + mf->yy * src->y + mf->yz * src->z);
+	dest->z = mf->zw + (mf->zx * src->x + mf->zy * src->y + mf->zz * src->z);
+	dest->w = mf->ww + (mf->wx * src->x + mf->wy * src->y + mf->wz * src->z);
+}
+
+static Vec3f Vec3f_Normalize(Vec3f vec) {
+	Vec3f ret;
+	float mgn = sqrtf(
+		(vec.x * vec.x) + (vec.y * vec.y) + (vec.z * vec.z)
+	);
+	
+	if (mgn == 0) {
+		ret.x = ret.y = ret.z = 0;
+	} else {
+		ret.x = vec.x / mgn;
+		ret.y = vec.y / mgn;
+		ret.z = vec.z / mgn;
+	}
+	
+	return ret;
+}
+
+static float Vec3f_Dot(Vec3f a, Vec3f b) {
+	return (a.x * b.x) + (a.y * b.y) + (a.z * b.z);
+}
 
 static Vec4f vec4color(RGB8 color) {
 	const float scale = 1 / 255.0f;
@@ -656,99 +757,38 @@ static Vec4f vec4color(RGB8 color) {
 	return (Vec4f) { color.r* scale, color.g* scale, color.b* scale };
 }
 
-static Vec4f bakeLight(Vec3f vtxPos, Vec3f vtxNor, LightInfo* light) {
-	assert(light);
-	switch (light->type) {
-		case LIGHT_AMBIENT:
-			return vec4color(light->params.amb.color);
-		case LIGHT_DIRECTIONAL: {
-			LightDirectional* params = &light->params.dir;
-			Vec3f norm = { params->x / 127.0f, params->y / 127.0f, params->z / 127.0f };
-			Vec4f color = vec4color(params->color);
-			norm = Vec3_Normalize(norm);
-			f32 mod = CLAMP(Vec3_Dot(vtxNor, norm), 0.0, 1.0);
-			Vec3_Mult(color, mod);
-			
-			return color;
-		}
-		case LIGHT_POINT_GLOW:
-		case LIGHT_POINT_NOGLOW: {
-			LightPoint* params = &light->params.point;
-			
-			#if 0 // TODO: Does not work, fix pls
-				
-				Vec4f color = {
-					params->color.r / 255.0f,
-					params->color.g / 255.0f,
-					params->color.b / 255.0f,
-					1.0f
-				};
-				Vec3f lPos = {
-					params->x - vtxPos.x,
-					params->y - vtxPos.y,
-					params->z - vtxPos.z
-				};
-				f32 radius = (f32)params->radius / 255;
-				f32 k, ks, ksf, v, d, l;
-				f32 instensity;
-				Vec3f lPosInv = { 0 };
-				
-				radius = 255.0f - 255.0f * (radius * radius);
-				l = 255;
-				k = Vec3_Dot(lPos, lPos) * 2.0f;
-				ks = sqrtf(k);
-				
-				Matrix_OrientVec3f(&lPos, &lPosInv, gMatrix.modelNow);
-				
-				for (u32 i = 0; i < 3; ++i) {
-					lPosInv.s[i] = (4.0f * lPosInv.s[i] / ks);
-					if (lPosInv.s[i] < -1.0f)
-						lPosInv.s[i] = -1.0f;
-					if (lPosInv.s[i] > 1.0f)
-						lPosInv.s[i] = 1.0f;
-				}
-				
-				v = Vec3_Dot(lPosInv, vtxNor);
-				v = CLAMP(v, -1.0, 1.0);
-				ksf = floorf(ks);
-				d = (ksf * l * 2.0f + SQ(ksf) * radius / 8.0f) * 1.52587890625e-05f + 1.0f;
-				instensity = v / d;
-				Vec4_Mult(color, instensity);
-				
-				return color;
-				
-			#else
-				
-				Vec3f pos = { params->x, params->y, params->z };
-				/* https://csawesome.runestone.academy/runestone/books/published/learnwebgl2/10_lights/07_lights_attenuation.html */
-				f32 dist = Vec_Vec3f_DistXYZ(&pos, &vtxPos) / 100;
-				float constant = 1.0 / 255.0;
-				float linear = 1.0f;
-				float quadratic = 1.0f - 1.0f * SQ((f32)params->radius / 255.0);
-				f32 attenuation = 1.0 / (constant + linear * dist + quadratic * (dist * dist));
-				Vec3f dir;
-				Vec3_Substract(dir, pos, vtxPos);
-				Vec3f norm = Vec3_Normalize(dir);
-				Vec4f color = vec4color(params->color);
-				f32 mod = CLAMP(Vec3_Dot(vtxNor, norm), 0.0, 1.0);
-				mod *= attenuation;
-				Vec3_Mult(color, mod);
-				
-				return color;
-				
-			#endif
-		}
+static Vec4f light_bind(Vec3f vtxPos, Vec3f vtxNor, int i) {
+	Light* light = &sLights.l[i];
+	
+	if (light->dir.pad1 == 0) {
+		LightDir_t* dir = &light->dir;
+		// Directional light
+		Vec4f col = vec4color((RGB8) { dir->col[0], dir->col[1], dir->col[2] });
+		Vec3f norm = Vec3f_Normalize((Vec3f) { dir->dir[0] / 127.0f, dir->dir[1] / 127.0f, dir->dir[2] / 127.0f });
+		float mod = CLAMP(Vec3f_Dot(vtxNor, norm), 0.0, 1.0);
+		
+		col.x *= mod;
+		col.y *= mod;
+		col.z *= mod;
+		
+		return col;
+	} else {
+		LightPoint_t* point = &light->point;
 	}
 	
 	return (Vec4f) { 0 };
 }
 
-static Vec4f bakeLights(Vec3f vtxPos, Vec3f vtxNor) {
-	Vec4f final = { 0 };
-	int i;
+static Vec4f light_bind_all(Vec3f vtxPos, Vec3f vtxNor) {
+	Vec4f final = {
+		sLights.a.l.col[0],
+		sLights.a.l.col[1],
+		sLights.a.l.col[2],
+		1.0f
+	};
 	
-	for (i = 0; i < gLightNum; ++i) {
-		Vec4f color = bakeLight(vtxPos, vtxNor, &gLight[i]);
+	for (int i = 0; i < sLightNum; i++) {
+		Vec4f color = light_bind(vtxPos, vtxNor, i);
 		final.x += color.x;
 		final.y += color.y;
 		final.z += color.z;
@@ -787,7 +827,7 @@ static void gbiFunc_vtx(void* cmd) {
 		v->pos.z = s16r(vaddr + 4) * scale;
 		Vec3f vtxPos = { v->pos.x, v->pos.y, v->pos.z };
 		Vec4f temp = v->pos;
-		Matrix_MultVec4fExt(&temp, &v->pos, gMatrix.modelNow);
+		MtxF_MultVec4fExt(&temp, &v->pos, gMatrix.modelNow);
 		// v->pos = vec3_mul_mat44f(&v->pos, gMatrix.modelNow);
 		v->texcoord0.u = s16r(vaddr + 8) * (1.0 / 1024) * (32.0 / gMatState.texWidth);
 		v->texcoord0.v = s16r(vaddr + 10) * (1.0 / 1024) * (32.0 / gMatState.texHeight);
@@ -818,8 +858,8 @@ static void gbiFunc_vtx(void* cmd) {
 				s8r(vaddr + 14) * div_1_127
 			};
 			
-			vtxNor = Vec3_Normalize(vtxNor);
-			v->color = bakeLights(vtxPos, vtxNor);
+			vtxNor = Vec3f_Normalize(vtxNor);
+			v->color = light_bind_all(vtxPos, vtxNor);
 			
 			v->norm.x = 0;
 			v->norm.y = 0;
@@ -992,7 +1032,7 @@ static void gbiFunc_setothermode_l(void* cmd) {
 	int length = b[3];
 	uint32_t data = u32r(b + 4);
 	
-	gMatState.othermode_low = gMatState.othermode_low & ~(((1 << length) - 1) << shift) | data;
+	gMatState.othermode_low = (gMatState.othermode_low & ~(((1 << length) - 1) << shift)) | data;
 	
 	othermode();
 }
@@ -1058,6 +1098,155 @@ static void gbiFunc_geometrymode(void* cmd) {
 	}
 }
 
+static void MtxToMtxF(Mtx* src, MtxF* dest) {
+	uint16_t* m1 = (void*)((uint8_t*)src);
+	uint16_t* m2 = (void*)((uint8_t*)src + 0x20);
+	
+	dest->xx = ((m1[0] << 0x10) | m2[0]) * (1 / 65536.0f);
+	dest->yx = ((m1[1] << 0x10) | m2[1]) * (1 / 65536.0f);
+	dest->zx = ((m1[2] << 0x10) | m2[2]) * (1 / 65536.0f);
+	dest->wx = ((m1[3] << 0x10) | m2[3]) * (1 / 65536.0f);
+	dest->xy = ((m1[4] << 0x10) | m2[4]) * (1 / 65536.0f);
+	dest->yy = ((m1[5] << 0x10) | m2[5]) * (1 / 65536.0f);
+	dest->zy = ((m1[6] << 0x10) | m2[6]) * (1 / 65536.0f);
+	dest->wy = ((m1[7] << 0x10) | m2[7]) * (1 / 65536.0f);
+	dest->xz = ((m1[8] << 0x10) | m2[8]) * (1 / 65536.0f);
+	dest->yz = ((m1[9] << 0x10) | m2[9]) * (1 / 65536.0f);
+	dest->zz = ((m1[10] << 0x10) | m2[10]) * (1 / 65536.0f);
+	dest->wz = ((m1[11] << 0x10) | m2[11]) * (1 / 65536.0f);
+	dest->xw = ((m1[12] << 0x10) | m2[12]) * (1 / 65536.0f);
+	dest->yw = ((m1[13] << 0x10) | m2[13]) * (1 / 65536.0f);
+	dest->zw = ((m1[14] << 0x10) | m2[14]) * (1 / 65536.0f);
+	dest->ww = ((m1[15] << 0x10) | m2[15]) * (1 / 65536.0f);
+}
+
+static void MtxFMtxFMult(MtxF* mfA, MtxF* mfB, MtxF* dest) {
+	float cx;
+	float cy;
+	float cz;
+	float cw;
+	float rx = mfA->xx;
+	float ry = mfA->xy;
+	float rz = mfA->xz;
+	float rw = mfA->xw;
+	
+	//--------
+	
+	cx = mfB->xx;
+	cy = mfB->yx;
+	cz = mfB->zx;
+	cw = mfB->wx;
+	dest->xx = (rx * cx) + (ry * cy) + (rz * cz) + (rw * cw);
+	
+	cx = mfB->xy;
+	cy = mfB->yy;
+	cz = mfB->zy;
+	cw = mfB->wy;
+	dest->xy = (rx * cx) + (ry * cy) + (rz * cz) + (rw * cw);
+	
+	cx = mfB->xz;
+	cy = mfB->yz;
+	cz = mfB->zz;
+	cw = mfB->wz;
+	dest->xz = (rx * cx) + (ry * cy) + (rz * cz) + (rw * cw);
+	
+	cx = mfB->xw;
+	cy = mfB->yw;
+	cz = mfB->zw;
+	cw = mfB->ww;
+	dest->xw = (rx * cx) + (ry * cy) + (rz * cz) + (rw * cw);
+	
+	//---ROW2---
+	rx = mfA->yx;
+	ry = mfA->yy;
+	rz = mfA->yz;
+	rw = mfA->yw;
+	//--------
+	cx = mfB->xx;
+	cy = mfB->yx;
+	cz = mfB->zx;
+	cw = mfB->wx;
+	dest->yx = (rx * cx) + (ry * cy) + (rz * cz) + (rw * cw);
+	
+	cx = mfB->xy;
+	cy = mfB->yy;
+	cz = mfB->zy;
+	cw = mfB->wy;
+	dest->yy = (rx * cx) + (ry * cy) + (rz * cz) + (rw * cw);
+	
+	cx = mfB->xz;
+	cy = mfB->yz;
+	cz = mfB->zz;
+	cw = mfB->wz;
+	dest->yz = (rx * cx) + (ry * cy) + (rz * cz) + (rw * cw);
+	
+	cx = mfB->xw;
+	cy = mfB->yw;
+	cz = mfB->zw;
+	cw = mfB->ww;
+	dest->yw = (rx * cx) + (ry * cy) + (rz * cz) + (rw * cw);
+	
+	//---ROW3---
+	rx = mfA->zx;
+	ry = mfA->zy;
+	rz = mfA->zz;
+	rw = mfA->zw;
+	//--------
+	cx = mfB->xx;
+	cy = mfB->yx;
+	cz = mfB->zx;
+	cw = mfB->wx;
+	dest->zx = (rx * cx) + (ry * cy) + (rz * cz) + (rw * cw);
+	
+	cx = mfB->xy;
+	cy = mfB->yy;
+	cz = mfB->zy;
+	cw = mfB->wy;
+	dest->zy = (rx * cx) + (ry * cy) + (rz * cz) + (rw * cw);
+	
+	cx = mfB->xz;
+	cy = mfB->yz;
+	cz = mfB->zz;
+	cw = mfB->wz;
+	dest->zz = (rx * cx) + (ry * cy) + (rz * cz) + (rw * cw);
+	
+	cx = mfB->xw;
+	cy = mfB->yw;
+	cz = mfB->zw;
+	cw = mfB->ww;
+	dest->zw = (rx * cx) + (ry * cy) + (rz * cz) + (rw * cw);
+	
+	//---ROW4---
+	rx = mfA->wx;
+	ry = mfA->wy;
+	rz = mfA->wz;
+	rw = mfA->ww;
+	//--------
+	cx = mfB->xx;
+	cy = mfB->yx;
+	cz = mfB->zx;
+	cw = mfB->wx;
+	dest->wx = (rx * cx) + (ry * cy) + (rz * cz) + (rw * cw);
+	
+	cx = mfB->xy;
+	cy = mfB->yy;
+	cz = mfB->zy;
+	cw = mfB->wy;
+	dest->wy = (rx * cx) + (ry * cy) + (rz * cz) + (rw * cw);
+	
+	cx = mfB->xz;
+	cy = mfB->yz;
+	cz = mfB->zz;
+	cw = mfB->wz;
+	dest->wz = (rx * cx) + (ry * cy) + (rz * cz) + (rw * cw);
+	
+	cx = mfB->xw;
+	cy = mfB->yw;
+	cz = mfB->zw;
+	cw = mfB->ww;
+	dest->ww = (rx * cx) + (ry * cy) + (rz * cz) + (rw * cw);
+}
+
 static void gbiFunc_mtx(void* cmd) {
 	uint8_t* b = cmd;
 	uint8_t params = b[3] ^ G_MTX_PUSH;
@@ -1066,7 +1255,7 @@ static void gbiFunc_mtx(void* cmd) {
 	MtxF mtxF;
 	
 	if (mtxaddr == 0x8012DB20) /* XXX hard-coded gMtxClear */
-		memcpy(&mtxF, &gMtxFClear, sizeof(gMtxFClear));
+		memcpy(&mtxF, &sClearMtx, sizeof(sClearMtx));
 	else {
 		bool wasDirectAddress = gPtrHiSet;
 		mtx = n64_virt2phys(mtxaddr);
@@ -1077,13 +1266,13 @@ static void gbiFunc_mtx(void* cmd) {
 		Mtx swap = *mtx;
 		
 		if (wasDirectAddress == false && (mtxaddr & 0xFF000000) != 0x01000000 && (mtxaddr & 0xFF000000) != 0x0D000000) {
-			for (s32 i = 0; i < 0x40 / 2; i++) {
-				u16* ss = (u16*)&swap;
-				SwapBE(ss[i]);
+			for (int32_t i = 0; i < 0x40 / 2; i++) {
+				uint16_t* ss = (uint16_t*)&swap;
+				ss[i] = u32r(&ss[i]);
 			}
 		}
 		
-		Matrix_MtxToMtxF(&swap, &mtxF);
+		MtxToMtxF(&swap, &mtxF);
 	}
 	
 	/* push matrix on stack */
@@ -1099,7 +1288,7 @@ static void gbiFunc_mtx(void* cmd) {
 		*gMatrix.modelNow = mtxF;
 	} else {
 		MtxF copy = *gMatrix.modelNow;
-		Matrix_MtxFMtxFMult(&copy, &mtxF, gMatrix.modelNow);
+		MtxFMtxFMult(&copy, &mtxF, gMatrix.modelNow);
 	}
 }
 
@@ -1318,8 +1507,10 @@ void n64_draw(void* dlist) {
 	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(VtxF), (void*)offsetof(VtxF, norm));
 	glEnableVertexAttribArray(4);
 	
+	int count = 0;
 	for (cmd = dlist; *cmd != G_ENDDL; cmd += 8) {
 		//fprintf(stderr, "%08x %08x\n", u32r(cmd), u32r(cmd + 4));
+		count++;
 		if (gGbi[*cmd]) {
 			gGbi[*cmd](cmd);
 			
@@ -1349,22 +1540,24 @@ void n64_set_fog(float fog[2], float color[3]) {
 	memcpy(gFog.color, color, sizeof(gFog.color));
 }
 
-void n64_set_lights(float lights[16]) {
-	memcpy(gLights, lights, sizeof(gLights));
-}
-
 void n64_clear_lights(void) {
-	gLightNum = 0;
+	sLightNum = 0;
 }
 
-bool n64_add_light(LightInfo* lightInfo) {
-	if (gLightNum < ARRAY_COUNT(gLight)) {
-		gLight[gLightNum++] = *lightInfo;
-		
-		return EXIT_SUCCESS;
-	} else {
-		return EXIT_FAILURE;
+bool n64_bind_light(Light* lightInfo, Ambient* ambient) {
+	bool ret = EXIT_FAILURE;
+	
+	if (lightInfo && sLightNum < 7) {
+		sLights.l[sLightNum++] = *lightInfo;
+		ret = EXIT_SUCCESS;
 	}
+	
+	if (ambient) {
+		sLights.a = *ambient;
+		ret = EXIT_SUCCESS;
+	}
+	
+	return ret;
 }
 
 void n64_set_onlyZmode(enum n64_zmode zmode) {
@@ -1395,10 +1588,10 @@ void n64_clearShaderCache(void) {
 	ShaderList_cleanup();
 }
 
-void* n64_graph_alloc(u32 sz) {
-	static u8 buf[1024 * 1024 * 8];
-	static u8* ptr;
-	u8* ret;
+void* n64_graph_alloc(uint32_t sz) {
+	static uint8_t buf[1024 * 1024 * 8];
+	static uint8_t* ptr;
+	uint8_t* ret;
 	
 	if (!ptr || !sz)
 		ptr = buf;
@@ -1409,15 +1602,15 @@ void* n64_graph_alloc(u32 sz) {
 	return ret;
 }
 
-void n64_assign_triangle(s32 flag) {
+void n64_assign_triangle(int32_t flag) {
 	if (flag == 0) {
 		gTriCur = 0;
 		
 		return;
 	}
 	
-	for (s32 i = 0; i < flag; i++) {
-		s32 j = 3 * i;
+	for (int32_t i = 0; i < flag; i++) {
+		int32_t j = 3 * i;
 		
 		gTriHead[gTriCur++] = (Tri) {
 			.p = {
@@ -1462,80 +1655,21 @@ uintptr_t gStorePointer;
 
 Gfx n64_gbi_gfxhi_ptr(void* ptr) {
 	gStorePointer = (uintptr_t)ptr;
-	// gStorePointer = ReadBE(gStorePointer);
 	
-	return gO_(G_SETPTRHI, 0, gStorePointer >> 32);
+	return gO_(G_SETPTRHI, 0, (uint64_t)gStorePointer >> 32);
 }
 
-Gfx n64_gbi_gfxhi_seg(u32 seg) {
+Gfx n64_gbi_gfxhi_seg(uint32_t seg) {
 	gStorePointer = seg;
-	// gStorePointer = ReadBE(gStorePointer);
 	
 	return gO_(G_NOOP, 0, 0);
 }
 
-Gfx* Gfx_TwoTexScroll(s32 t1, u16 x1, u16 y1, s16 w1, s16 h1, s32 t2, u16 x2, u16 y2, s16 w2, s16 h2) {
-	Gfx* displayList = Graph_Alloc(5 * sizeof(Gfx));
-	
-	x1 %= 2048;
-	y1 %= 2048;
-	x2 %= 2048;
-	y2 %= 2048;
-	
-	gDPTileSync(displayList);
-	gDPSetTileSize(displayList + 1, t1, x1, y1, (x1 + ((w1 - 1) << 2)), (y1 + ((h1 - 1) << 2)));
-	gDPTileSync(displayList + 2);
-	gDPSetTileSize(displayList + 3, t2, x2, y2, (x2 + ((w2 - 1) << 2)), (y2 + ((h2 - 1) << 2)));
-	gSPEndDisplayList(displayList + 4);
-	
-	return displayList;
-}
-
-Gfx* Gfx_TexScroll(u32 x, u32 y, s32 width, s32 height) {
-	Gfx* displayList = Graph_Alloc(3 * sizeof(Gfx));
-	
-	x %= 2048;
-	y %= 2048;
-	
-	gDPTileSync(displayList);
-	gDPSetTileSize(displayList + 1, 0, x, y, (x + ((width - 1) << 2)), (y + ((height - 1) << 2)));
-	gSPEndDisplayList(displayList + 2);
-	
-	return displayList;
-}
-
-Gfx* Gfx_TwoTexScrollEnvColor(s32 tile1, u32 x1, u32 y1, s32 width1, s32 height1, s32 tile2, u32 x2, u32 y2, s32 width2, s32 height2, s32 r, s32 g, s32 b, s32 a) {
-	Gfx* displayList = Graph_Alloc(6 * sizeof(Gfx));
-	
-	x1 %= 2048;
-	y1 %= 2048;
-	x2 %= 2048;
-	y2 %= 2048;
-	
-	gDPTileSync(displayList);
-	gDPSetTileSize(displayList + 1, tile1, x1, y1, (x1 + ((width1 - 1) << 2)), (y1 + ((height1 - 1) << 2)));
-	gDPTileSync(displayList + 2);
-	gDPSetTileSize(displayList + 3, tile2, x2, y2, (x2 + ((width2 - 1) << 2)), (y2 + ((height2 - 1) << 2)));
-	gDPSetEnvColor(displayList + 4, r, g, b, a);
-	gSPEndDisplayList(displayList + 5);
-	
-	return displayList;
-}
-
-Gfx* Gfx_TwoTexScrollPrimColor(s32 tile1, u32 x1, u32 y1, s32 width1, s32 height1, s32 tile2, u32 x2, u32 y2, s32 width2, s32 height2, s32 r, s32 g, s32 b, s32 a) {
-	Gfx* displayList = Graph_Alloc(10 * sizeof(Gfx));
-	
-	x1 %= 2048;
-	y1 %= 2048;
-	x2 %= 2048;
-	y2 %= 2048;
-	
-	gDPTileSync(displayList);
-	gDPSetTileSize(displayList + 1, tile1, x1, y1, (x1 + ((width1 - 1) << 2)), (y1 + ((height1 - 1) << 2)));
-	gDPTileSync(displayList + 2);
-	gDPSetTileSize(displayList + 3, tile2, x2, y2, (x2 + ((width2 - 1) << 2)), (y2 + ((height2 - 1) << 2)));
-	gDPSetPrimColor(displayList + 4, 0, 0, r, g, b, a);
-	gSPEndDisplayList(displayList + 5);
-	
-	return displayList;
+void n64_graph_init() {
+	n64_clear_lights();
+	n64_graph_alloc(GRAPH_INIT);
+	n64_assign_triangle(TRI_INIT);
+	for (int i = 0; i <= 0xF; i++)
+		gSegment[i] = NULL;
+	gPolyOpaDisp = gPolyOpaHead;
 }

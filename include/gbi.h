@@ -3942,6 +3942,256 @@ typedef uint16_t g_bgf_t;
 typedef uint8_t g_objf_t;
 typedef uint32_t g_objlt_t;
 
+typedef struct  {
+	_Alignas(8)
+	uint32_t hi;
+	uint32_t lo;
+} Gfx;
+
+typedef struct  {
+	int32_t x1;
+	int32_t y1;
+	int32_t x2;
+	int32_t y2;
+} Hilite_t;
+typedef union {
+	_Alignas(8)
+	Hilite_t h;
+} Hilite;
+
+typedef struct  {
+	uint8_t col[3]; // diffuse
+	char    c; // constant attenuation
+	uint8_t colc[3];
+	char    l; // linear attenuation
+	int16_t pos[3];
+	char    q; // quadratic attenuation
+} LightPoint_t;
+
+typedef struct  {
+	uint8_t col[3];
+	char    pad1;
+	uint8_t colc[3];
+	char    pad2;
+	int8_t  dir[3];
+	char    pad3;
+} LightDir_t;
+
+typedef union {
+	_Alignas(8)
+	LightDir_t dir;
+	LightPoint_t point;
+} Light;
+
+typedef struct {
+	Light l[2];
+} LookAt;
+
+typedef struct  {
+	uint8_t col[3];
+	char    pad1;
+	uint8_t colc[3];
+	char    pad2;
+} Ambient_t;
+typedef union {
+	_Alignas(8)
+	Ambient_t l;
+} Ambient;
+
+typedef struct {
+	Ambient a;
+	Light   l[1];
+} Lights0, Lights1;
+typedef struct {
+	Ambient a;
+	Light   l[2];
+} Lights2;
+typedef struct {
+	Ambient a;
+	Light   l[3];
+} Lights3;
+typedef struct {
+	Ambient a;
+	Light   l[4];
+} Lights4;
+typedef struct {
+	Ambient a;
+	Light   l[5];
+} Lights5;
+typedef struct {
+	Ambient a;
+	Light   l[6];
+} Lights6;
+typedef struct {
+	Ambient a;
+	Light   l[7];
+} Lightsn, Lights7;
+
+typedef struct  {
+	int16_t  ob[3];
+	uint16_t flag;
+	qs105_t  tc[2];
+	uint8_t  cn[4];
+} Vtx_t;
+typedef struct  {
+	int16_t  ob[3];
+	uint16_t flag;
+	qs105_t  tc[2];
+	int8_t   n[3];
+	uint8_t  a;
+} Vtx_tn;
+typedef union {
+	_Alignas(8)
+	Vtx_t v;
+	Vtx_tn n;
+} Vtx;
+
+typedef struct  {
+	qs142_t vscale[4];
+	qs142_t vtrans[4];
+} Vp_t;
+typedef union {
+	_Alignas(8)
+	Vp_t vp;
+} Vp;
+
+typedef struct  {
+	qs1516_t A;
+	qs1516_t B;
+	qs1516_t C;
+	qs1516_t D;
+	qs102_t  X;
+	qs102_t  Y;
+	qu510_t  BaseScaleX;
+	qu510_t  BaseScaleY;
+} uObjMtx_t;
+typedef union  {
+	_Alignas(8)
+	uObjMtx_t m;
+} uObjMtx;
+
+typedef struct  {
+	qs102_t X;
+	qs102_t Y;
+	qu510_t BaseScaleX;
+	qu510_t BaseScaleY;
+} uObjSubMtx_t;
+typedef union  {
+	_Alignas(8)
+	uObjSubMtx_t m;
+} uObjSubMtx;
+
+typedef struct  {
+	qu105_t   imageX;
+	qu102_t   imageW;
+	qs102_t   frameX;
+	qu102_t   frameW;
+	qu105_t   imageY;
+	qu102_t   imageH;
+	qs102_t   frameY;
+	qu102_t   frameH;
+	uint64_t* imagePtr;
+	g_bglt_t  imageLoad;
+	g_ifmt_t  imageFmt;
+	g_isiz_t  imageSiz;
+	uint16_t  imagePal;
+	g_bgf_t   imageFlip;
+	uint16_t  tmemW;
+	qs132_t   tmemH;
+	uint16_t  tmemLoadSH;
+	uint16_t  tmemLoadTH;
+	uint16_t  tmemSizeW;
+	uint16_t  tmemSize;
+} uObjBg_t;
+typedef struct  {
+	qu105_t   imageX;
+	qu102_t   imageW;
+	qs102_t   frameX;
+	qu102_t   frameW;
+	qu105_t   imageY;
+	qu102_t   imageH;
+	qs102_t   frameY;
+	qu102_t   frameH;
+	uint64_t* imagePtr;
+	g_bglt_t  imageLoad;
+	g_ifmt_t  imageFmt;
+	g_isiz_t  imageSiz;
+	uint16_t  imagePal;
+	g_bgf_t   imageFlip;
+	qu510_t   scaleW;
+	qu510_t   scaleH;
+	qs205_t   imageYorig;
+	char padding[4];
+} uObjScaleBg_t;
+typedef union {
+	_Alignas(8)
+	uObjBg_t b;
+	uObjScaleBg_t s;
+} uObjBg;
+
+typedef struct  {
+	qs102_t  objX;
+	qu510_t  scaleW;
+	qu105_t  imageW;
+	uint16_t paddingX;
+	qs102_t  objY;
+	qu510_t  scaleH;
+	qu105_t  imageH;
+	uint16_t paddingY;
+	uint16_t imageStride;
+	uint16_t imageAdrs;
+	g_ifmt_t imageFmt;
+	g_isiz_t imageSiz;
+	uint16_t imagePal;
+	g_objf_t imageFlags;
+} uObjSprite_t;
+typedef union {
+	_Alignas(8)
+	uObjSprite_t s;
+} uObjSprite;
+
+typedef struct  {
+	g_objlt_t type;
+	uint64_t* image;
+	uint16_t  tmem;
+	uint16_t  tsize;
+	uint16_t  tline;
+	uint16_t  sid;
+	uint32_t  flag;
+	uint32_t  mask;
+} uObjTxtrBlock_t;
+typedef struct  {
+	g_objlt_t type;
+	uint64_t* image;
+	uint16_t  tmem;
+	uint16_t  twidth;
+	uint16_t  theight;
+	uint16_t  sid;
+	uint32_t  flag;
+	uint32_t  mask;
+} uObjTxtrTile_t;
+typedef struct  {
+	g_objlt_t type;
+	uint64_t* image;
+	uint16_t  phead;
+	uint16_t  pnum;
+	uint16_t  zero;
+	uint16_t  sid;
+	uint32_t  flag;
+	uint32_t  mask;
+} uObjTxtrTLUT_t;
+typedef union {
+	_Alignas(8)
+	uObjTxtrBlock_t block;
+	uObjTxtrTile_t tile;
+	uObjTxtrTLUT_t tlut;
+} uObjTxtr;
+
+typedef struct {
+	uObjTxtr   txtr;
+	uObjSprite sprite;
+} uObjTxSprite;
+
 /* texture loading helper macros */
 #define G_SIZ_LDSIZ(siz)  ((siz)<G_IM_SIZ_16b?G_IM_SIZ_16b:(siz))
 #define G_SIZ_BITS(siz)   (4 << gI_(siz))
