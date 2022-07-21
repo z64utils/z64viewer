@@ -146,7 +146,7 @@ static struct {
 	MtxF* modelNow;
 } gMatrix;
 
-static unsigned sLightNum;
+static int sLightNum;
 static Lights7 sLights;
 
 static struct {
@@ -751,10 +751,10 @@ static float Vec3f_Dot(Vec3f a, Vec3f b) {
 	return (a.x * b.x) + (a.y * b.y) + (a.z * b.z);
 }
 
-static Vec4f vec4color(RGB8 color) {
+static Vec4f vec4color(uint8_t color[3]) {
 	const float scale = 1 / 255.0f;
 	
-	return (Vec4f) { color.r* scale, color.g* scale, color.b* scale };
+	return (Vec4f) { color[0] * scale, color[1] * scale, color[2] * scale, 0.0f };
 }
 
 static Vec4f light_bind(Vec3f vtxPos, Vec3f vtxNor, int i) {
@@ -762,9 +762,14 @@ static Vec4f light_bind(Vec3f vtxPos, Vec3f vtxNor, int i) {
 	
 	if (light->dir.pad1 == 0) {
 		LightDir_t* dir = &light->dir;
+		Vec3f onrm;
+		onrm.x = (float)dir->dir[0] / __INT8_MAX__;
+		onrm.y = (float)dir->dir[1] / __INT8_MAX__;
+		onrm.z = (float)dir->dir[2] / __INT8_MAX__;
+		
 		// Directional light
-		Vec4f col = vec4color((RGB8) { dir->col[0], dir->col[1], dir->col[2] });
-		Vec3f norm = Vec3f_Normalize((Vec3f) { dir->dir[0] / 127.0f, dir->dir[1] / 127.0f, dir->dir[2] / 127.0f });
+		Vec4f col = vec4color(dir->col);
+		Vec3f norm = Vec3f_Normalize(onrm);
 		float mod = CLAMP(Vec3f_Dot(vtxNor, norm), 0.0, 1.0);
 		
 		col.x *= mod;
@@ -781,9 +786,9 @@ static Vec4f light_bind(Vec3f vtxPos, Vec3f vtxNor, int i) {
 
 static Vec4f light_bind_all(Vec3f vtxPos, Vec3f vtxNor) {
 	Vec4f final = {
-		sLights.a.l.col[0],
-		sLights.a.l.col[1],
-		sLights.a.l.col[2],
+		sLights.a.l.col[0] / 255.0f,
+		sLights.a.l.col[1] / 255.0f,
+		sLights.a.l.col[2] / 255.0f,
 		1.0f
 	};
 	
@@ -1508,6 +1513,7 @@ void n64_draw(void* dlist) {
 	glEnableVertexAttribArray(4);
 	
 	int count = 0;
+	
 	for (cmd = dlist; *cmd != G_ENDDL; cmd += 8) {
 		//fprintf(stderr, "%08x %08x\n", u32r(cmd), u32r(cmd + 4));
 		count++;
