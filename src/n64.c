@@ -1512,11 +1512,8 @@ void n64_draw(void* dlist) {
 	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(VtxF), (void*)offsetof(VtxF, norm));
 	glEnableVertexAttribArray(4);
 	
-	int count = 0;
-	
 	for (cmd = dlist; *cmd != G_ENDDL; cmd += 8) {
 		//fprintf(stderr, "%08x %08x\n", u32r(cmd), u32r(cmd + 4));
-		count++;
 		if (gGbi[*cmd]) {
 			gGbi[*cmd](cmd);
 			
