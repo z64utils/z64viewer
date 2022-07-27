@@ -27,13 +27,6 @@
 #endif
 #include "gbi.h"
 
-typedef struct {
-	Vec3f p[3];
-	Vec3f n[3];
-} Tri;
-
-extern Tri gTriHead[1024 * 256];
-extern uint32_t gTriCur;
 extern Gfx gPolyOpaHead[4096];
 extern Gfx* gPolyOpaDisp;
 extern uint8_t gSegCheckBuf[64];
@@ -54,6 +47,12 @@ enum n64_geoLayer {
 
 extern void* gSegment[SEGMENT_MAX];
 
+typedef void (* TriCallback)(
+	/* 0 == init */ int32_t flag,
+	/* vertex    */ const void* v0, const void* v1, const void* v2,
+	/* normal    */ const void* n0, const void* n1, const void* n2
+);
+
 void n64_set_segment(int seg, void* data);
 void* n64_virt2phys(unsigned int segaddr);
 unsigned int n64_phys2virt(void* cmd);
@@ -69,7 +68,7 @@ void n64_set_onlyGeoLayer(enum n64_geoLayer geoLayer);
 void n64_swap(Gfx* g);
 void n64_clearShaderCache(void);
 void* n64_graph_alloc(uint32_t sz);
-void n64_assign_triangle(int32_t flag);
+void n64_set_triangle_buffer_callback(TriCallback callback);
 Gfx n64_gbi_gfxhi_ptr(void* ptr);
 Gfx n64_gbi_gfxhi_seg(uint32_t seg);
 void n64_graph_init();

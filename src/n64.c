@@ -120,8 +120,6 @@ static bool gFogEnabled = true;
 static bool gForceBl = false;
 static bool gCvgXalpha = false;
 
-Tri gTriHead[1024 * 256];
-uint32_t gTriCur;
 Gfx gPolyOpaHead[4096];
 Gfx* gPolyOpaDisp;
 uint8_t gSegCheckBuf[64];
@@ -230,6 +228,8 @@ const MtxF sClearMtx = {
 };
 
 typedef void (* gbiFunc)(void* cmd);
+
+static void n64_assign_triangle(int32_t flag);
 
 static ShaderList* ShaderList_new(void* addr, void* next) {
 	ShaderList* l = calloc(1, sizeof(*l));
@@ -824,12 +824,12 @@ static void gbiFunc_vtx(void* cmd) {
 		return;
 	
 	while (numv--) {
-		float scale = 1;
 		const float div_1_255 = (1.0f / 255.0f);
 		const float div_1_127 = (1.0f / 127.0f);
-		v->pos.x = s16r(vaddr + 0) * scale;
-		v->pos.y = s16r(vaddr + 2) * scale;
-		v->pos.z = s16r(vaddr + 4) * scale;
+		v->pos.x = s16r(vaddr + 0);
+		v->pos.y = s16r(vaddr + 2);
+		v->pos.z = s16r(vaddr + 4);
+		v->pos.w = 1.0f;
 		Vec3f vtxPos = { v->pos.x, v->pos.y, v->pos.z };
 		Vec4f temp = v->pos;
 		MtxF_MultVec4fExt(&temp, &v->pos, gMatrix.modelNow);
@@ -1605,9 +1605,18 @@ void* n64_graph_alloc(uint32_t sz) {
 	return ret;
 }
 
-void n64_assign_triangle(int32_t flag) {
+TriCallback sTriCallback;
+
+void n64_set_triangle_buffer_callback(TriCallback callback) {
+	sTriCallback = callback;
+}
+
+static void n64_assign_triangle(int32_t flag) {
+	if (sTriCallback == NULL)
+		return;
+	
 	if (flag == 0) {
-		gTriCur = 0;
+		sTriCallback(0, 0, 0, 0, 0, 0, 0);
 		
 		return;
 	}
@@ -1615,42 +1624,15 @@ void n64_assign_triangle(int32_t flag) {
 	for (int32_t i = 0; i < flag; i++) {
 		int32_t j = 3 * i;
 		
-		gTriHead[gTriCur++] = (Tri) {
-			.p = {
-				{
-					gVbuf[gIndices[0 + j]].pos.x,
-					gVbuf[gIndices[0 + j]].pos.y,
-					gVbuf[gIndices[0 + j]].pos.z,
-				},
-				{
-					gVbuf[gIndices[1 + j]].pos.x,
-					gVbuf[gIndices[1 + j]].pos.y,
-					gVbuf[gIndices[1 + j]].pos.z,
-				},
-				{
-					gVbuf[gIndices[2 + j]].pos.x,
-					gVbuf[gIndices[2 + j]].pos.y,
-					gVbuf[gIndices[2 + j]].pos.z,
-				}
-			},
-			.n = {
-				{
-					gVbuf[gIndices[0 + j]].norm.x,
-					gVbuf[gIndices[0 + j]].norm.y,
-					gVbuf[gIndices[0 + j]].norm.z,
-				},
-				{
-					gVbuf[gIndices[1 + j]].norm.x,
-					gVbuf[gIndices[1 + j]].norm.y,
-					gVbuf[gIndices[1 + j]].norm.z,
-				},
-				{
-					gVbuf[gIndices[2 + j]].norm.x,
-					gVbuf[gIndices[2 + j]].norm.y,
-					gVbuf[gIndices[2 + j]].norm.z,
-				}
-			}
-		};
+		sTriCallback(
+			flag,
+			&gVbuf[gIndices[0 + j]].pos,
+			&gVbuf[gIndices[1 + j]].pos,
+			&gVbuf[gIndices[2 + j]].pos,
+			&gVbuf[gIndices[0 + j]].norm,
+			&gVbuf[gIndices[1 + j]].norm,
+			&gVbuf[gIndices[2 + j]].norm
+		);
 	}
 }
 
