@@ -1660,5 +1660,4 @@ void n64_graph_init() {
 		gSegment[i] = NULL;
 	gPolyOpaDisp = gPolyOpaHead;
 	gPolyXluDisp = gPolyXluHead;
-	gFilter = GL_LINEAR;
 }
