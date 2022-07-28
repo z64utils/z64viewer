@@ -122,6 +122,8 @@ static bool gCvgXalpha = false;
 
 Gfx gPolyOpaHead[4096];
 Gfx* gPolyOpaDisp;
+Gfx gPolyXluHead[4096];
+Gfx* gPolyXluDisp;
 uint8_t gSegCheckBuf[64];
 
 static enum n64_geoLayer gOnlyThisGeoLayer;
@@ -1657,4 +1659,6 @@ void n64_graph_init() {
 	for (int i = 0; i <= 0xF; i++)
 		gSegment[i] = NULL;
 	gPolyOpaDisp = gPolyOpaHead;
+	gPolyXluDisp = gPolyXluHead;
+	gFilter = GL_LINEAR;
 }

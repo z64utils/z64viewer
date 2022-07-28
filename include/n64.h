@@ -20,7 +20,7 @@
 #define ARRAY_COUNT(arr)     (uint32_t)(sizeof(arr) / sizeof(arr[0]))
 
 #define POLY_OPA_DISP gPolyOpaDisp
-#define POLY_XLU_DISP gPolyOpaDisp
+#define POLY_XLU_DISP gPolyXluDisp
 
 #ifndef F3DEX_GBI_2
 #define F3DEX_GBI_2
@@ -29,6 +29,8 @@
 
 extern Gfx gPolyOpaHead[4096];
 extern Gfx* gPolyOpaDisp;
+extern Gfx gPolyXluHead[4096];
+extern Gfx* gPolyXluDisp;
 extern uint8_t gSegCheckBuf[64];
 
 enum n64_zmode {
