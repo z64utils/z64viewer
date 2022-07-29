@@ -285,19 +285,16 @@ static void ShaderList_cleanup(void) {
 static void othermode(void) {
 	uint32_t lo = gMatState.othermode_low;
 	uint32_t indep = (lo & 0b1111111111111000) >> 3;
-	bool gForceBlOld = gForceBl;
 	
 	gCurrentZmode = (indep & 0b0000110000000) >> 7;
 	gForceBl = (indep & 0b0100000000000) >> 11;
 	gCvgXalpha = (indep & 0b0001000000000) >> 9;
 	
-	if (gForceBl != gForceBlOld) {
-		if (gForceBl == true) {
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		} else { /* false */
-			glDisable(GL_BLEND);
-		}
+	if (gForceBl == true) {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	} else { /* false */
+		glDisable(GL_BLEND);
 	}
 	
 	gHideGeometry = false;
@@ -450,7 +447,7 @@ static void doMaterial(void* addr) {
 		glBindTexture(GL_TEXTURE_2D, gTexel[tile]);
 		
 		// set texture filtering parameters
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		
 		gMatState.tile[tile].doUpdate = false;
@@ -516,7 +513,7 @@ static void doMaterial(void* addr) {
 		);
 		//fprintf(stderr, "width height %d %d\n", width, height);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, wow);
-		glGenerateMipmap(GL_TEXTURE_2D);
+		//glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	
 	if (gHideGeometry)
