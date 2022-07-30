@@ -117,6 +117,8 @@ static bool gPtrHiSet = false;
 
 static Shader* gShader = 0;
 
+static uint32_t gOtherModeH = 0;
+
 static bool gHideGeometry = false;
 static bool gVertexColors = false;
 static bool gFogEnabled = true;
@@ -451,8 +453,26 @@ static void doMaterial(void* addr) {
 		gTexelCacheAt += 1;
 		
 		// set texture filtering parameters
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		{
+			GLint filter;
+			
+			switch (gOtherModeH & 0x8000)
+			{
+				case 0x8000:
+					if (gOtherModeH & G_TF_AVERAGE)
+						filter = GL_LINEAR;
+					else
+						filter = GL_NEAREST;
+					break;
+				
+				default:
+					filter = GL_LINEAR;
+					break;
+			}
+			
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
+		}
 		
 		gMatState.tile[tile].doUpdate = false;
 		int width = ((gMatState.tile[tile].lrs >> 2) - (gMatState.tile[tile].uls >> 2)) + 1;
@@ -1033,6 +1053,19 @@ static void gbiFunc_loadblock(void* cmd) {
 static void gbiFunc_loadtile(void* cmd) {
 }
 
+static void gbiFunc_setOtherMode_h(void* cmd) {
+	uint8_t* b = cmd;
+	int ss = b[2];
+	int nn = b[3];
+	uint32_t data = u32r(b + 4);
+	int shift = 32 - (nn + 1) - ss;
+	int length = nn + 1;
+	
+	gOtherModeH = gOtherModeH & ~(((1 << length) - 1) << shift) | data;
+	//fprintf(stderr, "%08x\n", gOtherModeH & G_TC_FILT);
+	//fprintf(stderr, "%08x %08x\n", u32r(b), u32r(b + 4));
+}
+
 static void gbiFunc_rdppipesync(void* cmd) {
 	gMatState.mtlReady = 0;
 }
@@ -1388,6 +1421,7 @@ static gbiFunc gGbi[256] = {
 	[G_SETTILESIZE] = gbiFunc_settilesize,
 	[G_LOADBLOCK] = gbiFunc_loadblock,
 	[G_LOADTILE] = gbiFunc_loadtile,
+	[G_SETOTHERMODE_H] = gbiFunc_setOtherMode_h,
 	[G_RDPPIPESYNC] = gbiFunc_rdppipesync,
 	[G_RDPSETOTHERMODE] = gbiFunc_rdpsetothermode,
 	[G_SETOTHERMODE_L] = gbiFunc_setothermode_l,
@@ -1666,4 +1700,5 @@ void n64_graph_init() {
 	gPolyOpaDisp = gPolyOpaHead;
 	gPolyXluDisp = gPolyXluHead;
 	gTexelCacheAt = 0;
+	gOtherModeH = 0 | G_TF_BILERP | G_TC_FILT;
 }
