@@ -104,8 +104,11 @@ typedef struct VtxF {
 static GLuint gVAO;
 static GLuint gVBO;
 static GLuint gEBO;
-static GLuint gTexel[2];
+static GLuint gTexel[4096];
 static GLuint gIndices[6];
+static int gTexelCacheCount = 0; // number of textures cached thus far
+static int gTexelCacheAt = 0; // wrapping cache index (XXX assumes texture order
+                              // is always the same; replace with dictionary later)
 
 static uint32_t gRdpHalf1;
 static uint32_t gRdpHalf2;
@@ -444,7 +447,8 @@ static void doMaterial(void* addr) {
 			continue;
 		
 		glActiveTexture(GL_TEXTURE0 + tile);
-		glBindTexture(GL_TEXTURE_2D, gTexel[tile]);
+		glBindTexture(GL_TEXTURE_2D, gTexel[gTexelCacheAt % ARRAY_COUNT(gTexel)]);
+		gTexelCacheAt += 1;
 		
 		// set texture filtering parameters
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -495,25 +499,29 @@ static void doMaterial(void* addr) {
 		//src += uls;
 		//fprintf(stderr, "%d %d\n", fmt, siz);
 		//memcpy(tmem, src, bytes); /* TODO dxt emulation requires line-by-line */
-		uint8_t wow[4096 * 8];
-		n64texconv_to_rgba8888(
-			wow
-			,
-			gMatState.tile[tile].data
-			,
-			(void*)gMatState.pal
-			,
-			fmt
-			,
-			siz
-			,
-			width
-			,
-			height
-		);
-		//fprintf(stderr, "width height %d %d\n", width, height);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, wow);
-		//glGenerateMipmap(GL_TEXTURE_2D);
+		if (gTexelCacheCount < ARRAY_COUNT(gTexel))
+		{
+			uint8_t wow[4096 * 8];
+			n64texconv_to_rgba8888(
+				wow
+				,
+				gMatState.tile[tile].data
+				,
+				(void*)gMatState.pal
+				,
+				fmt
+				,
+				siz
+				,
+				width
+				,
+				height
+			);
+			//fprintf(stderr, "width height %d %d\n", width, height);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, wow);
+			//glGenerateMipmap(GL_TEXTURE_2D);
+			gTexelCacheCount += 1;
+		}
 	}
 	
 	if (gHideGeometry)
@@ -1480,7 +1488,7 @@ void n64_draw(void* dlist) {
 	
 	/* set up texture stuff */
 	if (!gTexel[0])
-		glGenTextures(2, gTexel);
+		glGenTextures(ARRAY_COUNT(gTexel), gTexel);
 	
 	/* set up geometry stuff */
 	glBindVertexArray(gVAO);
@@ -1657,4 +1665,5 @@ void n64_graph_init() {
 		gSegment[i] = NULL;
 	gPolyOpaDisp = gPolyOpaHead;
 	gPolyXluDisp = gPolyXluHead;
+	gTexelCacheAt = 0;
 }
