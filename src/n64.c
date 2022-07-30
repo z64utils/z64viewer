@@ -8,7 +8,6 @@
  * https://wiki.cloudmodding.com/oot/F3DZEX2/Opcode_Details
  *
  * optimization opportunities:
- * - tri1/tri2 caching to reduce glDrawElements invocations
  * - I pulled n64texconv from zztexview, but that uses per-pixel
  *   callbacks to convert textures; a dedicated converter for each
  *   format tuned for speed would be better
@@ -105,7 +104,8 @@ static GLuint gVAO;
 static GLuint gVBO;
 static GLuint gEBO;
 static GLuint gTexel[4096];
-static GLuint gIndices[6];
+static GLubyte gIndices[4096];
+static int gIndicesUsed = 0;
 static int gTexelCacheCount = 0; // number of textures cached thus far
 static int gTexelCacheAt = 0; // wrapping cache index (XXX assumes texture order
                               // is always the same; replace with dictionary later)
@@ -885,6 +885,21 @@ static void gbiFunc_vtx(void* cmd) {
 	
 	glBindBuffer(GL_ARRAY_BUFFER, gVBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(gVbuf), gVbuf, GL_DYNAMIC_DRAW);
+	gIndicesUsed = 0;
+}
+
+static inline void TryDrawTriangleBatch(const uint8_t* b)
+{
+	if ((b[8] != G_TRI1 && b[8] != G_TRI2)
+		|| gIndicesUsed + 6 >= ARRAY_COUNT(gIndices)
+	)
+	{
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gEBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(*gIndices) * gIndicesUsed, gIndices, GL_DYNAMIC_DRAW);
+		
+		glDrawElements(GL_TRIANGLES, gIndicesUsed, GL_UNSIGNED_BYTE, 0);
+		gIndicesUsed = 0;
+	}
 }
 
 static void gbiFunc_tri1(void* cmd) {
@@ -893,15 +908,13 @@ static void gbiFunc_tri1(void* cmd) {
 	if (gHideGeometry)
 		return;
 	
-	gIndices[0] = b[1] / 2;
-	gIndices[1] = b[2] / 2;
-	gIndices[2] = b[3] / 2;
+	gIndices[gIndicesUsed++] = b[1] / 2;
+	gIndices[gIndicesUsed++] = b[2] / 2;
+	gIndices[gIndicesUsed++] = b[3] / 2;
 	
 	n64_assign_triangle(1);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gEBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(gIndices), gIndices, GL_DYNAMIC_DRAW);
 	
-	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+	TryDrawTriangleBatch(b);
 }
 
 static void gbiFunc_tri2(void* cmd) {
@@ -910,19 +923,17 @@ static void gbiFunc_tri2(void* cmd) {
 	if (gHideGeometry)
 		return;
 	
-	gIndices[0] = b[1] / 2;
-	gIndices[1] = b[2] / 2;
-	gIndices[2] = b[3] / 2;
+	gIndices[gIndicesUsed++] = b[1] / 2;
+	gIndices[gIndicesUsed++] = b[2] / 2;
+	gIndices[gIndicesUsed++] = b[3] / 2;
 	
-	gIndices[3] = b[5] / 2;
-	gIndices[4] = b[6] / 2;
-	gIndices[5] = b[7] / 2;
+	gIndices[gIndicesUsed++] = b[5] / 2;
+	gIndices[gIndicesUsed++] = b[6] / 2;
+	gIndices[gIndicesUsed++] = b[7] / 2;
 	
 	n64_assign_triangle(2);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gEBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(gIndices), gIndices, GL_DYNAMIC_DRAW);
 	
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	TryDrawTriangleBatch(b);
 }
 
 static void gbiFunc_settimg(void* cmd) {
@@ -1495,9 +1506,6 @@ void n64_draw(void* dlist) {
 	
 	glBindBuffer(GL_ARRAY_BUFFER, gVBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(gVbuf), gVbuf, GL_DYNAMIC_DRAW);
-	
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gEBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(gIndices), gIndices, GL_DYNAMIC_DRAW);
 	
 	/* pos */
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(VtxF), (void*)offsetof(VtxF, pos));
