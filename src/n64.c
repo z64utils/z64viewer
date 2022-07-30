@@ -110,9 +110,8 @@ static GLuint gTexel[TEXTURE_CACHE_SIZE];
 static GLubyte gIndices[4096];
 static int gIndicesUsed = 0;
 static int gTexelCacheCount = 0; // number of textures cached thus far
-static struct
-{
-	void *data;
+static struct {
+	void* data;
 } gTexelDict[TEXTURE_CACHE_SIZE];
 
 static uint32_t gRdpHalf1;
@@ -120,7 +119,7 @@ static uint32_t gRdpHalf2;
 static uintptr_t gPtrHi = 0;
 static bool gPtrHiSet = false;
 
-static Shader* gShader = 0;
+// static Shader* gShader = 0;
 
 static bool gHideGeometry = false;
 static bool gVertexColors = false;
@@ -149,8 +148,8 @@ static ShaderList* sShaderList = 0;
 
 static struct {
 	//float model[16];
-	MtxF view;
-	MtxF projection;
+	MtxF  view;
+	MtxF  projection;
 	MtxF  modelStack[MATRIX_STACK_MAX];
 	MtxF* modelNow;
 } gMatrix;
@@ -455,21 +454,18 @@ static void doMaterial(void* addr) {
 		if (!gMatState.tile[tile].doUpdate)
 			continue;
 		
-		for (i = 0; i < TEXTURE_CACHE_SIZE; ++i)
-		{
+		for (i = 0; i < TEXTURE_CACHE_SIZE; ++i) {
 			if (gMatState.tile[tile].data == gTexelDict[i].data)
 				break;
 			
-			if (gTexelDict[i].data == 0)
-			{
+			if (gTexelDict[i].data == 0) {
 				isNew = true;
 				gTexelDict[i].data = gMatState.tile[tile].data;
 				break;
 			}
 		}
 		// no match found
-		if (i == TEXTURE_CACHE_SIZE)
-		{
+		if (i == TEXTURE_CACHE_SIZE) {
 			i = 0;
 		}
 		glActiveTexture(GL_TEXTURE0 + tile);
@@ -524,8 +520,7 @@ static void doMaterial(void* addr) {
 		//src += uls;
 		//fprintf(stderr, "%d %d\n", fmt, siz);
 		//memcpy(tmem, src, bytes); /* TODO dxt emulation requires line-by-line */
-		if (isNew && gTexelCacheCount < TEXTURE_CACHE_SIZE)
-		{
+		if (isNew && gTexelCacheCount < TEXTURE_CACHE_SIZE) {
 			uint8_t wow[4096 * 8];
 			n64texconv_to_rgba8888(
 				wow
@@ -810,7 +805,7 @@ static Vec4f light_bind(Vec3f vtxPos, Vec3f vtxNor, int i) {
 		
 		return col;
 	} else {
-		LightPoint_t* point = &light->point;
+		// LightPoint_t* point = &light->point;
 	}
 	
 	return (Vec4f) { 0 };
@@ -915,8 +910,7 @@ static bool gbiFunc_vtx(void* cmd) {
 	return false;
 }
 
-static bool gbiFunc_culldl(void* cmd)
-{
+static bool gbiFunc_culldl(void* cmd) {
 	if (gCullDLenabled == false)
 		return false;
 	
@@ -935,8 +929,7 @@ static bool gbiFunc_culldl(void* cmd)
 	float Far = FLT_MAX;
 	Vec4f Eye = { view->xw, view->yw, view->zw, view->ww };
 	
-	for (i = vfirst; i < vlast; ++i, ++v)
-	{
+	for (i = vfirst; i < vlast; ++i, ++v) {
 		// multiply by view/projection matrices
 		Vec4f pos = v->pos;
 		Vec4f temp;
@@ -965,7 +958,7 @@ static bool gbiFunc_culldl(void* cmd)
 		// skip any vertex that falls outside NDC space
 		//fprintf(stderr, "%f %f %f\n", ndc.x, ndc.y, ndc.z);
 		if (ndc.x < -1 || ndc.x > 1
-			|| ndc.y < -1 || ndc.y > 1
+		   || ndc.y < -1 || ndc.y > 1
 		)
 			continue;
 		
@@ -974,20 +967,18 @@ static bool gbiFunc_culldl(void* cmd)
 	
 	// eye of camera is contained within bounding box
 	if (Left <= Eye.x && Eye.x <= Right
-		&& Bottom <= Eye.y && Eye.y <= Top
-		&& Near <= Eye.z && Eye.z <= Far
+	   && Bottom <= Eye.y && Eye.y <= Top
+	   && Near <= Eye.z && Eye.z <= Far
 	)
 		return false;
 	
 	return true;
 }
 
-static inline void TryDrawTriangleBatch(const uint8_t* b)
-{
+static inline void TryDrawTriangleBatch(const uint8_t* b) {
 	if ((b[8] != G_TRI1 && b[8] != G_TRI2)
-		|| gIndicesUsed + 6 >= ARRAY_COUNT(gIndices)
-	)
-	{
+	   || gIndicesUsed + 6 >= ARRAY_COUNT(gIndices)
+	) {
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gEBO);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(*gIndices) * gIndicesUsed, gIndices, GL_DYNAMIC_DRAW);
 		
@@ -1076,7 +1067,7 @@ static bool gbiFunc_texture(void* cmd) {
 
 static bool gbiFunc_loadtlut(void* cmd) {
 	uint8_t* b = cmd;
-	int t = b[4];
+	// int t = b[4];
 	int c = (b[5] << 4) | (b[6] >> 4);
 	
 	if (!gMatState.timg.imgaddr)
@@ -1179,10 +1170,9 @@ static bool gbiFunc_setothermode_l(void* cmd) {
 }
 
 static bool gbiFunc_rdpsetothermode(void* cmd) {
-	uint8_t* b = cmd;
-	
-	uint32_t hi = u32r(b);
-	uint32_t lo = u32r(b + 4);
+	// uint8_t* b = cmd;
+	// uint32_t hi = u32r(b);
+	// uint32_t lo = u32r(b + 4);
 	
 	othermode();
 	
@@ -1457,7 +1447,7 @@ static bool gbiFunc_popmtx(void* cmd) {
 
 static bool gbiFunc_dl(void* cmd) {
 	uint8_t* b = cmd;
-	uint32_t hi = u32r(b);
+	// uint32_t hi = u32r(b);
 	uint32_t lo = u32r(b + 4);
 	
 	n64_draw(n64_virt2phys(lo));
@@ -1503,11 +1493,11 @@ static bool gbiFunc_moveword(void* cmd) {
 }
 
 static bool gbiFunc_branch_z(void* cmd) {
-	uint8_t* b = cmd;
-	uint32_t hi = u32r(b);
-	uint32_t lo = u32r(b + 4);
-	int vbidx0 = ((hi >> 12) & 0xfff) / 5;
-	int vbidx1 = (hi & 0xfff) / 2;
+	// uint8_t* b = cmd;
+	// uint32_t hi = u32r(b);
+	// uint32_t lo = u32r(b + 4);
+	// int vbidx0 = ((hi >> 12) & 0xfff) / 5;
+	// int vbidx1 = (hi & 0xfff) / 2;
 	
 	/* TODO simulate branching; for now, just draw everything */
 	n64_draw(n64_virt2phys(gRdpHalf1));
@@ -1699,7 +1689,7 @@ void n64_set_fog(float fog[2], float color[3]) {
 	memcpy(gFog.color, color, sizeof(gFog.color));
 }
 
-void n64_clear_lights(void) {
+static void n64_clear_lights(void) {
 	sLightNum = 0;
 }
 
@@ -1743,8 +1733,13 @@ void n64_swap(Gfx* g) {
  * heap memory gets freed and more heap memory gets allocated which
  * might potentially occupy the same sets of addresses
  */
-void n64_clearShaderCache(void) {
+void n64_clearCache() {
 	ShaderList_cleanup();
+	for (int32_t i = 0; i < gTexelCacheCount; i++) {
+		gTexelDict[i].data = 0;
+		gTexel[i] = 0;
+	}
+	gTexelCacheCount = 0;
 }
 
 void* n64_graph_alloc(uint32_t sz) {
