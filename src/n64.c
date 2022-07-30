@@ -764,14 +764,14 @@ static inline Vec3f vec3_mul_mat44f(void* v_, void* mat_) {
 }
 #endif
 
-static void MtxF_MultVec4fExt(Vec4f* src, Vec4f* dest, MtxF* mf) {
-	dest->x = mf->xw + (mf->xx * src->x + mf->xy * src->y + mf->xz * src->z);
-	dest->y = mf->yw + (mf->yx * src->x + mf->yy * src->y + mf->yz * src->z);
-	dest->z = mf->zw + (mf->zx * src->x + mf->zy * src->y + mf->zz * src->z);
-	dest->w = mf->ww + (mf->wx * src->x + mf->wy * src->y + mf->wz * src->z);
+static void mtx_multVec3fToVec4f(Vec3f* src, Vec4f* vec, MtxF* mf) {
+	vec->x = mf->xw + (mf->xx * src->x + mf->xy * src->y + mf->xz * src->z);
+	vec->y = mf->yw + (mf->yx * src->x + mf->yy * src->y + mf->yz * src->z);
+	vec->z = mf->zw + (mf->zx * src->x + mf->zy * src->y + mf->zz * src->z);
+	vec->w = mf->ww + (mf->wx * src->x + mf->wy * src->y + mf->wz * src->z);
 }
 
-static Vec3f Vec3f_Normalize(Vec3f vec) {
+static Vec3f vec3f_normalize(Vec3f vec) {
 	Vec3f ret;
 	float mgn = sqrtf(
 		(vec.x * vec.x) + (vec.y * vec.y) + (vec.z * vec.z)
@@ -788,11 +788,11 @@ static Vec3f Vec3f_Normalize(Vec3f vec) {
 	return ret;
 }
 
-static float Vec3f_Dot(Vec3f a, Vec3f b) {
+static float vec3f_dot(Vec3f a, Vec3f b) {
 	return (a.x * b.x) + (a.y * b.y) + (a.z * b.z);
 }
 
-static Vec4f vec4color(uint8_t color[3]) {
+static Vec4f vec4f_color(uint8_t color[3]) {
 	const float scale = 1 / 255.0f;
 	
 	return (Vec4f) { color[0] * scale, color[1] * scale, color[2] * scale, 0.0f };
@@ -809,9 +809,9 @@ static Vec4f light_bind(Vec3f vtxPos, Vec3f vtxNor, int i) {
 		onrm.z = (float)dir->dir[2] / __INT8_MAX__;
 		
 		// Directional light
-		Vec4f col = vec4color(dir->col);
-		Vec3f norm = Vec3f_Normalize(onrm);
-		float mod = CLAMP(Vec3f_Dot(vtxNor, norm), 0.0, 1.0);
+		Vec4f col = vec4f_color(dir->col);
+		Vec3f norm = vec3f_normalize(onrm);
+		float mod = CLAMP(vec3f_dot(vtxNor, norm), 0.0, 1.0);
 		
 		col.x *= mod;
 		col.y *= mod;
@@ -867,14 +867,15 @@ static bool gbiFunc_vtx(void* cmd) {
 	while (numv--) {
 		const float div_1_255 = (1.0f / 255.0f);
 		const float div_1_127 = (1.0f / 127.0f);
+		
 		v->pos.x = s16r(vaddr + 0);
 		v->pos.y = s16r(vaddr + 2);
 		v->pos.z = s16r(vaddr + 4);
-		v->pos.w = 1.0f;
-		Vec3f vtxPos = { v->pos.x, v->pos.y, v->pos.z };
-		Vec4f temp = v->pos;
-		MtxF_MultVec4fExt(&temp, &v->pos, gMatrix.modelNow);
-		// v->pos = vec3_mul_mat44f(&v->pos, gMatrix.modelNow);
+		
+		Vec3f wordPos = { v->pos.x, v->pos.y, v->pos.z };
+		
+		mtx_multVec3fToVec4f(&wordPos, &v->pos, gMatrix.modelNow);
+		
 		v->texcoord0.u = s16r(vaddr + 8) * (1.0 / 1024) * (32.0 / gMatState.texWidth);
 		v->texcoord0.v = s16r(vaddr + 10) * (1.0 / 1024) * (32.0 / gMatState.texHeight);
 		v->texcoord1.u = v->texcoord0.u;
@@ -904,8 +905,8 @@ static bool gbiFunc_vtx(void* cmd) {
 				s8r(vaddr + 14) * div_1_127
 			};
 			
-			vtxNor = Vec3f_Normalize(vtxNor);
-			v->color = light_bind_all(vtxPos, vtxNor);
+			vtxNor = vec3f_normalize(vtxNor);
+			v->color = light_bind_all(wordPos, vtxNor);
 			
 			v->norm.x = 0;
 			v->norm.y = 0;
@@ -957,11 +958,12 @@ static bool gbiFunc_culldl(void* cmd) {
 		Near = fmax(Near, pos.z);
 		Far = fmin(Far, pos.z);
 		
-		pos.w = 1.0;
-		MtxF_MultVec4fExt(&pos, &temp, view);
-		MtxF_MultVec4fExt(&temp, &clipspace, proj);
+		mtx_multVec3fToVec4f((void*)&pos, &temp, view);
+		mtx_multVec3fToVec4f((void*)&temp, &clipspace, proj);
+		
 		if (clipspace.w == 0)
 			continue;
+		
 		ndc.x = clipspace.x / clipspace.w;
 		ndc.y = clipspace.y / clipspace.w;
 		ndc.z = clipspace.z / clipspace.w;
@@ -970,10 +972,8 @@ static bool gbiFunc_culldl(void* cmd) {
 		// TODO if (depth > fogStart) continue;
 		
 		// skip any vertex that falls outside NDC space
-		//fprintf(stderr, "%f %f %f\n", ndc.x, ndc.y, ndc.z);
-		if (ndc.x < -1 || ndc.x > 1
-		   || ndc.y < -1 || ndc.y > 1
-		)
+		// fprintf(stderr, "%f %f %f\n", ndc.x, ndc.y, ndc.z);
+		if (ndc.x < -1 || ndc.x > 1 || ndc.y < -1 || ndc.y > 1)
 			continue;
 		
 		return false;
