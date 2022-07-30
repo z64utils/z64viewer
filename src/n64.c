@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#include <float.h>
 #include <math.h>
 
 typedef float MtxF_t[4][4];
@@ -126,6 +127,7 @@ static bool gVertexColors = false;
 static bool gFogEnabled = true;
 static bool gForceBl = false;
 static bool gCvgXalpha = false;
+static bool gCullDLenabled = true;
 
 Gfx gPolyOpaHead[4096];
 Gfx* gPolyOpaDisp;
@@ -147,8 +149,8 @@ static ShaderList* sShaderList = 0;
 
 static struct {
 	//float model[16];
-	float view[16];
-	float projection[16];
+	MtxF view;
+	MtxF projection;
 	MtxF  modelStack[MATRIX_STACK_MAX];
 	MtxF* modelNow;
 } gMatrix;
@@ -709,8 +711,8 @@ static void doMaterial(void* addr) {
 		
 		// mvp matrix
 		//Shader_setMat4(shader, "model", gMatrix.model);
-		Shader_setMat4(shader, "view", gMatrix.view);
-		Shader_setMat4(shader, "projection", gMatrix.projection);
+		Shader_setMat4(shader, "view", &gMatrix.view);
+		Shader_setMat4(shader, "projection", &gMatrix.projection);
 		Shader_setVec3(shader, "uFogColor", gFog.color[0], gFog.color[1], gFog.color[2]);
 		Shader_setVec2(shader, "uFog", gFog.fog[0], gFog.fog[1]);
 		Shader_setInt(shader, "texture0", 0);
@@ -911,6 +913,73 @@ static bool gbiFunc_vtx(void* cmd) {
 	gIndicesUsed = 0;
 	
 	return false;
+}
+
+static bool gbiFunc_culldl(void* cmd)
+{
+	if (gCullDLenabled == false)
+		return false;
+	
+	uint8_t* b = cmd;
+	MtxF* view = &gMatrix.view;
+	MtxF* proj = &gMatrix.projection;
+	int vfirst = u16r(b + 2) / 2;
+	int vlast = u16r(b + 6) / 2;
+	int i;
+	VtxF* v = gVbuf + vfirst;
+	float Top = FLT_MIN;
+	float Bottom = FLT_MAX;
+	float Left = FLT_MAX;
+	float Right = FLT_MIN;
+	float Near = FLT_MIN;
+	float Far = FLT_MAX;
+	Vec4f Eye = { view->xw, view->yw, view->zw, view->ww };
+	
+	for (i = vfirst; i < vlast; ++i, ++v)
+	{
+		// multiply by view/projection matrices
+		Vec4f pos = v->pos;
+		Vec4f temp;
+		Vec4f clipspace;
+		Vec4f ndc; // normalized device coordinate space
+		
+		Top = fmax(Top, pos.y);
+		Bottom = fmin(Bottom, pos.y);
+		Left = fmin(Left, pos.x);
+		Right = fmax(Right, pos.x);
+		Near = fmax(Near, pos.z);
+		Far = fmin(Far, pos.z);
+		
+		pos.w = 1.0;
+		MtxF_MultVec4fExt(&pos, &temp, view);
+		MtxF_MultVec4fExt(&temp, &clipspace, proj);
+		if (clipspace.w == 0)
+			continue;
+		ndc.x = clipspace.x / clipspace.w;
+		ndc.y = clipspace.y / clipspace.w;
+		ndc.z = clipspace.z / clipspace.w;
+		ndc.w = clipspace.w;
+		
+		// TODO if (depth > fogStart) continue;
+		
+		// skip any vertex that falls outside NDC space
+		//fprintf(stderr, "%f %f %f\n", ndc.x, ndc.y, ndc.z);
+		if (ndc.x < -1 || ndc.x > 1
+			|| ndc.y < -1 || ndc.y > 1
+		)
+			continue;
+		
+		return false;
+	}
+	
+	// eye of camera is contained within bounding box
+	if (Left <= Eye.x && Eye.x <= Right
+		&& Bottom <= Eye.y && Eye.y <= Top
+		&& Near <= Eye.z && Eye.z <= Far
+	)
+		return false;
+	
+	return true;
 }
 
 static inline void TryDrawTriangleBatch(const uint8_t* b)
@@ -1465,6 +1534,7 @@ static bool gbiFunc_rdphalf_2(void* cmd) {
 /* this LUT emulates the N64's graphics binary interface */
 static gbiFunc gGbi[256] = {
 	[G_VTX] = gbiFunc_vtx,
+	[G_CULLDL] = gbiFunc_culldl,
 	[G_TRI1] = gbiFunc_tri1,
 	[G_TRI2] = gbiFunc_tri2,
 	[G_SETTIMG] = gbiFunc_settimg,
@@ -1617,11 +1687,11 @@ void n64_setMatrix_model(void* data) {
 }
 
 void n64_setMatrix_view(void* data) {
-	memcpy(gMatrix.view, data, sizeof(gMatrix.view));
+	memcpy(&gMatrix.view, data, sizeof(gMatrix.view));
 }
 
 void n64_setMatrix_projection(void* data) {
-	memcpy(gMatrix.projection, data, sizeof(gMatrix.projection));
+	memcpy(&gMatrix.projection, data, sizeof(gMatrix.projection));
 }
 
 void n64_set_fog(float fog[2], float color[3]) {
