@@ -232,7 +232,7 @@ const MtxF sClearMtx = {
 	0.0f, 0.0f, 0.0f, 1.0f,
 };
 
-typedef void (* gbiFunc)(void* cmd);
+typedef bool (* gbiFunc)(void* cmd);
 
 static void n64_assign_triangle(int32_t flag);
 
@@ -813,7 +813,7 @@ static Vec4f light_bind_all(Vec3f vtxPos, Vec3f vtxNor) {
 	return final;
 }
 
-static void gbiFunc_vtx(void* cmd) {
+static bool gbiFunc_vtx(void* cmd) {
 	uint8_t* b = cmd;
 	
 	int numv = (b[1] << 4) | (b[2] >> 4);
@@ -828,7 +828,7 @@ static void gbiFunc_vtx(void* cmd) {
 	}
 	
 	if (gHideGeometry)
-		return;
+		return false;
 	
 	while (numv--) {
 		const float div_1_255 = (1.0f / 255.0f);
@@ -886,6 +886,8 @@ static void gbiFunc_vtx(void* cmd) {
 	glBindBuffer(GL_ARRAY_BUFFER, gVBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(gVbuf), gVbuf, GL_DYNAMIC_DRAW);
 	gIndicesUsed = 0;
+	
+	return false;
 }
 
 static inline void TryDrawTriangleBatch(const uint8_t* b)
@@ -902,11 +904,11 @@ static inline void TryDrawTriangleBatch(const uint8_t* b)
 	}
 }
 
-static void gbiFunc_tri1(void* cmd) {
+static bool gbiFunc_tri1(void* cmd) {
 	uint8_t* b = cmd;
 	
 	if (gHideGeometry)
-		return;
+		return false;
 	
 	gIndices[gIndicesUsed++] = b[1] / 2;
 	gIndices[gIndicesUsed++] = b[2] / 2;
@@ -915,13 +917,15 @@ static void gbiFunc_tri1(void* cmd) {
 	n64_assign_triangle(1);
 	
 	TryDrawTriangleBatch(b);
+	
+	return false;
 }
 
-static void gbiFunc_tri2(void* cmd) {
+static bool gbiFunc_tri2(void* cmd) {
 	uint8_t* b = cmd;
 	
 	if (gHideGeometry)
-		return;
+		return false;
 	
 	gIndices[gIndicesUsed++] = b[1] / 2;
 	gIndices[gIndicesUsed++] = b[2] / 2;
@@ -934,9 +938,11 @@ static void gbiFunc_tri2(void* cmd) {
 	n64_assign_triangle(2);
 	
 	TryDrawTriangleBatch(b);
+	
+	return false;
 }
 
-static void gbiFunc_settimg(void* cmd) {
+static bool gbiFunc_settimg(void* cmd) {
 	uint8_t* b = cmd;
 	uint8_t bits = b[1];
 	uint16_t hi = u16r(b + 2);
@@ -950,9 +956,11 @@ static void gbiFunc_settimg(void* cmd) {
 	gMatState.timg.siz = siz;
 	gMatState.timg.width = width;
 	gMatState.timg.imgaddr = imgaddr;
+	
+	return false;
 }
 
-static void gbiFunc_texture(void* cmd) {
+static bool gbiFunc_texture(void* cmd) {
 	uint8_t* b = cmd;
 	uint16_t bits = u16r(b + 2);
 	int tile = (bits >> 8) & 7;
@@ -960,45 +968,51 @@ static void gbiFunc_texture(void* cmd) {
 	int on = bits & 0xfe;
 	
 	if (tile > 1)
-		return;
+		return false;
 	
 	gMatState.tile[tile].on = on;
 	
 	if (!on)
-		return;
+		return false;
 	
 	gMatState.tile[tile].level = level;
 	gMatState.tile[tile].scaleS = u16r(b + 4) * (1.0f / UINT16_MAX);
 	gMatState.tile[tile].scaleT = u16r(b + 6) * (1.0f / UINT16_MAX);
+	
+	return false;
 }
 
-static void gbiFunc_loadtlut(void* cmd) {
+static bool gbiFunc_loadtlut(void* cmd) {
 	uint8_t* b = cmd;
 	int t = b[4];
 	int c = (b[5] << 4) | (b[6] >> 4);
 	
 	if (!gMatState.timg.imgaddr)
-		return;
+		return false;
 	
 	memcpy(gMatState.pal, gMatState.timg.imgaddr, ((c >> 2) + 1) * sizeof(uint16_t));
+	
+	return false;
 }
 
-static void gbiFunc_settilesize(void* cmd) {
+static bool gbiFunc_settilesize(void* cmd) {
 	uint8_t* b = cmd;
 	int i = b[4];
 	uint32_t hi = u32r(b);
 	uint32_t lo = u32r(b + 4);
 	
 	if (i > 1)
-		return;
+		return false;
 	
 	gMatState.tile[i].uls = (hi >> 12) & 0xfff;
 	gMatState.tile[i].ult = hi & 0xfff;
 	gMatState.tile[i].lrs = (lo >> 12) & 0xfff;
 	gMatState.tile[i].lrt = lo & 0xfff;
+	
+	return false;
 }
 
-static void gbiFunc_settile(void* cmd) {
+static bool gbiFunc_settile(void* cmd) {
 	uint8_t* b = cmd;
 	uint32_t hi = u32r(b);
 	uint32_t lo = u32r(b + 4);
@@ -1017,7 +1031,7 @@ static void gbiFunc_settile(void* cmd) {
 	int shiftS = lo & 0xf;
 	
 	if (tile > 1)
-		return;
+		return false;
 	
 	gMatState.tile[tile].fmt = fmt;
 	gMatState.tile[tile].siz = siz;
@@ -1036,19 +1050,29 @@ static void gbiFunc_settile(void* cmd) {
 	
 	gMatState.tile[tile].shiftS_m = shift_to_multiplier(shiftS);
 	gMatState.tile[tile].shiftT_m = shift_to_multiplier(shiftT);
+	
+	return false;
 }
 
-static void gbiFunc_loadblock(void* cmd) {
+static bool gbiFunc_loadblock(void* cmd) {
+	return false;
 }
 
-static void gbiFunc_loadtile(void* cmd) {
+static bool gbiFunc_loadtile(void* cmd) {
+	return false;
 }
 
-static void gbiFunc_rdppipesync(void* cmd) {
+static bool gbiFunc_rdppipesync(void* cmd) {
 	gMatState.mtlReady = 0;
+	
+	return false;
 }
 
-static void gbiFunc_setothermode_l(void* cmd) {
+static bool gbiFunc_enddl(void* cmd) {
+	return true;
+}
+
+static bool gbiFunc_setothermode_l(void* cmd) {
 	uint8_t* b = cmd;
 	
 	int shift = b[2];
@@ -1058,39 +1082,49 @@ static void gbiFunc_setothermode_l(void* cmd) {
 	gMatState.othermode_low = (gMatState.othermode_low & ~(((1 << length) - 1) << shift)) | data;
 	
 	othermode();
+	
+	return false;
 }
 
-static void gbiFunc_rdpsetothermode(void* cmd) {
+static bool gbiFunc_rdpsetothermode(void* cmd) {
 	uint8_t* b = cmd;
 	
 	uint32_t hi = u32r(b);
 	uint32_t lo = u32r(b + 4);
 	
 	othermode();
+	
+	return false;
 }
 
-static void gbiFunc_setprimcolor(void* cmd) {
+static bool gbiFunc_setprimcolor(void* cmd) {
 	uint8_t* b = cmd;
 	
 	gMatState.prim.hi = u32r(b);
 	gMatState.prim.lo = u32r(b + 4);
+	
+	return false;
 }
 
-static void gbiFunc_setenvcolor(void* cmd) {
+static bool gbiFunc_setenvcolor(void* cmd) {
 	uint8_t* b = cmd;
 	
 	gMatState.env.hi = u32r(b);
 	gMatState.env.lo = u32r(b + 4);
+	
+	return false;
 }
 
-static void gbiFunc_setcombine(void* cmd) {
+static bool gbiFunc_setcombine(void* cmd) {
 	uint8_t* b = cmd;
 	
 	gMatState.setcombine.hi = u32r(b);
 	gMatState.setcombine.lo = u32r(b + 4);
+	
+	return false;
 }
 
-static void gbiFunc_geometrymode(void* cmd) {
+static bool gbiFunc_geometrymode(void* cmd) {
 	uint8_t* b = cmd;
 	uint32_t clearbits = ~(u32r(b) & 0xffffff);
 	uint32_t setbits = u32r(b + 4);
@@ -1119,6 +1153,8 @@ static void gbiFunc_geometrymode(void* cmd) {
 			glDisable(GL_CULL_FACE);
 			break;
 	}
+	
+	return false;
 }
 
 static void MtxToMtxF(Mtx* src, MtxF* dest) {
@@ -1270,7 +1306,7 @@ static void MtxFMtxFMult(MtxF* mfA, MtxF* mfB, MtxF* dest) {
 	dest->ww = (rx * cx) + (ry * cy) + (rz * cz) + (rw * cw);
 }
 
-static void gbiFunc_mtx(void* cmd) {
+static bool gbiFunc_mtx(void* cmd) {
 	uint8_t* b = cmd;
 	uint8_t params = b[3] ^ G_MTX_PUSH;
 	uint32_t mtxaddr = u32r(b + 4);
@@ -1284,7 +1320,7 @@ static void gbiFunc_mtx(void* cmd) {
 		mtx = n64_virt2phys(mtxaddr);
 		
 		if (!mtx)
-			return;
+			return false;
 		
 		Mtx swap = *mtx;
 		
@@ -1313,25 +1349,31 @@ static void gbiFunc_mtx(void* cmd) {
 		MtxF copy = *gMatrix.modelNow;
 		MtxFMtxFMult(&copy, &mtxF, gMatrix.modelNow);
 	}
+	
+	return false;
 }
 
-static void gbiFunc_popmtx(void* cmd) {
+static bool gbiFunc_popmtx(void* cmd) {
 	uint8_t* b = cmd;
 	int num = u32r(b + 4) / 0x40;
 	
 	gMatrix.modelNow -= num;
 	assert(gMatrix.modelNow >= gMatrix.modelStack && "matrix stack underflow");
+	
+	return false;
 }
 
-static void gbiFunc_dl(void* cmd) {
+static bool gbiFunc_dl(void* cmd) {
 	uint8_t* b = cmd;
 	uint32_t hi = u32r(b);
 	uint32_t lo = u32r(b + 4);
 	
 	n64_draw(n64_virt2phys(lo));
+	
+	return b[1] != 0;
 }
 
-static void gbiFunc_setptrhi(void* cmd) {
+static bool gbiFunc_setptrhi(void* cmd) {
 	if (sizeof(uintptr_t) == 8) {
 		uint8_t* b = cmd;
 		gPtrHi = u32r(b + 4);
@@ -1339,9 +1381,11 @@ static void gbiFunc_setptrhi(void* cmd) {
 	} else
 		gPtrHi = 0;
 	gPtrHiSet = true;
+	
+	return false;
 }
 
-static void gbiFunc_moveword(void* cmd) {
+static bool gbiFunc_moveword(void* cmd) {
 	uint8_t* b = cmd;
 	uint32_t hi = u32r(b);
 	uint32_t lo = u32r(b + 4);
@@ -1362,9 +1406,11 @@ static void gbiFunc_moveword(void* cmd) {
 		case G_MW_PERSPNORM: break; // TODO
 		default: assert(0 && "moveword unknown index"); break;
 	}
+	
+	return false;
 }
 
-static void gbiFunc_branch_z(void* cmd) {
+static bool gbiFunc_branch_z(void* cmd) {
 	uint8_t* b = cmd;
 	uint32_t hi = u32r(b);
 	uint32_t lo = u32r(b + 4);
@@ -1373,18 +1419,24 @@ static void gbiFunc_branch_z(void* cmd) {
 	
 	/* TODO simulate branching; for now, just draw everything */
 	n64_draw(n64_virt2phys(gRdpHalf1));
+	
+	return false;
 }
 
-static void gbiFunc_rdphalf_1(void* cmd) {
+static bool gbiFunc_rdphalf_1(void* cmd) {
 	uint8_t* b = cmd;
 	
 	gRdpHalf1 = u32r(b + 4);
+	
+	return false;
 }
 
-static void gbiFunc_rdphalf_2(void* cmd) {
+static bool gbiFunc_rdphalf_2(void* cmd) {
 	uint8_t* b = cmd;
 	
 	gRdpHalf2 = u32r(b + 4);
+	
+	return false;
 }
 
 /* this LUT emulates the N64's graphics binary interface */
@@ -1413,7 +1465,8 @@ static gbiFunc gGbi[256] = {
 	[G_SETPTRHI] = gbiFunc_setptrhi,
 	[G_BRANCH_Z] = gbiFunc_branch_z,
 	[G_RDPHALF_1] = gbiFunc_rdphalf_1,
-	[G_RDPHALF_2] = gbiFunc_rdphalf_2
+	[G_RDPHALF_2] = gbiFunc_rdphalf_2,
+	[G_ENDDL] = gbiFunc_enddl
 };
 
 /*
@@ -1527,15 +1580,10 @@ void n64_draw(void* dlist) {
 	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(VtxF), (void*)offsetof(VtxF, norm));
 	glEnableVertexAttribArray(4);
 	
-	for (cmd = dlist; *cmd != G_ENDDL; cmd += 8) {
+	for (cmd = dlist; ; cmd += 8) {
 		//fprintf(stderr, "%08x %08x\n", u32r(cmd), u32r(cmd + 4));
-		if (gGbi[*cmd]) {
-			gGbi[*cmd](cmd);
-			
-			/* special early exit condition */
-			if (*cmd == G_DL && cmd[1])
-				break;
-		}
+		if (gGbi[*cmd] && gGbi[*cmd](cmd))
+			break;
 	}
 }
 
