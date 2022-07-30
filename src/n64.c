@@ -113,6 +113,7 @@ static int gTexelCacheCount = 0; // number of textures cached thus far
 static struct {
 	void* data;
 } gTexelDict[TEXTURE_CACHE_SIZE];
+static GLint gFilterMode = GL_LINEAR;
 
 static uint32_t gRdpHalf1;
 static uint32_t gRdpHalf2;
@@ -200,7 +201,8 @@ static struct {
 	int mtlReady;
 	int texWidth;
 	int texHeight;
-	uint32_t othermode_low;
+	uint32_t othermode_hi;
+	uint32_t othermode_lo;
 	struct {
 		uint32_t hi;
 		uint32_t lo;
@@ -291,12 +293,24 @@ static void ShaderList_cleanup(void) {
 }
 
 static void othermode(void) {
-	uint32_t lo = gMatState.othermode_low;
+	uint32_t hi = gMatState.othermode_hi;
+	uint32_t lo = gMatState.othermode_lo;
 	uint32_t indep = (lo & 0b1111111111111000) >> 3;
 	
 	gCurrentZmode = (indep & 0b0000110000000) >> 7;
 	gForceBl = (indep & 0b0100000000000) >> 11;
 	gCvgXalpha = (indep & 0b0001000000000) >> 9;
+	
+	switch (hi & (0b11 << G_MDSFT_TEXTFILT)) {
+		case G_TF_POINT:
+			gFilterMode = GL_NEAREST;
+			break;
+		
+		case G_TF_BILERP:
+		case G_TF_AVERAGE:
+			gFilterMode = GL_LINEAR;
+			break;
+	}
 	
 	if (gForceBl == true) {
 		glEnable(GL_BLEND);
@@ -472,8 +486,8 @@ static void doMaterial(void* addr) {
 		glBindTexture(GL_TEXTURE_2D, gTexel[i]);
 		
 		// set texture filtering parameters
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gFilterMode);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gFilterMode);
 		
 		gMatState.tile[tile].doUpdate = false;
 		int width = ((gMatState.tile[tile].lrs >> 2) - (gMatState.tile[tile].uls >> 2)) + 1;
@@ -1162,7 +1176,22 @@ static bool gbiFunc_setothermode_l(void* cmd) {
 	int length = b[3];
 	uint32_t data = u32r(b + 4);
 	
-	gMatState.othermode_low = (gMatState.othermode_low & ~(((1 << length) - 1) << shift)) | data;
+	gMatState.othermode_lo = (gMatState.othermode_lo & ~(((1 << length) - 1) << shift)) | data;
+	
+	othermode();
+	
+	return false;
+}
+
+static bool gbiFunc_setothermode_h(void* cmd) {
+	uint8_t* b = cmd;
+	int ss = b[2];
+	int nn = b[3];
+	uint32_t data = u32r(b + 4);
+	int shift = 32 - (nn + 1) - ss;
+	int length = nn + 1;
+
+	gMatState.othermode_hi = (gMatState.othermode_hi & ~(((1 << length) - 1) << shift)) | data;
 	
 	othermode();
 	
@@ -1170,9 +1199,10 @@ static bool gbiFunc_setothermode_l(void* cmd) {
 }
 
 static bool gbiFunc_rdpsetothermode(void* cmd) {
-	// uint8_t* b = cmd;
-	// uint32_t hi = u32r(b);
-	// uint32_t lo = u32r(b + 4);
+	uint8_t* b = cmd;
+	
+	gMatState.othermode_hi = u32r(b);
+	gMatState.othermode_lo = u32r(b + 4);
 	
 	othermode();
 	
@@ -1537,6 +1567,7 @@ static gbiFunc gGbi[256] = {
 	[G_RDPPIPESYNC] = gbiFunc_rdppipesync,
 	[G_RDPSETOTHERMODE] = gbiFunc_rdpsetothermode,
 	[G_SETOTHERMODE_L] = gbiFunc_setothermode_l,
+	[G_SETOTHERMODE_H] = gbiFunc_setothermode_h,
 	[G_SETPRIMCOLOR] = gbiFunc_setprimcolor,
 	[G_SETENVCOLOR] = gbiFunc_setenvcolor,
 	[G_SETCOMBINE] = gbiFunc_setcombine,
