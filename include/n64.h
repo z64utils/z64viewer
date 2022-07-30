@@ -72,6 +72,7 @@ void* n64_graph_alloc(uint32_t sz);
 void n64_set_triangle_buffer_callback(TriCallback callback);
 Gfx n64_gbi_gfxhi_ptr(void* ptr);
 Gfx n64_gbi_gfxhi_seg(uint32_t seg);
+bool n64_set_culling(bool state);
 void n64_graph_init();
 
 #define gxSPMatrix(mtx)           { Assert(gPolyOpaDisp - gPolyOpaHead < ARRAY_COUNT(gPolyOpaHead)); gSPMatrix(gPolyOpaDisp++, mtx, G_MTX_LOAD); }

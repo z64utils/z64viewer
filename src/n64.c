@@ -305,7 +305,7 @@ static void othermode(void) {
 		case G_TF_POINT:
 			gFilterMode = GL_NEAREST;
 			break;
-		
+			
 		case G_TF_BILERP:
 		case G_TF_AVERAGE:
 			gFilterMode = GL_LINEAR;
@@ -1190,7 +1190,7 @@ static bool gbiFunc_setothermode_h(void* cmd) {
 	uint32_t data = u32r(b + 4);
 	int shift = 32 - (nn + 1) - ss;
 	int length = nn + 1;
-
+	
 	gMatState.othermode_hi = (gMatState.othermode_hi & ~(((1 << length) - 1) << shift)) | data;
 	
 	othermode();
@@ -1830,6 +1830,10 @@ Gfx n64_gbi_gfxhi_seg(uint32_t seg) {
 	gStorePointer = seg;
 	
 	return gO_(G_NOOP, 0, 0);
+}
+
+bool n64_set_culling(bool state) {
+	return gCullDLenabled = state;
 }
 
 void n64_graph_init() {
