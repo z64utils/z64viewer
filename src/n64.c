@@ -1293,6 +1293,10 @@ static bool gbiFunc_geometrymode(void* cmd) {
 		gVertexColors = 1;
 	if (setbits & G_LIGHTING)
 		gVertexColors = 0;
+	if (clearbits & G_ZBUFFER)
+		glDisable(GL_DEPTH_TEST);
+	if (setbits & G_ZBUFFER)
+		glEnable(GL_DEPTH_TEST);
 	
 	/* backface/frontface culling */
 	glEnable(GL_CULL_FACE);
@@ -1699,7 +1703,6 @@ void n64_draw(void* dlist) {
 	if (!dlist)
 		return;
 	
-	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	
 	if (!gVAO)
