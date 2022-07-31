@@ -142,7 +142,7 @@ static enum n64_zmode gCurrentZmode;
 typedef struct ShaderList {
 	struct ShaderList* next;
 	Shader* shader;
-	void*   addr;
+	uint64_t uuid;
 } ShaderList;
 
 static ShaderList* sShaderList = 0;
@@ -214,7 +214,7 @@ static struct {
 		float    g;
 		float    b;
 		float    alpha;
-		float    lodfrac;
+		float    lodfrac; // TODO not yet populated
 	} prim;
 	struct {
 		uint32_t hi;
@@ -224,9 +224,9 @@ static struct {
 		float    b;
 		float    alpha;
 	} env;
-	float    lodfrac;
-	float    k4;
-	float    k5;
+	float    lodfrac; // TODO not yet populated
+	float    k4; // TODO not yet populated
+	float    k5; // TODO not yet populated
 	uint32_t geometrymode;
 } gMatState; /* material state magic */
 
@@ -243,20 +243,19 @@ typedef bool (* gbiFunc)(void* cmd);
 
 static void n64_assign_triangle(int32_t flag);
 
-static ShaderList* ShaderList_new(void* addr, void* next) {
+static ShaderList* ShaderList_new(uint64_t uuid, void* next) {
 	ShaderList* l = calloc(1, sizeof(*l));
 	
-	l->addr = addr;
+	l->uuid = uuid;
 	l->next = next;
 	l->shader = Shader_new();
 	
 	return l;
 }
 
-static Shader* ShaderList_add(void* addr, bool* isNew) {
+static Shader* ShaderList_add(uint64_t uuid, bool* isNew) {
 	ShaderList* l;
 	
-	assert(addr);
 	assert(isNew);
 	
 	if (!sShaderList)
@@ -264,12 +263,12 @@ static Shader* ShaderList_add(void* addr, bool* isNew) {
 	
 	*isNew = false;
 	for (l = sShaderList; l; l = l->next) {
-		if (l->addr == addr)
+		if (l->uuid == uuid)
 			return l->shader;
 	}
 	
 	*isNew = true;
-	l = ShaderList_new(addr, sShaderList);
+	l = ShaderList_new(uuid, sShaderList);
 	sShaderList = l;
 	
 	return l->shader;
@@ -374,7 +373,7 @@ static char* strcattf(char* dst, const char* fmt, ...) {
 	return dst + strlen(dst);
 }
 
-static const char* quickstr(const char* fmt, ...) {
+/*static const char* quickstr(const char* fmt, ...) {
 	static char buf[256];
 	va_list args;
 	
@@ -383,7 +382,7 @@ static const char* quickstr(const char* fmt, ...) {
 	va_end(args);
 	
 	return buf;
-}
+}*/
 
 static const char* colorValueString(int idx, int v) {
 	assert(idx >= 0 && idx < 4);
@@ -399,9 +398,9 @@ static const char* colorValueString(int idx, int v) {
 		case 0x00: return "FragColor.rgb";
 		case 0x01: return "texture(texture0, TexCoord0).rgb";
 		case 0x02: return "texture(texture1, TexCoord1).rgb";
-		case 0x03: return quickstr("vec3(%f,%f,%f)", gMatState.prim.r, gMatState.prim.g, gMatState.prim.b);
+		case 0x03: return "uPrimColor.rgb";
 		case 0x04: return "shading.rgb";
-		case 0x05: return quickstr("vec3(%f,%f,%f)", gMatState.env.r, gMatState.env.g, gMatState.env.b);
+		case 0x05: return "uEnvColor.rgb";
 		case 0x06:
 			switch (idx) {
 				case 0x00: return "vec3(1.0)";
@@ -412,18 +411,18 @@ static const char* colorValueString(int idx, int v) {
 		case 0x07:
 			switch (idx) {
 				case 0x00: return "vec3(1.0)"; // TODO CCMUX_NOISE
-				case 0x01: return quickstr("vec3(%f)", gMatState.k4);
+				case 0x01: return "vec3(uK4)";
 				case 0x02: return "vec3(FragColor.a)";
 				case 0x03: return "vec3(0.0)";
 			}
 		case 0x08: return "vec3(texture(texture0, TexCoord0).a)";
 		case 0x09: return "vec3(texture(texture1, TexCoord1).a)";
-		case 0x0A: return quickstr("vec3(%f)", gMatState.prim.alpha);
+		case 0x0A: return "vec3(uPrimColor.a)";
 		case 0x0B: return "vec3(shading.a)";
-		case 0x0C: return quickstr("vec3(%f)", gMatState.env.alpha);
-		case 0x0D: return quickstr("vec3(%f)", gMatState.lodfrac);
-		case 0x0E: return quickstr("vec3(%f)", gMatState.prim.lodfrac);
-		case 0x0F: return quickstr("vec3(%f)", gMatState.k5);
+		case 0x0C: return "vec3(uEnvColor.a)";
+		case 0x0D: return "vec3(uLodFrac)";
+		case 0x0E: return "vec3(uPrimLodFrac)";
+		case 0x0F: return "vec3(uK5)";
 	}
 	
 	return "vec3(0.0)";
@@ -439,17 +438,17 @@ static const char* alphaValueString(int idx, int v) {
 	switch (v) {
 		case 0x00:
 			switch (idx) {
-				case 0x02: return quickstr("%f", gMatState.lodfrac);
+				case 0x02: return "uPrimLodFrac";
 				default: return "FragColor.a";
 			}
 		case 0x01: return "texture(texture0, TexCoord0).a";
 		case 0x02: return "texture(texture1, TexCoord1).a";
-		case 0x03: return quickstr("%f", gMatState.prim.alpha);
+		case 0x03: return "uPrimColor.a";
 		case 0x04: return "shading.a";
-		case 0x05: return quickstr("%f", gMatState.env.alpha);
+		case 0x05: return "uEnvColor.a";
 		case 0x06:
 			switch (idx) {
-				case 0x02: return quickstr("%f", gMatState.prim.lodfrac);
+				case 0x02: return "uPrimLodFrac";
 				default: return "1.0";
 			}
 	}
@@ -562,8 +561,14 @@ static void doMaterial(void* addr) {
 		return;
 	
 	#define SHADER_SOURCE(...) "#version 330 core\n" # __VA_ARGS__
-	/* TODO track state changes; if no states changed, don't compile new shader */
-	if (1) {
+	/* uuid tracks state changes; if no states changed, don't compile new shader */
+	{
+		uint64_t uuid =
+			(gFogEnabled << 63)
+			| ((gCvgXalpha || gForceBl) << 62)
+			| ((gMatState.setcombine.hi & 0x00ffffff) << 32)
+			| (gMatState.setcombine.lo)
+		;
 		bool isNew = false;
 		gMatState.prim.r = ((gMatState.prim.lo >> 24) & 0xff) / 255.0f;
 		gMatState.prim.g = ((gMatState.prim.lo >> 16) & 0xff) / 255.0f;
@@ -574,7 +579,9 @@ static void doMaterial(void* addr) {
 		gMatState.env.g = ((gMatState.env.lo >> 16) & 0xff) / 255.0f;
 		gMatState.env.b = ((gMatState.env.lo >> 8) & 0xff) / 255.0f;
 		gMatState.env.alpha = (gMatState.env.lo & 0xff) / 255.0f;
-		Shader* shader = ShaderList_add(addr, &isNew);
+		Shader* shader = ShaderList_add(uuid, &isNew);
+		
+		// TODO also populate lodfrac, prim.lodfrac, k4, and k5 here
 		
 		if (isNew) {
 			const char* vtx = SHADER_SOURCE(
@@ -639,6 +646,12 @@ static void doMaterial(void* addr) {
 				uniform sampler2D texture0;
 				uniform sampler2D texture1;
 				uniform vec3 uFogColor;
+				uniform vec4 uPrimColor;
+				uniform vec4 uEnvColor;
+				uniform float uK4;
+				uniform float uK5;
+				uniform float uLodFrac;
+				uniform float uPrimLodFrac;
 				
 				/*void main() // simple default for testing...
 				                                {
@@ -715,15 +728,36 @@ static void doMaterial(void* addr) {
 			Shader_update(shader, vtx, frag);
 		}
 		
-		// render container
-		Shader_use(shader);
+		// using new shader, so update view-projection matrices
+		if (Shader_use(shader))
+		{
+			Shader_setMat4(shader, "view", &gMatrix.view);
+			Shader_setMat4(shader, "projection", &gMatrix.projection);
+		}
 		
-		// mvp matrix
-		//Shader_setMat4(shader, "model", gMatrix.model);
-		Shader_setMat4(shader, "view", &gMatrix.view);
-		Shader_setMat4(shader, "projection", &gMatrix.projection);
+		// populate other misc variables
+		Shader_setVec4(
+			shader
+			, "uPrimColor"
+			, gMatState.prim.r
+			, gMatState.prim.g
+			, gMatState.prim.b
+			, gMatState.prim.alpha
+		);
+		Shader_setVec4(
+			shader
+			, "uEnvColor"
+			, gMatState.env.r
+			, gMatState.env.g
+			, gMatState.env.b
+			, gMatState.env.alpha
+		);
 		Shader_setVec3(shader, "uFogColor", gFog.color[0], gFog.color[1], gFog.color[2]);
 		Shader_setVec2(shader, "uFog", gFog.fog[0], gFog.fog[1]);
+		Shader_setFloat(shader, "uK4", gMatState.k4);
+		Shader_setFloat(shader, "uK5", gMatState.k5);
+		Shader_setFloat(shader, "uLodFrac", gMatState.lodfrac);
+		Shader_setFloat(shader, "uPrimLodFrac", gMatState.prim.lodfrac);
 		Shader_setInt(shader, "texture0", 0);
 		Shader_setInt(shader, "texture1", 1);
 	}
@@ -1844,4 +1878,5 @@ void n64_graph_init() {
 		gSegment[i] = NULL;
 	gPolyOpaDisp = gPolyOpaHead;
 	gPolyXluDisp = gPolyXluHead;
+	Shader_use(0);
 }

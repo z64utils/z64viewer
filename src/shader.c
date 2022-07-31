@@ -81,11 +81,18 @@ void Shader_update(Shader* s, const char* vs, const char* fs) {
 	glDeleteShader(f);
 }
 
-void Shader_use(Shader* s) {
-	if (!s)
-		return;
+bool Shader_use(Shader* s) {
+	static Shader* prev;
 	
-	glUseProgram(s->id);
+	if (s == prev)
+		return false;
+	
+	if (s)
+		glUseProgram(s->id);
+	
+	prev = s;
+	
+	return true;
 }
 
 Shader* Shader_new(void) {
@@ -106,8 +113,12 @@ void Shader_delete(Shader* s) {
 	free(s);
 }
 
-void Shader_setInt(Shader* s, const char* name, int i) {
-	glUniform1i(glGetUniformLocation(s->id, name), i);
+void Shader_setInt(Shader* s, const char* name, int v) {
+	glUniform1i(glGetUniformLocation(s->id, name), v);
+}
+
+void Shader_setFloat(Shader* s, const char* name, float v) {
+	glUniform1f(glGetUniformLocation(s->id, name), v);
 }
 
 void Shader_setVec2(Shader* s, const char* name, float v0, float v1) {
@@ -116,6 +127,10 @@ void Shader_setVec2(Shader* s, const char* name, float v0, float v1) {
 
 void Shader_setVec3(Shader* s, const char* name, float v0, float v1, float v2) {
 	glUniform3f(glGetUniformLocation(s->id, name), v0, v1, v2);
+}
+
+void Shader_setVec4(Shader* s, const char* name, float v0, float v1, float v2, float v3) {
+	glUniform4f(glGetUniformLocation(s->id, name), v0, v1, v2, v3);
 }
 
 void Shader_setMat4(Shader* s, const char* name, const void* m) {
