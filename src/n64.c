@@ -114,6 +114,7 @@ static struct {
 	void* data;
 } gTexelDict[TEXTURE_CACHE_SIZE];
 static GLint gFilterMode = GL_LINEAR;
+static void* sTriangleCallbackUserData;
 static n64_triangleCallbackFunc sTriangleCallback;
 
 static uint32_t gRdpHalf1;
@@ -142,7 +143,7 @@ static enum n64_zmode gCurrentZmode;
 
 typedef struct ShaderList {
 	struct ShaderList* next;
-	Shader* shader;
+	Shader*  shader;
 	uint64_t uuid;
 } ShaderList;
 
@@ -373,15 +374,15 @@ static char* strcattf(char* dst, const char* fmt, ...) {
 }
 
 /*static const char* quickstr(const char* fmt, ...) {
-	static char buf[256];
-	va_list args;
-	
-	va_start(args, fmt);
-	vsnprintf(buf, sizeof(buf), fmt, args);
-	va_end(args);
-	
-	return buf;
-}*/
+        static char buf[256];
+        va_list args;
+
+        va_start(args, fmt);
+        vsnprintf(buf, sizeof(buf), fmt, args);
+        va_end(args);
+
+        return buf;
+   }*/
 
 static const char* colorValueString(int idx, int v) {
 	assert(idx >= 0 && idx < 4);
@@ -728,8 +729,7 @@ static void doMaterial(void* addr) {
 		}
 		
 		// using new shader, so update view-projection matrices
-		if (Shader_use(shader))
-		{
+		if (Shader_use(shader)) {
 			Shader_setMat4(shader, "view", &gMatrix.view);
 			Shader_setMat4(shader, "projection", &gMatrix.projection);
 		}
@@ -737,19 +737,29 @@ static void doMaterial(void* addr) {
 		// populate other misc variables
 		Shader_setVec4(
 			shader
-			, "uPrimColor"
-			, gMatState.prim.r
-			, gMatState.prim.g
-			, gMatState.prim.b
-			, gMatState.prim.alpha
+			,
+			"uPrimColor"
+			,
+			gMatState.prim.r
+			,
+			gMatState.prim.g
+			,
+			gMatState.prim.b
+			,
+			gMatState.prim.alpha
 		);
 		Shader_setVec4(
 			shader
-			, "uEnvColor"
-			, gMatState.env.r
-			, gMatState.env.g
-			, gMatState.env.b
-			, gMatState.env.alpha
+			,
+			"uEnvColor"
+			,
+			gMatState.env.r
+			,
+			gMatState.env.g
+			,
+			gMatState.env.b
+			,
+			gMatState.env.alpha
 		);
 		Shader_setVec3(shader, "uFogColor", gFog.color[0], gFog.color[1], gFog.color[2]);
 		Shader_setVec2(shader, "uFog", gFog.fog[0], gFog.fog[1]);
@@ -1038,7 +1048,7 @@ static inline void TryDrawTriangleBatch(const uint8_t* b) {
 				Vec3f Bnorm = { B.norm.x, B.norm.y, B.norm.z };
 				Vec3f Cnorm = { C.norm.x, C.norm.y, C.norm.z };
 				
-				sTriangleCallback(&Apos, &Bpos, &Cpos, &Anorm, &Bnorm, &Cnorm);
+				sTriangleCallback(sTriangleCallbackUserData, &Apos, &Bpos, &Cpos, &Anorm, &Bnorm, &Cnorm);
 			}
 		}
 		
@@ -1835,7 +1845,8 @@ void* n64_graph_alloc(uint32_t sz) {
 	return ret;
 }
 
-void n64_set_triangleCallbackFunc(n64_triangleCallbackFunc callback) {
+void n64_set_triangleCallbackFunc(void* userData, n64_triangleCallbackFunc callback) {
+	sTriangleCallbackUserData = userData;
 	sTriangleCallback = callback;
 }
 
