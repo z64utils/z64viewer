@@ -49,10 +49,9 @@ enum n64_geoLayer {
 
 extern void* gSegment[SEGMENT_MAX];
 
-typedef void (* TriCallback)(
-	/* 0 == init */ int32_t flag,
-	/* vertex    */ const void* v0, const void* v1, const void* v2,
-	/* normal    */ const void* n0, const void* n1, const void* n2
+typedef void (* n64_triangleCallbackFunc)(
+	/* vertex */ const void* v0, const void* v1, const void* v2,
+	/* normal */ const void* n0, const void* n1, const void* n2
 );
 
 void n64_set_segment(int seg, void* data);
@@ -69,7 +68,7 @@ void n64_set_onlyGeoLayer(enum n64_geoLayer geoLayer);
 void n64_swap(Gfx* g);
 void n64_clearCache();
 void* n64_graph_alloc(uint32_t sz);
-void n64_set_triangle_buffer_callback(TriCallback callback);
+void n64_set_triangleCallbackFunc(n64_triangleCallbackFunc callback);
 Gfx n64_gbi_gfxhi_ptr(void* ptr);
 Gfx n64_gbi_gfxhi_seg(uint32_t seg);
 bool n64_set_culling(bool state);

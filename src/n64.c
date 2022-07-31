@@ -114,6 +114,7 @@ static struct {
 	void* data;
 } gTexelDict[TEXTURE_CACHE_SIZE];
 static GLint gFilterMode = GL_LINEAR;
+static n64_triangleCallbackFunc sTriangleCallback;
 
 static uint32_t gRdpHalf1;
 static uint32_t gRdpHalf2;
@@ -240,8 +241,6 @@ const MtxF sClearMtx = {
 };
 
 typedef bool (* gbiFunc)(void* cmd);
-
-static void n64_assign_triangle(int32_t flag);
 
 static ShaderList* ShaderList_new(uint64_t uuid, void* next) {
 	ShaderList* l = calloc(1, sizeof(*l));
@@ -1023,24 +1022,24 @@ static bool gbiFunc_culldl(void* cmd) {
 	return true;
 }
 
-extern void TmpLineTriangleTest(Vec3f PosA, Vec3f PosB, Vec3f PosC, Vec3f NormA, Vec3f NormB, Vec3f NormC);
 static inline void TryDrawTriangleBatch(const uint8_t* b) {
 	if ((b[8] != G_TRI1 && b[8] != G_TRI2)
 	   || gIndicesUsed + 6 >= ARRAY_COUNT(gIndices)
 	) {
-		for (int i = 0; i < gIndicesUsed; i += 3)
-		{
-			VtxF A = gVbuf[gIndices[i + 0]];
-			VtxF B = gVbuf[gIndices[i + 1]];
-			VtxF C = gVbuf[gIndices[i + 2]];
-			Vec3f Apos = { A.pos.x, A.pos.y, A.pos.z };
-			Vec3f Bpos = { B.pos.x, B.pos.y, B.pos.z };
-			Vec3f Cpos = { C.pos.x, C.pos.y, C.pos.z };
-			Vec3f Anorm = { A.norm.x, A.norm.y, A.norm.z };
-			Vec3f Bnorm = { B.norm.x, B.norm.y, B.norm.z };
-			Vec3f Cnorm = { C.norm.x, C.norm.y, C.norm.z };
-			
-			TmpLineTriangleTest(Apos, Bpos, Cpos, Anorm, Bnorm, Cnorm);
+		if (sTriangleCallback) {
+			for (int i = 0; i < gIndicesUsed; i += 3) {
+				VtxF A = gVbuf[gIndices[i + 0]];
+				VtxF B = gVbuf[gIndices[i + 1]];
+				VtxF C = gVbuf[gIndices[i + 2]];
+				Vec3f Apos = { A.pos.x, A.pos.y, A.pos.z };
+				Vec3f Bpos = { B.pos.x, B.pos.y, B.pos.z };
+				Vec3f Cpos = { C.pos.x, C.pos.y, C.pos.z };
+				Vec3f Anorm = { A.norm.x, A.norm.y, A.norm.z };
+				Vec3f Bnorm = { B.norm.x, B.norm.y, B.norm.z };
+				Vec3f Cnorm = { C.norm.x, C.norm.y, C.norm.z };
+				
+				sTriangleCallback(&Apos, &Bpos, &Cpos, &Anorm, &Bnorm, &Cnorm);
+			}
 		}
 		
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gEBO);
@@ -1061,8 +1060,6 @@ static bool gbiFunc_tri1(void* cmd) {
 	gIndices[gIndicesUsed++] = b[2] / 2;
 	gIndices[gIndicesUsed++] = b[3] / 2;
 	
-	n64_assign_triangle(1);
-	
 	TryDrawTriangleBatch(b);
 	
 	return false;
@@ -1081,8 +1078,6 @@ static bool gbiFunc_tri2(void* cmd) {
 	gIndices[gIndicesUsed++] = b[5] / 2;
 	gIndices[gIndicesUsed++] = b[6] / 2;
 	gIndices[gIndicesUsed++] = b[7] / 2;
-	
-	n64_assign_triangle(2);
 	
 	TryDrawTriangleBatch(b);
 	
@@ -1837,35 +1832,8 @@ void* n64_graph_alloc(uint32_t sz) {
 	return ret;
 }
 
-TriCallback sTriCallback;
-
-void n64_set_triangle_buffer_callback(TriCallback callback) {
-	sTriCallback = callback;
-}
-
-static void n64_assign_triangle(int32_t flag) {
-	if (sTriCallback == NULL)
-		return;
-	
-	if (flag == 0) {
-		sTriCallback(0, 0, 0, 0, 0, 0, 0);
-		
-		return;
-	}
-	
-	for (int32_t i = 0; i < flag; i++) {
-		int32_t j = 3 * i;
-		
-		sTriCallback(
-			flag,
-			&gVbuf[gIndices[0 + j]].pos,
-			&gVbuf[gIndices[1 + j]].pos,
-			&gVbuf[gIndices[2 + j]].pos,
-			&gVbuf[gIndices[0 + j]].norm,
-			&gVbuf[gIndices[1 + j]].norm,
-			&gVbuf[gIndices[2 + j]].norm
-		);
-	}
+void n64_set_triangleCallbackFunc(n64_triangleCallbackFunc callback) {
+	sTriangleCallback = callback;
 }
 
 uintptr_t gStorePointer;
@@ -1889,7 +1857,6 @@ bool n64_set_culling(bool state) {
 void n64_graph_init() {
 	n64_clear_lights();
 	n64_graph_alloc(GRAPH_INIT);
-	n64_assign_triangle(TRI_INIT);
 	for (int i = 0; i <= 0xF; i++)
 		gSegment[i] = NULL;
 	gPolyOpaDisp = gPolyOpaHead;
