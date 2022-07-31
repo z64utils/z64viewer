@@ -1023,10 +1023,26 @@ static bool gbiFunc_culldl(void* cmd) {
 	return true;
 }
 
+extern void TmpLineTriangleTest(Vec3f PosA, Vec3f PosB, Vec3f PosC, Vec3f NormA, Vec3f NormB, Vec3f NormC);
 static inline void TryDrawTriangleBatch(const uint8_t* b) {
 	if ((b[8] != G_TRI1 && b[8] != G_TRI2)
 	   || gIndicesUsed + 6 >= ARRAY_COUNT(gIndices)
 	) {
+		for (int i = 0; i < gIndicesUsed; i += 3)
+		{
+			VtxF A = gVbuf[gIndices[i + 0]];
+			VtxF B = gVbuf[gIndices[i + 1]];
+			VtxF C = gVbuf[gIndices[i + 2]];
+			Vec3f Apos = { A.pos.x, A.pos.y, A.pos.z };
+			Vec3f Bpos = { B.pos.x, B.pos.y, B.pos.z };
+			Vec3f Cpos = { C.pos.x, C.pos.y, C.pos.z };
+			Vec3f Anorm = { A.norm.x, A.norm.y, A.norm.z };
+			Vec3f Bnorm = { B.norm.x, B.norm.y, B.norm.z };
+			Vec3f Cnorm = { C.norm.x, C.norm.y, C.norm.z };
+			
+			TmpLineTriangleTest(Apos, Bpos, Cpos, Anorm, Bnorm, Cnorm);
+		}
+		
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gEBO);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(*gIndices) * gIndicesUsed, gIndices, GL_DYNAMIC_DRAW);
 		
