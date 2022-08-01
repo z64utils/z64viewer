@@ -20,6 +20,10 @@
 
 #include <bigendian.h>
 
+#define GX_POLYGONOFFSET 0b00000001
+#define GX_WIREFRAME     0b00000010
+#define GX_EXTRAS        0x80
+
 #include <string.h>
 #include <stdint.h>
 
@@ -3918,6 +3922,10 @@ extern uintptr_t gStorePointer;
 	#define gSpecial2(gdl, ...) gD_(gdl, gsSpecial2, __VA_ARGS__)
 	#define gSpecial1(gdl, ...) gD_(gdl, gsSpecial1, __VA_ARGS__)
 #endif
+
+/* extras */
+#define gsDPExtras(clear, set)  gO_(GX_EXTRAS, clear, set)
+#define gDPExtras(gdl, ...) gD_(gdl, gsDPExtras, __VA_ARGS__)
 
 /* data types and structures */
 typedef uint8_t qu08_t;

@@ -736,29 +736,19 @@ static void doMaterial(void* addr) {
 		
 		// populate other misc variables
 		Shader_setVec4(
-			shader
-			,
-			"uPrimColor"
-			,
-			gMatState.prim.r
-			,
-			gMatState.prim.g
-			,
-			gMatState.prim.b
-			,
+			shader,
+			"uPrimColor",
+			gMatState.prim.r,
+			gMatState.prim.g,
+			gMatState.prim.b,
 			gMatState.prim.alpha
 		);
 		Shader_setVec4(
-			shader
-			,
-			"uEnvColor"
-			,
-			gMatState.env.r
-			,
-			gMatState.env.g
-			,
-			gMatState.env.b
-			,
+			shader,
+			"uEnvColor",
+			gMatState.env.r,
+			gMatState.env.g,
+			gMatState.env.b,
 			gMatState.env.alpha
 		);
 		Shader_setVec3(shader, "uFogColor", gFog.color[0], gFog.color[1], gFog.color[2]);
@@ -1290,6 +1280,35 @@ static bool gbiFunc_setenvcolor(void* cmd) {
 	return false;
 }
 
+static bool gbiFunc_extras(void* cmd) {
+	uint8_t* b = cmd;
+	
+	uint32_t clear = u32r(b);
+	uint32_t set = u32r(b + 4);
+	
+	if (clear & GX_POLYGONOFFSET) {
+		glDisable(GL_POLYGON_OFFSET_FILL);
+		glDisable(GL_POLYGON_OFFSET_LINE);
+		glPolygonOffset(0, 0);
+	}
+	
+	if (clear & GX_WIREFRAME) {
+		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+	}
+	
+	if (set & GX_POLYGONOFFSET) {
+		glEnable(GL_POLYGON_OFFSET_FILL);
+		glEnable(GL_POLYGON_OFFSET_LINE);
+		glPolygonOffset(-2, -2);
+	}
+	
+	if (set & GX_WIREFRAME) {
+		glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+	}
+	
+	return false;
+}
+
 static bool gbiFunc_setcombine(void* cmd) {
 	uint8_t* b = cmd;
 	
@@ -1647,7 +1666,8 @@ static gbiFunc gGbi[256] = {
 	[G_BRANCH_Z] = gbiFunc_branch_z,
 	[G_RDPHALF_1] = gbiFunc_rdphalf_1,
 	[G_RDPHALF_2] = gbiFunc_rdphalf_2,
-	[G_ENDDL] = gbiFunc_enddl
+	[G_ENDDL] = gbiFunc_enddl,
+	[GX_EXTRAS] = gbiFunc_extras
 };
 
 /*
