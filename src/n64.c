@@ -1041,14 +1041,22 @@ static inline void TryDrawTriangleBatch(const uint8_t* b) {
 				VtxF A = gVbuf[gIndices[i + 0]];
 				VtxF B = gVbuf[gIndices[i + 1]];
 				VtxF C = gVbuf[gIndices[i + 2]];
-				Vec3f Apos = { A.pos.x, A.pos.y, A.pos.z };
-				Vec3f Bpos = { B.pos.x, B.pos.y, B.pos.z };
-				Vec3f Cpos = { C.pos.x, C.pos.y, C.pos.z };
-				Vec3f Anorm = { A.norm.x, A.norm.y, A.norm.z };
-				Vec3f Bnorm = { B.norm.x, B.norm.y, B.norm.z };
-				Vec3f Cnorm = { C.norm.x, C.norm.y, C.norm.z };
+				n64_triangleCallbackData triData = {
+					{
+						{ A.pos.x, A.pos.y, A.pos.z },
+						{ B.pos.x, B.pos.y, B.pos.z },
+						{ C.pos.x, C.pos.y, C.pos.z },
+					},
+					{
+						{ A.norm.x, A.norm.y, A.norm.z },
+						{ B.norm.x, B.norm.y, B.norm.z },
+						{ C.norm.x, C.norm.y, C.norm.z },
+					},
+					!!(gMatState.geometrymode & G_CULL_BACK),
+					!!(gMatState.geometrymode & G_CULL_FRONT)
+				};
 				
-				sTriangleCallback(sTriangleCallbackUserData, &Apos, &Bpos, &Cpos, &Anorm, &Bnorm, &Cnorm);
+				sTriangleCallback(sTriangleCallbackUserData, &triData);
 			}
 		}
 		
@@ -1757,6 +1765,13 @@ void n64_draw(void* dlist) {
 		if (gGbi[*cmd] && gGbi[*cmd](cmd))
 			break;
 	}
+}
+
+void n64_draw_buffers(void) {
+	gSPEndDisplayList(POLY_OPA_DISP++);
+	gSPEndDisplayList(POLY_XLU_DISP++);
+	n64_draw(gPolyOpaHead);
+	n64_draw(gPolyXluHead);
 }
 
 void n64_setMatrix_model(void* data) {

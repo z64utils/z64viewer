@@ -49,16 +49,27 @@ enum n64_geoLayer {
 
 extern void* gSegment[SEGMENT_MAX];
 
+typedef struct {
+	struct {
+		float x, y, z;
+	} v[3];
+	struct {
+		float x, y, z;
+	} n[3];
+	bool cullBackface;
+	bool cullFrontface;
+} n64_triangleCallbackData;
+
 typedef void (* n64_triangleCallbackFunc)(
 	void* userData,
-	/* vertex */ const void* v0, const void* v1, const void* v2,
-	/* normal */ const void* n0, const void* n1, const void* n2
+	const n64_triangleCallbackData* tri
 );
 
 void n64_set_segment(int seg, void* data);
 void* n64_virt2phys(unsigned int segaddr);
 unsigned int n64_phys2virt(void* cmd);
 void n64_draw(void* dlist);
+void n64_draw_buffers(void);
 void n64_setMatrix_model(void* data);
 void n64_setMatrix_view(void* data);
 void n64_setMatrix_projection(void* data);
