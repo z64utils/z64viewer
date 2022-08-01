@@ -1903,12 +1903,18 @@ bool n64_set_culling(bool state) {
 	return gCullDLenabled = state;
 }
 
+void n64_reset_buffers(void) {
+	gPolyOpaDisp = gPolyOpaHead;
+	gPolyXluDisp = gPolyXluHead;
+}
+
 void n64_graph_init() {
 	n64_clear_lights();
 	n64_graph_alloc(GRAPH_INIT);
 	for (int i = 0; i <= 0xF; i++)
 		gSegment[i] = NULL;
-	gPolyOpaDisp = gPolyOpaHead;
-	gPolyXluDisp = gPolyXluHead;
+	n64_reset_buffers();
 	Shader_use(0);
+	n64_set_onlyZmode(ZMODE_ALL);
+	n64_set_onlyGeoLayer(GEOLAYER_ALL);
 }
