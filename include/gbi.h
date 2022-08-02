@@ -3941,7 +3941,7 @@ extern uintptr_t gStorePointer;
 #define gXPSetHighlightColor(gdl, ...) gD_(gdl, gsEXSetHighlightColor, __VA_ARGS__)
 #define gsXPOutline(r, g, b, a, thickness)  gO_(GX_SHADER_OUTLINE, \
 	((uint8_t)r) << 16 | ((uint8_t)g) << 8 | (uint8_t)b, \
-	thickness)
+	((uint8_t)thickness) << 8 | (uint8_t)a)
 #define gXPOutline(gdl, ...) gD_(gdl, gsXPOutline, __VA_ARGS__)
 #define gXPClearOutline(gdl) gXPOutline(gdl, 0, 0, 0, 0, 0)
 
