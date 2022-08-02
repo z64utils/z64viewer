@@ -20,11 +20,11 @@
 
 #include <bigendian.h>
 
-#define GX_POLYGONOFFSET 0b00000001
-#define GX_WIREFRAME     0b00000010
-#define GX_OUTLINE       0b00000100
-#define GX_EXTRAS        0x80
-#define GX_HILIGHT       0x81
+#define GX_POLYGONOFFSET         0b00000001
+#define GX_WIREFRAME             0b00000010
+#define GX_OUTLINE               0b00000100
+#define GX_EXTRAS                0x80
+#define GX_HILIGHT               0x81
 
 #define GX_HILIGHT_MODE_ADD 0x00
 #define GX_HILIGHT_MODE_SUB 0x01
@@ -3932,8 +3932,8 @@ extern uintptr_t gStorePointer;
 #endif
 
 /* extras */
-#define gsDPExtras(clear, set)  gO_(GX_EXTRAS, clear, set)
-#define gDPExtras(gdl, ...) gD_(gdl, gsDPExtras, __VA_ARGS__)
+#define gsXPMode(clear, set)  gO_(GX_EXTRAS, clear, set)
+#define gXPMode(gdl, ...) gD_(gdl, gsXPMode, __VA_ARGS__)
 #define gsXPSetHighlightColor(r, g, b, factor, mode)  gO_(GX_HILIGHT, \
 	((uint8_t)r) << 16 | ((uint8_t)g) << 8 | (uint8_t)b, \
 	GX_HILIGHT_MODE_ ## mode | ((uint8_t)factor) << 8)

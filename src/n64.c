@@ -88,11 +88,7 @@ typedef struct VtxF {
 		float v;
 	} texcoord0, texcoord1;
 	Vec4f color;
-	struct {
-		float x;
-		float y;
-		float z;
-	} norm;
+	Vec3f norm;
 } VtxF;
 
 #include <n64.h>
@@ -824,6 +820,31 @@ static void mtx_multVec3fToVec4f(Vec3f* src, Vec4f* vec, MtxF* mf) {
 	vec->w = mf->ww + (mf->wx * src->x + mf->wy * src->y + mf->wz * src->z);
 }
 
+static void mtx_normalReoriantation(Vec3f* src, Vec3f* vec, MtxF* mf) {
+	vec->x = (mf->xx * src->x + mf->xy * src->y + mf->xz * src->z);
+    vec->y = (mf->yx * src->x + mf->yy * src->y + mf->yz * src->z);
+    vec->z = (mf->zx * src->x + mf->zy * src->y + mf->zz * src->z);
+}
+
+static Vec4f vec4f_normalize3(Vec4f vec) {
+	Vec4f ret;
+	float mgn = sqrtf(
+		(vec.x * vec.x) + (vec.y * vec.y) + (vec.z * vec.z)
+	);
+	
+	if (mgn == 0) {
+		ret.x = ret.y = ret.z = 0;
+	} else {
+		ret.x = vec.x / mgn;
+		ret.y = vec.y / mgn;
+		ret.z = vec.z / mgn;
+	}
+	
+	ret.w = vec.w;
+	
+	return ret;
+}
+
 static Vec3f vec3f_normalize(Vec3f vec) {
 	Vec3f ret;
 	float mgn = sqrtf(
@@ -925,9 +946,9 @@ static bool gbiFunc_vtx(void* cmd) {
 		v->pos.y = s16r(vaddr + 2);
 		v->pos.z = s16r(vaddr + 4);
 		
-		Vec3f wordPos = { v->pos.x, v->pos.y, v->pos.z };
+		Vec3f modelPos = { v->pos.x, v->pos.y, v->pos.z };
 		
-		mtx_multVec3fToVec4f(&wordPos, &v->pos, gMatrix.modelNow);
+		mtx_multVec3fToVec4f(&modelPos, &v->pos, gMatrix.modelNow);
 		
 		v->texcoord0.u = s16r(vaddr + 8) * (1.0 / 1024) * (32.0 / gMatState.texWidth);
 		v->texcoord0.v = s16r(vaddr + 10) * (1.0 / 1024) * (32.0 / gMatState.texHeight);
@@ -952,14 +973,18 @@ static bool gbiFunc_vtx(void* cmd) {
 			v->norm.y = 0;
 			v->norm.z = 0;
 		} else {
-			Vec3f vtxNor = {
+			Vec3f n = {
 				s8r(vaddr + 12) * div_1_127,
 				s8r(vaddr + 13) * div_1_127,
-				s8r(vaddr + 14) * div_1_127
+				s8r(vaddr + 14) * div_1_127,
 			};
+			Vec3f mn;
 			
-			vtxNor = vec3f_normalize(vtxNor);
-			v->color = light_bind_all(wordPos, vtxNor);
+			mtx_normalReoriantation(&n, &mn, gMatrix.modelNow);
+			n = mn;
+			
+			n = vec3f_normalize(n);
+			v->color = light_bind_all(modelPos, n);
 			
 			v->norm.x = 0;
 			v->norm.y = 0;
