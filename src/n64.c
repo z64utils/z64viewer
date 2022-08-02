@@ -234,6 +234,7 @@ static struct {
 	float    k4; // TODO not yet populated
 	float    k5; // TODO not yet populated
 	uint32_t geometrymode;
+	bool fog;
 } gMatState; /* material state magic */
 
 void* gSegment[SEGMENT_MAX] = { 0 };
@@ -299,6 +300,17 @@ static void othermode(void) {
 	uint32_t hi = gMatState.othermode_hi;
 	uint32_t lo = gMatState.othermode_lo;
 	uint32_t indep = (lo & 0b1111111111111000) >> 3;
+	uint32_t rmodeCycDep = (lo & 0b11111111111111110000000000000000) >> 16;
+	uint8_t P_1 = (rmodeCycDep >> 14) & 0b11;
+	uint8_t P_2 = (rmodeCycDep >> 12) & 0b11;
+	uint8_t A_1 = (rmodeCycDep >> 10) & 0b11;
+	uint8_t A_2 = (rmodeCycDep >> 8) & 0b11;
+	uint8_t M_1 = (rmodeCycDep >> 6) & 0b11;
+	uint8_t M_2 = (rmodeCycDep >> 4) & 0b11;
+	uint8_t B_1 = (rmodeCycDep >> 2) & 0b11;
+	uint8_t B_2 = (rmodeCycDep >> 0) & 0b11;
+	
+	gMatState.fog = true;
 	
 	gCurrentZmode = (indep & 0b0000110000000) >> 7;
 	gForceBl = (indep & 0b0100000000000) >> 11;
@@ -721,7 +733,7 @@ static void doMaterial(void* addr) {
 				ADDF("final += %s;", colorValueString(3, (lo >> 6) & 0x7));
 				ADD("FragColor.rgb = final;");
 				
-				if (gFogEnabled)
+				if (gFogEnabled && gMatState.fog)
 					ADD("FragColor.rgb = mix(FragColor.rgb, uFogColor, vFog);");
 				
 				ADD("}");
