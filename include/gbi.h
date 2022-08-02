@@ -22,6 +22,7 @@
 
 #define GX_POLYGONOFFSET 0b00000001
 #define GX_WIREFRAME     0b00000010
+#define GX_OUTLINE       0b00000100
 #define GX_EXTRAS        0x80
 
 #include <string.h>

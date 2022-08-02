@@ -122,7 +122,8 @@ static uint32_t gRdpHalf2;
 static uintptr_t gPtrHi = 0;
 static bool gPtrHiSet = false;
 
-// static Shader* gShader = 0;
+static Shader* gShader = 0;
+static Shader* sOutlineShader = 0;
 
 static bool gHideGeometry = false;
 static bool gVertexColors = false;
@@ -130,6 +131,9 @@ static bool gFogEnabled = true;
 static bool gForceBl = false;
 static bool gCvgXalpha = false;
 static bool gCullDLenabled = true;
+static bool gGxOutline = false;
+
+static int gPolygonOffset = 0;
 
 Gfx gPolyOpaHead[4096];
 Gfx* gPolyOpaDisp;
@@ -344,13 +348,14 @@ static void othermode(void) {
 	switch (gCurrentZmode) {
 		case ZMODE_DEC: /* ZMODE_DEC */
 			glEnable(GL_POLYGON_OFFSET_FILL);
-			glPolygonOffset(-1, -1);
+			gPolygonOffset = -1;
 			break;
 		default:
 			glDisable(GL_POLYGON_OFFSET_FILL);
-			glPolygonOffset(0, 0);
+			gPolygonOffset = 0;
 			break;
 	}
+	glPolygonOffset(gPolygonOffset, gPolygonOffset);
 }
 
 /* like strcat, but returns pointer to tail of appended string */
@@ -729,6 +734,7 @@ static void doMaterial(void* addr) {
 		}
 		
 		// using new shader, so update view-projection matrices
+		gShader = shader;
 		if (Shader_use(shader)) {
 			Shader_setMat4(shader, "view", &gMatrix.view);
 			Shader_setMat4(shader, "projection", &gMatrix.projection);
@@ -1053,6 +1059,26 @@ static inline void TryDrawTriangleBatch(const uint8_t* b) {
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gEBO);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(*gIndices) * gIndicesUsed, gIndices, GL_DYNAMIC_DRAW);
 		
+		if (gGxOutline) {
+			Shader_use(sOutlineShader);
+			Shader_setMat4(sOutlineShader, "view", &gMatrix.view);
+			Shader_setMat4(sOutlineShader, "projection", &gMatrix.projection);
+			
+			glEnable(GL_POLYGON_OFFSET_LINE);
+			glPolygonOffset(10, 10);
+			
+			Shader_setVec4(sOutlineShader, "color", 1, 0.5, 0, 1);
+			glLineWidth(5);
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			glDrawElements(GL_TRIANGLES, gIndicesUsed, GL_UNSIGNED_BYTE, 0);
+			
+			glPolygonOffset(gPolygonOffset, gPolygonOffset);
+			glDisable(GL_POLYGON_OFFSET_LINE);
+			
+			glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+			Shader_use(gShader);
+		}
+		
 		glDrawElements(GL_TRIANGLES, gIndicesUsed, GL_UNSIGNED_BYTE, 0);
 		gIndicesUsed = 0;
 	}
@@ -1285,6 +1311,12 @@ static bool gbiFunc_extras(void* cmd) {
 	
 	uint32_t clear = u32r(b);
 	uint32_t set = u32r(b + 4);
+	
+	if (clear & GX_OUTLINE)
+		gGxOutline = false;
+	
+	if (set & GX_OUTLINE)
+		gGxOutline = true;
 	
 	if (clear & GX_POLYGONOFFSET) {
 		glDisable(GL_POLYGON_OFFSET_FILL);
@@ -1917,4 +1949,35 @@ void n64_graph_init() {
 	Shader_use(0);
 	n64_set_onlyZmode(ZMODE_ALL);
 	n64_set_onlyGeoLayer(GEOLAYER_ALL);
+	
+	if (!sOutlineShader) {
+		sOutlineShader = Shader_new();
+		
+		const char* vtx = SHADER_SOURCE(
+			layout (location = 0) in vec4 aPos;
+			layout (location = 1) in vec4 aColor;
+			layout (location = 2) in vec2 aTexCoord0;
+			layout (location = 3) in vec2 aTexCoord1;
+			layout (location = 4) in vec3 aNorm;
+			
+			// uniform mat4 model;
+			uniform mat4 view;
+			uniform mat4 projection;
+				
+			void main() {
+				vec4 wow = projection * view * vec4(aPos.xyz, 1.0);
+				
+				gl_Position = projection * view * aPos;
+			}
+		);
+		const char* frag = SHADER_SOURCE(
+			out vec4 FragColor;
+			uniform vec4 color;
+			
+			void main() {
+				FragColor.rgba = color;
+			}
+		);
+		Shader_update(sOutlineShader, vtx, frag);
+	}
 }
