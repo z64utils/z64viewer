@@ -25,6 +25,7 @@
 #define GX_OUTLINE               0b00000100
 #define GX_EXTRAS                0x80
 #define GX_HILIGHT               0x81
+#define GX_SHADER_OUTLINE        0x82
 
 #define GX_HILIGHT_MODE_ADD 0x00
 #define GX_HILIGHT_MODE_SUB 0x01
@@ -3938,6 +3939,11 @@ extern uintptr_t gStorePointer;
 	((uint8_t)r) << 16 | ((uint8_t)g) << 8 | (uint8_t)b, \
 	GX_HILIGHT_MODE_ ## mode | ((uint8_t)factor) << 8)
 #define gXPSetHighlightColor(gdl, ...) gD_(gdl, gsEXSetHighlightColor, __VA_ARGS__)
+#define gsXPOutline(r, g, b, a, thickness)  gO_(GX_SHADER_OUTLINE, \
+	((uint8_t)r) << 16 | ((uint8_t)g) << 8 | (uint8_t)b, \
+	thickness)
+#define gXPOutline(gdl, ...) gD_(gdl, gsXPOutline, __VA_ARGS__)
+#define gXPClearOutline(gdl) gXPOutline(gdl, 0, 0, 0, 0, 0)
 
 
 /* data types and structures */
