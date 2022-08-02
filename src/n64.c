@@ -297,20 +297,22 @@ static void ShaderList_cleanup(void) {
 }
 
 static void othermode(void) {
+	#define G_RM_CYCLE1_MASK 0b1100110011001100
+	#define G_RM_CYCLE2_MASK 0b0011001100110011
+	#define gRMCycle1(p, a, m, b) ((p) << 14 | (a) << 10 | (m) << 6 | (b) << 2)
+	#define gRMCycle0(p, a, m, b) ((p) << 12 | (a) << 8 | (m) << 4 | (b) << 0)
 	uint32_t hi = gMatState.othermode_hi;
 	uint32_t lo = gMatState.othermode_lo;
 	uint32_t indep = (lo & 0b1111111111111000) >> 3;
-	uint32_t rmodeCycDep = (lo & 0b11111111111111110000000000000000) >> 16;
-	uint8_t P_1 = (rmodeCycDep >> 14) & 0b11;
-	uint8_t P_2 = (rmodeCycDep >> 12) & 0b11;
-	uint8_t A_1 = (rmodeCycDep >> 10) & 0b11;
-	uint8_t A_2 = (rmodeCycDep >> 8) & 0b11;
-	uint8_t M_1 = (rmodeCycDep >> 6) & 0b11;
-	uint8_t M_2 = (rmodeCycDep >> 4) & 0b11;
-	uint8_t B_1 = (rmodeCycDep >> 2) & 0b11;
-	uint8_t B_2 = (rmodeCycDep >> 0) & 0b11;
+	uint16_t cycDepBlnd = lo >> 16;
 	
 	gMatState.fog = true;
+	
+	/*
+	 * Hardcoe G_RM_PASS to have no fog, does not work atm. Maybe the variables are set wrong?
+	 */
+	if ((cycDepBlnd & G_RM_CYCLE1_MASK) == gRMCycle1(G_BL_CLR_IN, G_BL_0, G_BL_CLR_IN, G_BL_1))
+		gMatState.fog = false;
 	
 	gCurrentZmode = (indep & 0b0000110000000) >> 7;
 	gForceBl = (indep & 0b0100000000000) >> 11;
