@@ -230,7 +230,7 @@ static struct {
 	float    k4; // TODO not yet populated
 	float    k5; // TODO not yet populated
 	uint32_t geometrymode;
-	bool fog;
+	bool mixFog; // Condition to mix fog into the material
 } gMatState; /* material state magic */
 
 void* gSegment[SEGMENT_MAX] = { 0 };
@@ -293,22 +293,23 @@ static void ShaderList_cleanup(void) {
 }
 
 static void othermode(void) {
-	#define G_RM_CYCLE1_MASK 0b1100110011001100
-	#define G_RM_CYCLE2_MASK 0b0011001100110011
-	#define gRMCycle1(p, a, m, b) ((p) << 14 | (a) << 10 | (m) << 6 | (b) << 2)
-	#define gRMCycle0(p, a, m, b) ((p) << 12 | (a) << 8 | (m) << 4 | (b) << 0)
+	#define G_RM_CYCLE1_MASK 0xCCCC0000
+	#define G_RM_CYCLE2_MASK 0x33330000
 	uint32_t hi = gMatState.othermode_hi;
 	uint32_t lo = gMatState.othermode_lo;
 	uint32_t indep = (lo & 0b1111111111111000) >> 3;
-	uint16_t cycDepBlnd = lo >> 16;
 	
-	gMatState.fog = true;
+	gMatState.mixFog = true;
 	
 	/*
-	 * Hardcoe G_RM_PASS to have no fog, does not work atm. Maybe the variables are set wrong?
+	 * One of the cases where FOG should be ignored. But this is mostly
+	 * hardcoded solution and wont apply to all cases where fog would
+	 * be disabled on material.
+	 *
+	 * Required further investigation.
 	 */
-	if ((cycDepBlnd & G_RM_CYCLE1_MASK) == gRMCycle1(G_BL_CLR_IN, G_BL_0, G_BL_CLR_IN, G_BL_1))
-		gMatState.fog = false;
+	if ((lo & G_RM_CYCLE1_MASK) == GBL_c1(G_BL_CLR_IN, G_BL_0, G_BL_CLR_IN, G_BL_1))
+		gMatState.mixFog = false;
 	
 	gCurrentZmode = (indep & 0b0000110000000) >> 7;
 	gForceBl = (indep & 0b0100000000000) >> 11;
@@ -731,7 +732,7 @@ static void doMaterial(void* addr) {
 				ADDF("final += %s;", colorValueString(3, (lo >> 6) & 0x7));
 				ADD("FragColor.rgb = final;");
 				
-				if (gFogEnabled && gMatState.fog)
+				if (gFogEnabled && gMatState.mixFog)
 					ADD("FragColor.rgb = mix(FragColor.rgb, uFogColor, vFog);");
 				
 				ADD("}");
@@ -822,8 +823,8 @@ static void mtx_multVec3fToVec4f(Vec3f* src, Vec4f* vec, MtxF* mf) {
 
 static void mtx_normalReoriantation(Vec3f* src, Vec3f* vec, MtxF* mf) {
 	vec->x = (mf->xx * src->x + mf->xy * src->y + mf->xz * src->z);
-    vec->y = (mf->yx * src->x + mf->yy * src->y + mf->yz * src->z);
-    vec->z = (mf->zx * src->x + mf->zy * src->y + mf->zz * src->z);
+	vec->y = (mf->yx * src->x + mf->yy * src->y + mf->yz * src->z);
+	vec->z = (mf->zx * src->x + mf->zy * src->y + mf->zz * src->z);
 }
 
 static Vec4f vec4f_normalize3(Vec4f vec) {
@@ -1289,10 +1290,11 @@ static bool gbiFunc_enddl(void* cmd) {
 
 static bool gbiFunc_setothermode_l(void* cmd) {
 	uint8_t* b = cmd;
-	
-	int shift = b[2];
-	int length = b[3];
+	int ss = b[2];
+	int nn = b[3];
 	uint32_t data = u32r(b + 4);
+	int shift = 32 - (nn + 1) - ss;
+	int length = nn + 1;
 	
 	gMatState.othermode_lo = (gMatState.othermode_lo & ~(((1 << length) - 1) << shift)) | data;
 	
