@@ -119,7 +119,6 @@ static uintptr_t gPtrHi = 0;
 static bool gPtrHiSet = false;
 
 static Shader* gShader = 0;
-static Shader* sOutlineShader = 0;
 
 static bool gHideGeometry = false;
 static bool gVertexColors = false;
@@ -127,7 +126,6 @@ static bool gFogEnabled = true;
 static bool gForceBl = false;
 static bool gCvgXalpha = false;
 static bool gCullDLenabled = true;
-static bool gGxOutline = false;
 
 static int gPolygonOffset = 0;
 
@@ -970,22 +968,9 @@ static bool gbiFunc_vtx(void* cmd) {
 			v->color.x = u8r(vaddr + 12) * div_1_255;
 			v->color.y = u8r(vaddr + 13) * div_1_255;
 			v->color.z = u8r(vaddr + 14) * div_1_255;
-			
-			if (gGxOutline) {
-				Vec3f n = {
-					s8r(vaddr + 12) * div_1_127,
-					s8r(vaddr + 13) * div_1_127,
-					s8r(vaddr + 14) * div_1_127,
-				};
-				Vec3f mn;
-				
-				mtx_normalReoriantation(&n, &mn, gMatrix.modelNow);
-				n = mn;
-				
-				n = vec3f_normalize(n);
-				
-				v->norm = n;
-			}
+			v->norm.x = 0;
+			v->norm.y = 0;
+			v->norm.z = 0;
 		} else {
 			Vec3f n = {
 				s8r(vaddr + 12) * div_1_127,
@@ -998,8 +983,11 @@ static bool gbiFunc_vtx(void* cmd) {
 			n = mn;
 			
 			n = vec3f_normalize(n);
-			v->norm = n;
 			v->color = light_bind_all(modelPos, n);
+			
+			v->norm.x = 0;
+			v->norm.y = 0;
+			v->norm.z = 0;
 		}
 		v->color.w = u8r(vaddr + 15) * div_1_255;
 		
@@ -1108,66 +1096,6 @@ static inline void TryDrawTriangleBatch(const uint8_t* b) {
 		
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gEBO);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(*gIndices) * gIndicesUsed, gIndices, GL_DYNAMIC_DRAW);
-		
-	#if 0 // Wireframe method
-		if (gGxOutline) {
-			Shader_use(sOutlineShader);
-			Shader_setMat4(sOutlineShader, "view", &gMatrix.view);
-			Shader_setMat4(sOutlineShader, "projection", &gMatrix.projection);
-			
-			glEnable(GL_POLYGON_OFFSET_LINE);
-			glPolygonOffset(10, 10);
-			
-			Shader_setVec4(sOutlineShader, "color", 1, 0.5, 0, 1);
-			glLineWidth(5);
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			glDrawElements(GL_TRIANGLES, gIndicesUsed, GL_UNSIGNED_BYTE, 0);
-			
-			glPolygonOffset(gPolygonOffset, gPolygonOffset);
-			glDisable(GL_POLYGON_OFFSET_LINE);
-			
-			glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-			Shader_use(gShader);
-		}
-	#else // Inverse hull method
-		if (gGxOutline) {
-			GLint OldCullMode;
-			GLboolean OldCullBool;
-			GLboolean OldDepthBool;
-			GLboolean OldBlendBool;
-			
-			Shader_use(sOutlineShader);
-			Shader_setMat4(sOutlineShader, "view", &gMatrix.view);
-			Shader_setMat4(sOutlineShader, "projection", &gMatrix.projection);
-			
-			glGetIntegerv(GL_CULL_FACE_MODE, &OldCullMode);
-			glGetBooleanv(GL_CULL_FACE, &OldCullBool);
-			glGetBooleanv(GL_DEPTH_TEST, &OldDepthBool);
-			glGetBooleanv(GL_BLEND, &OldBlendBool);
-			
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			
-			if (OldCullBool)
-				glEnable(GL_CULL_FACE);
-			glCullFace(GL_FRONT);
-			//glDisable(GL_DEPTH_TEST); // comment this line to disable x-ray mode
-			
-			Shader_setVec4(sOutlineShader, "color", 1, 0.5, 0, 1);
-			glDrawElements(GL_TRIANGLES, gIndicesUsed, GL_UNSIGNED_BYTE, 0);
-			
-			Shader_use(gShader);
-			
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			glCullFace(OldCullMode);
-			if (!OldBlendBool)
-				glDisable(GL_BLEND);
-			if (!OldCullBool)
-				glDisable(GL_CULL_FACE);
-			if (OldDepthBool)
-				glEnable(GL_DEPTH_TEST);
-		}
-	#endif
 		
 		glDrawElements(GL_TRIANGLES, gIndicesUsed, GL_UNSIGNED_BYTE, 0);
 		gIndicesUsed = 0;
@@ -1402,12 +1330,6 @@ static bool gbiFunc_extras(void* cmd) {
 	
 	uint32_t clear = u32r(b);
 	uint32_t set = u32r(b + 4);
-	
-	if (clear & GX_OUTLINE)
-		gGxOutline = false;
-	
-	if (set & GX_OUTLINE)
-		gGxOutline = true;
 	
 	if (clear & GX_POLYGONOFFSET) {
 		glDisable(GL_POLYGON_OFFSET_FILL);
@@ -2040,34 +1962,4 @@ void n64_graph_init() {
 	Shader_use(0);
 	n64_set_onlyZmode(ZMODE_ALL);
 	n64_set_onlyGeoLayer(GEOLAYER_ALL);
-	
-	if (!sOutlineShader) {
-		sOutlineShader = Shader_new();
-		
-		const char* vtx = SHADER_SOURCE(
-			layout (location = 0) in vec4 aPos;
-			layout (location = 1) in vec4 aColor;
-			layout (location = 2) in vec2 aTexCoord0;
-			layout (location = 3) in vec2 aTexCoord1;
-			layout (location = 4) in vec3 aNorm;
-			
-			// uniform mat4 model;
-			uniform mat4 view;
-			uniform mat4 projection;
-				
-			void main() {
-				//gl_Position = projection * view * aPos; // wireframe method
-				gl_Position = projection * view * vec4((aPos.xyz + aNorm * 1.0), 1.0); // inverse hull
-			}
-		);
-		const char* frag = SHADER_SOURCE(
-			out vec4 FragColor;
-			uniform vec4 color;
-			
-			void main() {
-				FragColor.rgba = color;
-			}
-		);
-		Shader_update(sOutlineShader, vtx, frag);
-	}
 }
