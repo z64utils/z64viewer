@@ -1331,6 +1331,12 @@ static bool gbiFunc_extras(void* cmd) {
 	uint32_t clear = u32r(b);
 	uint32_t set = u32r(b + 4);
 	
+	if (clear & GX_STENCILWRITE)
+		glStencilMask(0x00);
+	
+	if (set & GX_STENCILWRITE)
+		glStencilMask(0xFF);
+	
 	if (clear & GX_POLYGONOFFSET) {
 		glDisable(GL_POLYGON_OFFSET_FILL);
 		glDisable(GL_POLYGON_OFFSET_LINE);

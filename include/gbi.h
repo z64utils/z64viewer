@@ -22,7 +22,7 @@
 
 #define GX_POLYGONOFFSET         0b00000001
 #define GX_WIREFRAME             0b00000010
-#define GX_OUTLINE               0b00000100
+#define GX_STENCILWRITE          0b00000100
 #define GX_EXTRAS                0x80
 #define GX_HILIGHT               0x81
 #define GX_SHADER_OUTLINE        0x82
