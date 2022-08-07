@@ -1843,6 +1843,7 @@ void n64_draw_buffers(void) {
 	gSPEndDisplayList(POLY_XLU_DISP++);
 	n64_draw(gPolyOpaHead);
 	n64_draw(gPolyXluHead);
+	n64_reset_buffers();
 }
 
 void n64_setMatrix_model(void* data) {
