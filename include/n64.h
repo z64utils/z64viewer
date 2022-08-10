@@ -60,9 +60,26 @@ typedef struct {
 	bool cullFrontface;
 } n64_triangleCallbackData;
 
-typedef void (* n64_triangleCallbackFunc)(
+typedef void (*n64_triangleCallbackFunc)(
 	void* userData,
 	const n64_triangleCallbackData* tri
+);
+
+typedef struct {
+	float x, y, z, w;
+	struct {
+		float u, v;
+	} texcoord0, texcoord1;
+	float r, g, b, a;
+	struct {
+		float x, y, z;
+	} n;
+} n64_cullingCallbackData;
+
+typedef bool (*n64_cullingCallbackFunc)(
+	void* userData,
+	const n64_cullingCallbackData* vtx,
+	uint32_t numVtx
 );
 
 void n64_set_segment(int seg, void* data);
@@ -81,6 +98,7 @@ void n64_swap(Gfx* g);
 void n64_clearCache();
 void* n64_graph_alloc(uint32_t sz);
 void n64_set_triangleCallbackFunc(void* userData, n64_triangleCallbackFunc callback);
+void n64_set_cullingCallbackFunc(void* userData, n64_cullingCallbackFunc callback);
 Gfx n64_gbi_gfxhi_ptr(void* ptr);
 Gfx n64_gbi_gfxhi_seg(uint32_t seg);
 bool n64_set_culling(bool state);
