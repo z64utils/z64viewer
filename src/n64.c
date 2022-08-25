@@ -177,21 +177,21 @@ static struct {
 		uint16_t lrs;
 		uint16_t lrt;
 		
-		int      fmt;
-		int      siz;
-		int      line;
-		int      tmem;
-		int      tile;
-		int      palette;
-		int      cmT;
-		int      maskT;
-		int      shiftT;
-		int      cmS;
-		int      maskS;
-		int      shiftS;
-		float    shiftS_m;
-		float    shiftT_m;
-		bool     doUpdate;
+		int   fmt;
+		int   siz;
+		int   line;
+		int   tmem;
+		int   tile;
+		int   palette;
+		int   cmT;
+		int   maskT;
+		int   shiftT;
+		int   cmS;
+		int   maskS;
+		int   shiftS;
+		float shiftS_m;
+		float shiftT_m;
+		bool  doUpdate;
 	} tile[2];
 	struct {
 		void* imgaddr;
@@ -200,9 +200,9 @@ static struct {
 		int   width;
 	} timg;
 	uint16_t pal[256]; /* palette */
-	int mtlReady;
-	int texWidth;
-	int texHeight;
+	int      mtlReady;
+	int      texWidth;
+	int      texHeight;
 	uint32_t othermode_hi;
 	uint32_t othermode_lo;
 	struct {
@@ -230,7 +230,7 @@ static struct {
 	float    k4; // TODO not yet populated
 	float    k5; // TODO not yet populated
 	uint32_t geometrymode;
-	bool mixFog; // Condition to mix fog into the material
+	bool     mixFog; // Condition to mix fog into the material
 } gMatState; /* material state magic */
 
 void* gSegment[SEGMENT_MAX] = { 0 };
@@ -1020,8 +1020,9 @@ static bool gbiFunc_culldl(void* cmd) {
 }
 
 static inline void TryDrawTriangleBatch(const uint8_t* b) {
-	if ((b[8] != G_TRI1 && b[8] != G_TRI2)
-	   || gIndicesUsed + 6 >= ARRAY_COUNT(gIndices)
+	if (
+		(b[8] != G_TRI1 && b[8] != G_TRI2)
+		|| gIndicesUsed + 6 >= ARRAY_COUNT(gIndices)
 	) {
 		if (sTriangleCallback) {
 			for (int i = 0; i < gIndicesUsed; i += 3) {
@@ -1030,9 +1031,9 @@ static inline void TryDrawTriangleBatch(const uint8_t* b) {
 				VtxF C = gVbuf[gIndices[i + 2]];
 				n64_triangleCallbackData triData = {
 					{
-						{ A.pos.x, A.pos.y, A.pos.z },
-						{ B.pos.x, B.pos.y, B.pos.z },
-						{ C.pos.x, C.pos.y, C.pos.z },
+						{ A.pos.x,  A.pos.y,  A.pos.z  },
+						{ B.pos.x,  B.pos.y,  B.pos.z  },
+						{ C.pos.x,  C.pos.y,  C.pos.z  },
 					},
 					{
 						{ A.norm.x, A.norm.y, A.norm.z },
@@ -1927,4 +1928,19 @@ void n64_graph_init() {
 	Shader_use(0);
 	n64_set_onlyZmode(ZMODE_ALL);
 	n64_set_onlyGeoLayer(GEOLAYER_ALL);
+}
+
+#undef n64_gbi
+void* n64_gbi(size_t gbiNum, ...) {
+	Gfx* gfx = malloc(sizeof(Gfx) * gbiNum);
+	va_list va;
+	
+	va_start(va, gbiNum);
+	for (uint32_t i = 0; i < gbiNum; i++) {
+		gfx[i] = va_arg(va, Gfx);
+		gfx[i].hi = u32r(&gfx[i].hi);
+		gfx[i].lo = u32r(&gfx[i].lo);
+	}
+	
+	return gfx;
 }
