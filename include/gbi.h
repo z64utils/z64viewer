@@ -3969,7 +3969,7 @@ typedef uint16_t g_bgf_t;
 typedef uint8_t g_objf_t;
 typedef uint32_t g_objlt_t;
 
-typedef struct  {
+typedef struct Gfx {
 	_Alignas(8)
 	uint32_t hi;
 	uint32_t lo;
