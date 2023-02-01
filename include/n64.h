@@ -112,12 +112,12 @@ void* n64_gbi(size_t gbiNum, ...);
 #define SEGMENTED_TO_VIRTUAL(seg) n64_virt2phys(seg)
 #define gxSPDisplayList(dl) \
 	{ \
-		Assert(gPolyOpaDisp - gPolyOpaHead < ARRAY_COUNT(gPolyOpaHead)); \
+		_assert(gPolyOpaDisp - gPolyOpaHead < ARRAY_COUNT(gPolyOpaHead)); \
 		gDisplayList(gPolyOpaDisp++, dl, 0); \
 	}
 #define gxSPSegment(disp, sed, data) \
 	{ \
-		Assert(gPolyOpaDisp - gPolyOpaHead < ARRAY_COUNT(gPolyOpaHead)); \
+		_assert(gPolyOpaDisp - gPolyOpaHead < ARRAY_COUNT(gPolyOpaHead)); \
 		gSPSegment(disp, sed, data); \
 		gSegment[sed] = data; \
 	}
