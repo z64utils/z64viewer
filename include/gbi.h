@@ -20,18 +20,18 @@
 
 #include <bigendian.h>
 
-#define GX_POLYGONOFFSET         0b00000001
-#define GX_WIREFRAME             0b00000010
-#define GX_STENCILWRITE          0b00000100
-#define GX_EXTRAS                0x80
-#define GX_HILIGHT               0x81
-#define GX_SHADER_OUTLINE        0x82
+#define GX_MODE               0x80
+#define GX_MODE_POLYGONOFFSET 0b00000001
+#define GX_MODE_WIREFRAME     0b00000010
+#define GX_MODE_STENCILWRITE  0b00000100
 
-#define GX_HILIGHT_MODE_ADD 0x00
-#define GX_HILIGHT_MODE_SUB 0x01
-#define GX_HILIGHT_MODE_MUL 0x02
-#define GX_HILIGHT_MODE_DIV 0x04
-#define GX_HILIGHT_MODE_MIX 0x05
+#define GX_HILIGHT       0x81
+#define GX_HILIGHT_CLEAR 0x00
+#define GX_HILIGHT_ADD   0x01
+#define GX_HILIGHT_SUB   0x02
+#define GX_HILIGHT_MUL   0x03
+#define GX_HILIGHT_DIV   0x04
+#define GX_HILIGHT_MIX   0x05
 
 #include <string.h>
 #include <stdint.h>
@@ -3933,18 +3933,16 @@ extern uintptr_t gStorePointer;
 #endif
 
 /* extras */
-#define gsXPMode(clear, set)  gO_(GX_EXTRAS, clear, set)
+#define gsXPMode(clear, set)  gO_(GX_MODE, clear, set)
 #define gXPMode(gdl, ...) gD_(gdl, gsXPMode, __VA_ARGS__)
+#define gXPModeSet(gdl, ...) gD_(gdl, gsXPMode, 0, __VA_ARGS__)
+#define gXPModeClear(gdl, ...) gD_(gdl, gsXPMode, __VA_ARGS__, 0)
+
 #define gsXPSetHighlightColor(r, g, b, factor, mode)  gO_(GX_HILIGHT, \
 	((uint8_t)r) << 16 | ((uint8_t)g) << 8 | (uint8_t)b, \
-	GX_HILIGHT_MODE_ ## mode | ((uint8_t)factor) << 8)
-#define gXPSetHighlightColor(gdl, ...) gD_(gdl, gsEXSetHighlightColor, __VA_ARGS__)
-#define gsXPOutline(r, g, b, a, thickness)  gO_(GX_SHADER_OUTLINE, \
-	((uint8_t)r) << 16 | ((uint8_t)g) << 8 | (uint8_t)b, \
-	(thickness & 0xFFFFFF) << 8 | (uint8_t)a)
-#define gXPOutline(gdl, ...) gD_(gdl, gsXPOutline, __VA_ARGS__)
-#define gXPClearOutline(gdl) gXPOutline(gdl, 0, 0, 0, 0, 0)
-
+	GX_HILIGHT_ ## mode | ((uint8_t)factor) << 8)
+#define gXPSetHighlightColor(gdl, ...) gD_(gdl, gsXPSetHighlightColor, __VA_ARGS__)
+#define gXPClearHighlightColor(gdl) gD_(gdl, gsXPSetHighlightColor, 0, 0, 0, 0, CLEAR)
 
 /* data types and structures */
 typedef uint8_t qu08_t;

@@ -226,6 +226,10 @@ static struct {
         float    b;
         float    alpha;
     } env;
+    struct {
+        float   r, g, b, factor;
+        uint8_t mode;
+    } xhighlight;
     float    lodfrac; // TODO not yet populated
     float    k4; // TODO not yet populated
     float    k5; // TODO not yet populated
@@ -366,6 +370,7 @@ static void othermode(void) {
             gPolygonOffset = 0;
             break;
     }
+    
     glPolygonOffset(gPolygonOffset, gPolygonOffset);
 }
 
@@ -424,6 +429,7 @@ static const char* colorValueString(int idx, int v) {
                 case 0x02: return "vec3(1.0)"; // TODO CCMUX_SCALE
                 case 0x03: return "vec3(1.0)";
             }
+            
         case 0x07:
             switch (idx) {
                 case 0x00: return "vec3(1.0)"; // TODO CCMUX_NOISE
@@ -431,6 +437,7 @@ static const char* colorValueString(int idx, int v) {
                 case 0x02: return "vec3(FragColor.a)";
                 case 0x03: return "vec3(0.0)";
             }
+            
         case 0x08: return "vec3(texture(texture0, TexCoord0).a)";
         case 0x09: return "vec3(texture(texture1, TexCoord1).a)";
         case 0x0A: return "vec3(uPrimColor.a)";
@@ -457,6 +464,7 @@ static const char* alphaValueString(int idx, int v) {
                 case 0x02: return "uPrimLodFrac";
                 default: return "FragColor.a";
             }
+            
         case 0x01: return "texture(texture0, TexCoord0).a";
         case 0x02: return "texture(texture1, TexCoord1).a";
         case 0x03: return "uPrimColor.a";
@@ -470,6 +478,62 @@ static const char* alphaValueString(int idx, int v) {
     }
     
     return "0.0";
+}
+
+#define SHADER_SOURCE(...) "#version 330 core\n" # __VA_ARGS__
+
+static void doOutline(uint8_t r, uint8_t g, uint8_t b, int8_t scale) {
+    uint64_t uuid =
+        ((uint64_t)0xFFFFFFFF << 32) |
+        r << 24 | g << 16 | b << 8 | (uint8_t)scale;
+    bool isNew = false;
+    Shader* shader = ShaderList_add(uuid, &isNew);
+    
+    if (isNew) {
+        //crustify
+        const char* vtx = SHADER_SOURCE(
+            layout (location = 0) in vec4 aPos;
+        
+            uniform mat4 view;
+            uniform mat4 model;
+            uniform mat4 trans;
+            uniform mat4 rot;
+            uniform mat4 scale;
+            uniform float outline;
+        
+            void main() {
+                vec3 cp = vec3(model * trans * rot * scale * outline * vec4(aPos, 1.0f));
+                gl_Position = view * vec4(cp, 1.0);
+            }
+        );
+        
+        char frag[4096] = SHADER_SOURCE(
+            out vec4 FragColor;
+        
+            uniform vec4 uOutlineColor;
+        
+            void main() {
+                FragColor = uOutlineColor;
+            }
+        );
+        //uncrustify
+        
+        Shader_update(shader, vtx, frag);
+    }
+    
+    gShader = shader;
+    if (Shader_use(shader)) {
+        Shader_setMat4(shader, "view", &gMatrix.view);
+        Shader_setMat4(shader, "projection", &gMatrix.projection);
+    }
+    Shader_setVec4(
+        shader,
+        "uOutlineColor",
+        r / 255.0f,
+        g / 255.0f,
+        b / 255.0f,
+        1.0f
+    );
 }
 
 static void doMaterial(void* addr) {
@@ -525,6 +589,7 @@ static void doMaterial(void* addr) {
                 wrapT = GL_CLAMP_TO_EDGE;
                 break;
         }
+        
         switch (gMatState.tile[tile].cmS) {
             case G_TX_MIRROR:
                 wrapS = GL_MIRRORED_REPEAT;
@@ -533,6 +598,7 @@ static void doMaterial(void* addr) {
                 wrapS = GL_CLAMP_TO_EDGE;
                 break;
         }
+        
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapS);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapT);
         
@@ -576,13 +642,13 @@ static void doMaterial(void* addr) {
     if (gHideGeometry)
         return;
     
-    #define SHADER_SOURCE(...) "#version 330 core\n" # __VA_ARGS__
     /* uuid tracks state changes; if no states changed, don't compile new shader */
     {
         uint64_t uuid =
-            (gFogEnabled << 63)
-            | ((gCvgXalpha || gForceBl) << 62)
-            | ((gMatState.setcombine.hi & 0x00ffffff) << 32)
+            ((uint64_t)gFogEnabled << 63)
+            | ((uint64_t)(gCvgXalpha || gForceBl) << 62)
+            | ((uint64_t)(gMatState.xhighlight.mode != 0) << 61)
+            | ((uint64_t)(gMatState.setcombine.hi & 0x00ffffff) << 32)
             | (gMatState.setcombine.lo)
         ;
         bool isNew = false;
@@ -655,6 +721,7 @@ static void doMaterial(void* addr) {
 				uniform sampler2D texture1;
 				uniform vec3 uFogColor;
 				uniform vec4 uPrimColor;
+				uniform vec4 uHighlight;
 				uniform vec4 uEnvColor;
 				uniform float uK4;
 				uniform float uK5;
@@ -718,6 +785,24 @@ static void doMaterial(void* addr) {
                 if (gFogEnabled && gMatState.mixFog)
                     ADD("FragColor.rgb = mix(FragColor.rgb, uFogColor, vFog);");
                 
+                switch (gMatState.xhighlight.mode) {
+                    case GX_HILIGHT_ADD:
+                        ADD("FragColor.rgb = mix(FragColor.rgb, FragColor.rgb + uHighlight.rgb, uHighlight.a);");
+                        break;
+                    case GX_HILIGHT_SUB:
+                        ADD("FragColor.rgb = mix(FragColor.rgb, FragColor.rgb - uHighlight.rgb, uHighlight.a);");
+                        break;
+                    case GX_HILIGHT_MUL:
+                        ADD("FragColor.rgb = mix(FragColor.rgb, FragColor.rgb * uHighlight.rgb, uHighlight.a);");
+                        break;
+                    case GX_HILIGHT_DIV:
+                        ADD("FragColor.rgb = mix(FragColor.rgb, FragColor.rgb / uHighlight.rgb, uHighlight.a);");
+                        break;
+                    case GX_HILIGHT_MIX:
+                        ADD("FragColor.rgb = mix(FragColor.rgb, uHighlight.rgb, uHighlight.a);");
+                        break;
+                }
+                
                 ADD("}");
                 
 #undef ADD
@@ -742,6 +827,14 @@ static void doMaterial(void* addr) {
             gMatState.prim.g,
             gMatState.prim.b,
             gMatState.prim.alpha
+        );
+        Shader_setVec4(
+            shader,
+            "uHighlight",
+            gMatState.xhighlight.r,
+            gMatState.xhighlight.g,
+            gMatState.xhighlight.b,
+            gMatState.xhighlight.factor
         );
         Shader_setVec4(
             shader,
@@ -1262,41 +1355,6 @@ static bool gbiFunc_setenvcolor(void* cmd) {
     return false;
 }
 
-static bool gbiFunc_extras(void* cmd) {
-    uint8_t* b = cmd;
-    
-    uint32_t clear = u32r(b);
-    uint32_t set = u32r(b + 4);
-    
-    if (clear & GX_STENCILWRITE)
-        glStencilMask(0x00);
-    
-    if (set & GX_STENCILWRITE)
-        glStencilMask(0xFF);
-    
-    if (clear & GX_POLYGONOFFSET) {
-        glDisable(GL_POLYGON_OFFSET_FILL);
-        glDisable(GL_POLYGON_OFFSET_LINE);
-        glPolygonOffset(0, 0);
-    }
-    
-    if (clear & GX_WIREFRAME) {
-        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-    }
-    
-    if (set & GX_POLYGONOFFSET) {
-        glEnable(GL_POLYGON_OFFSET_FILL);
-        glEnable(GL_POLYGON_OFFSET_LINE);
-        glPolygonOffset(-2, -2);
-    }
-    
-    if (set & GX_WIREFRAME) {
-        glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-    }
-    
-    return false;
-}
-
 static bool gbiFunc_setcombine(void* cmd) {
     uint8_t* b = cmd;
     
@@ -1625,6 +1683,81 @@ static bool gbiFunc_rdphalf_2(void* cmd) {
     return false;
 }
 
+static bool gbiFunc_gxMode(void* cmd) {
+    uint8_t* b = cmd;
+    
+    uint32_t clear = u32r(b);
+    uint32_t set = u32r(b + 4);
+    
+    if (clear & GX_MODE_STENCILWRITE) {
+        // glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+        glStencilMask(0x00);
+    }
+    
+    if (set & GX_MODE_STENCILWRITE) {
+        // glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        glStencilMask(0xFF);
+    }
+    
+    if (clear & GX_MODE_POLYGONOFFSET) {
+        glDisable(GL_POLYGON_OFFSET_FILL);
+        glDisable(GL_POLYGON_OFFSET_LINE);
+        glPolygonOffset(0, 0);
+    }
+    
+    if (clear & GX_MODE_WIREFRAME) {
+        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+    }
+    
+    if (set & GX_MODE_POLYGONOFFSET) {
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glEnable(GL_POLYGON_OFFSET_LINE);
+        glPolygonOffset(-2, -2);
+    }
+    
+    if (set & GX_MODE_WIREFRAME) {
+        glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+    }
+    
+    return false;
+}
+
+static bool gbiFunc_gxHighlight(void* cmd) {
+    struct {
+        union {
+            struct {
+                uint8_t cmd;
+                uint8_t r;
+                uint8_t g;
+                uint8_t b;
+            };
+            uint32_t upper;
+        };
+        union {
+            struct {
+                uint8_t reserved[2];
+                uint8_t factor;
+                uint8_t mode;
+            };
+            uint32_t lower;
+        };
+    } c = {
+        .upper = *((uint32_t*)cmd),
+        .lower = *((uint32_t*)cmd + 1),
+    };
+    
+    gMatState.xhighlight.mode = c.mode;
+    
+    if (c.mode) {
+        gMatState.xhighlight.r = c.r / 255.0f;
+        gMatState.xhighlight.g = c.g / 255.0f;
+        gMatState.xhighlight.b = c.b / 255.0f;
+        gMatState.xhighlight.factor = c.factor / 255.0f;
+    }
+    
+    return false;
+}
+
 /* this LUT emulates the N64's graphics binary interface */
 static gbiFunc gGbi[256] = {
     [G_VTX] = gbiFunc_vtx,
@@ -1655,7 +1788,8 @@ static gbiFunc gGbi[256] = {
     [G_RDPHALF_1] = gbiFunc_rdphalf_1,
     [G_RDPHALF_2] = gbiFunc_rdphalf_2,
     [G_ENDDL] = gbiFunc_enddl,
-    [GX_EXTRAS] = gbiFunc_extras
+    [GX_MODE] = gbiFunc_gxMode,
+    [GX_HILIGHT] = gbiFunc_gxHighlight,
 };
 
 /*
@@ -1729,6 +1863,8 @@ void n64_draw(void* dlist) {
     if (!dlist)
         return;
     
+    glEnable(GL_STENCIL_TEST);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
     glDepthFunc(GL_LESS);
     
     if (!gVAO)
