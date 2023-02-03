@@ -1648,16 +1648,6 @@ static bool gbiFunc_gxMode(void* cmd) {
     uint32_t clear = u32r(b);
     uint32_t set = u32r(b + 4);
     
-    if (clear & GX_MODE_STENCILWRITE) {
-        // glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-        // glStencilMask(0x00);
-    }
-    
-    if (set & GX_MODE_STENCILWRITE) {
-        // glStencilFunc(GL_ALWAYS, 1, 0xFF);
-        // glStencilMask(0xFF);
-    }
-    
     if (clear & GX_MODE_POLYGONOFFSET) {
         glDisable(GL_POLYGON_OFFSET_FILL);
         glDisable(GL_POLYGON_OFFSET_LINE);
