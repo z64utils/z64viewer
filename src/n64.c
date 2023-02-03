@@ -248,6 +248,8 @@ const MtxF sClearMtx = {
 
 typedef bool (* gbiFunc)(void* cmd);
 
+static void n64_drawImpl(void* dlist);
+
 static ShaderList* ShaderList_new(uint64_t uuid, void* next) {
     ShaderList* l = calloc(1, sizeof(*l));
     
@@ -480,62 +482,6 @@ static const char* alphaValueString(int idx, int v) {
     return "0.0";
 }
 
-#define SHADER_SOURCE(...) "#version 330 core\n" # __VA_ARGS__
-
-static void doOutline(uint8_t r, uint8_t g, uint8_t b, int8_t scale) {
-    uint64_t uuid =
-        ((uint64_t)0xFFFFFFFF << 32) |
-        r << 24 | g << 16 | b << 8 | (uint8_t)scale;
-    bool isNew = false;
-    Shader* shader = ShaderList_add(uuid, &isNew);
-    
-    if (isNew) {
-        //crustify
-        const char* vtx = SHADER_SOURCE(
-            layout (location = 0) in vec4 aPos;
-        
-            uniform mat4 view;
-            uniform mat4 model;
-            uniform mat4 trans;
-            uniform mat4 rot;
-            uniform mat4 scale;
-            uniform float outline;
-        
-            void main() {
-                vec3 cp = vec3(model * trans * rot * scale * outline * vec4(aPos, 1.0f));
-                gl_Position = view * vec4(cp, 1.0);
-            }
-        );
-        
-        char frag[4096] = SHADER_SOURCE(
-            out vec4 FragColor;
-        
-            uniform vec4 uOutlineColor;
-        
-            void main() {
-                FragColor = uOutlineColor;
-            }
-        );
-        //uncrustify
-        
-        Shader_update(shader, vtx, frag);
-    }
-    
-    gShader = shader;
-    if (Shader_use(shader)) {
-        Shader_setMat4(shader, "view", &gMatrix.view);
-        Shader_setMat4(shader, "projection", &gMatrix.projection);
-    }
-    Shader_setVec4(
-        shader,
-        "uOutlineColor",
-        r / 255.0f,
-        g / 255.0f,
-        b / 255.0f,
-        1.0f
-    );
-}
-
 static void doMaterial(void* addr) {
     int tile = 0; /* G_TX_RENDERTILE */
     
@@ -666,6 +612,8 @@ static void doMaterial(void* addr) {
         // TODO also populate lodfrac, prim.lodfrac, k4, and k5 here
         
         if (isNew) {
+            
+            #define SHADER_SOURCE(...) "#version 330 core\n" # __VA_ARGS__
             //crustify
 			const char* vtx = SHADER_SOURCE(
 				layout (location = 0) in vec4 aPos;
@@ -789,22 +737,31 @@ static void doMaterial(void* addr) {
                     case GX_HILIGHT_ADD:
                         ADD("FragColor.rgb = mix(FragColor.rgb, FragColor.rgb + uHighlight.rgb, uHighlight.a);");
                         break;
+                        
                     case GX_HILIGHT_SUB:
                         ADD("FragColor.rgb = mix(FragColor.rgb, FragColor.rgb - uHighlight.rgb, uHighlight.a);");
                         break;
+                        
                     case GX_HILIGHT_MUL:
                         ADD("FragColor.rgb = mix(FragColor.rgb, FragColor.rgb * uHighlight.rgb, uHighlight.a);");
                         break;
+                        
                     case GX_HILIGHT_DIV:
                         ADD("FragColor.rgb = mix(FragColor.rgb, FragColor.rgb / uHighlight.rgb, uHighlight.a);");
                         break;
+                        
                     case GX_HILIGHT_MIX:
                         ADD("FragColor.rgb = mix(FragColor.rgb, uHighlight.rgb, uHighlight.a);");
+                        break;
+                        
+                    case GX_HILIGHT_DODGE:
+                        ADD("FragColor.rgb = mix(FragColor.rgb, uHighlight.rgb / (vec3(1, 1, 1) - FragColor.rgb), uHighlight.a);");
                         break;
                 }
                 
                 ADD("}");
                 
+#undef SHADER_SOURCE
 #undef ADD
 #undef ADDF
             }
@@ -903,6 +860,7 @@ static void mtx_normalReoriantation(Vec3f* src, Vec3f* vec, MtxF* mf) {
     vec->z = (mf->zx * src->x + mf->zy * src->y + mf->zz * src->z);
 }
 
+#if 0
 static Vec4f vec4f_normalize3(Vec4f vec) {
     Vec4f ret;
     float mgn = sqrtf(
@@ -921,6 +879,7 @@ static Vec4f vec4f_normalize3(Vec4f vec) {
     
     return ret;
 }
+#endif
 
 static Vec3f vec3f_normalize(Vec3f vec) {
     Vec3f ret;
@@ -1612,7 +1571,7 @@ static bool gbiFunc_dl(void* cmd) {
     // uint32_t hi = u32r(b);
     uint32_t lo = u32r(b + 4);
     
-    n64_draw(n64_virt2phys(lo));
+    n64_drawImpl(n64_virt2phys(lo));
     
     return b[1] != 0;
 }
@@ -1662,7 +1621,7 @@ static bool gbiFunc_branch_z(void* cmd) {
     // int vbidx1 = (hi & 0xfff) / 2;
     
     /* TODO simulate branching; for now, just draw everything */
-    n64_draw(n64_virt2phys(gRdpHalf1));
+    n64_drawImpl(n64_virt2phys(gRdpHalf1));
     
     return false;
 }
@@ -1691,12 +1650,12 @@ static bool gbiFunc_gxMode(void* cmd) {
     
     if (clear & GX_MODE_STENCILWRITE) {
         // glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-        glStencilMask(0x00);
+        // glStencilMask(0x00);
     }
     
     if (set & GX_MODE_STENCILWRITE) {
         // glStencilFunc(GL_ALWAYS, 1, 0xFF);
-        glStencilMask(0xFF);
+        // glStencilMask(0xFF);
     }
     
     if (clear & GX_MODE_POLYGONOFFSET) {
@@ -1857,14 +1816,12 @@ unsigned int n64_phys2virt(void* cmd) {
     return 0;
 }
 
-void n64_draw(void* dlist) {
+static void n64_drawImpl(void* dlist) {
     uint8_t* cmd;
     
     if (!dlist)
         return;
     
-    glEnable(GL_STENCIL_TEST);
-    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
     glDepthFunc(GL_LESS);
     
     if (!gVAO)
@@ -1909,6 +1866,12 @@ void n64_draw(void* dlist) {
         if (gGbi[*cmd] && gGbi[*cmd](cmd))
             break;
     }
+}
+
+void n64_draw(void* dlist) {
+    glEnable(GL_STENCIL_TEST);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+    n64_drawImpl(dlist);
 }
 
 void n64_draw_buffers(void) {

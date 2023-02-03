@@ -32,6 +32,7 @@
 #define GX_HILIGHT_MUL   0x03
 #define GX_HILIGHT_DIV   0x04
 #define GX_HILIGHT_MIX   0x05
+#define GX_HILIGHT_DODGE 0x06
 
 #include <string.h>
 #include <stdint.h>
@@ -3935,14 +3936,18 @@ extern uintptr_t gStorePointer;
 /* extras */
 #define gsXPMode(clear, set)  gO_(GX_MODE, clear, set)
 #define gXPMode(gdl, ...) gD_(gdl, gsXPMode, __VA_ARGS__)
-#define gXPModeSet(gdl, ...) gD_(gdl, gsXPMode, 0, __VA_ARGS__)
-#define gXPModeClear(gdl, ...) gD_(gdl, gsXPMode, __VA_ARGS__, 0)
+#define gXPModeSet(gdl, a) gD_(gdl, gsXPMode, 0, a)
+#define gXPModeClear(gdl, a) gD_(gdl, gsXPMode, a, 0)
 
 #define gsXPSetHighlightColor(r, g, b, factor, mode)  gO_(GX_HILIGHT, \
 	((uint8_t)r) << 16 | ((uint8_t)g) << 8 | (uint8_t)b, \
 	GX_HILIGHT_ ## mode | ((uint8_t)factor) << 8)
 #define gXPSetHighlightColor(gdl, ...) gD_(gdl, gsXPSetHighlightColor, __VA_ARGS__)
 #define gXPClearHighlightColor(gdl) gD_(gdl, gsXPSetHighlightColor, 0, 0, 0, 0, CLEAR)
+
+#define gsXPDrawOutline(r, g, b, f) gO_(GX_DRAW_OUTLINE, \
+	((uint8_t)r) << 24 | ((uint8_t)g) << 16 | (uint8_t)b << 8 | f, 0)
+#define gXPDrawOutline(gdl, ...) gD_(gdl, gsXPDrawOutline, __VA_ARGS__)
 
 /* data types and structures */
 typedef uint8_t qu08_t;
