@@ -1050,7 +1050,7 @@ list_colors(oct_node root)
 {
 	int idx;
 	
-	for (idx = 0; 
+	for (idx = 0;
 	unsigned char i, bit;
 	
 	for (bit = 1 << 7; bit; bit >>= 1)
@@ -1104,7 +1104,7 @@ error_diffuse(
 #define C10 7
 #define C01 5
 #define C11 2
-#define C00 1 
+#define C00 1
 #define CTOTAL (C00 + C11 + C10 + C01)
 
 	for (px = npx, i = 0; i < h; i++) {
@@ -1655,7 +1655,7 @@ acfunc_average(ACFUNC_ARGS)
 	return 1;
 }
 
-/* 
+/*
  * if (max_alpha_colors == 0), the indexing steps are skipped
  */
 static
@@ -2256,5 +2256,3 @@ n64texconv_min_size(
 	
 	return 0;
 }
-
-

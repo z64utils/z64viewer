@@ -5,38 +5,33 @@
 
 struct n64texconv_palctx;
 
-enum n64texconv_fmt
-{
-	N64TEXCONV_RGBA = 0 /* same order as gbi.h, important! */
-	, N64TEXCONV_YUV
-	, N64TEXCONV_CI
-	, N64TEXCONV_IA
-	, N64TEXCONV_I
-	, N64TEXCONV_1BIT
-	, N64TEXCONV_FMT_MAX
+enum n64texconv_fmt {
+	N64TEXCONV_RGBA = 0, /* same order as gbi.h, important! */
+	N64TEXCONV_YUV,
+	N64TEXCONV_CI,
+	N64TEXCONV_IA,
+	N64TEXCONV_I,
+	N64TEXCONV_1BIT,
+	N64TEXCONV_FMT_MAX
 };
 
-
-enum n64texconv_bpp
-{
-	N64TEXCONV_4 = 0 /* same order as gbi.h, important! */
-	, N64TEXCONV_8
-	, N64TEXCONV_16
-	, N64TEXCONV_32
+enum n64texconv_bpp {
+	N64TEXCONV_4 = 0, /* same order as gbi.h, important! */
+	N64TEXCONV_8,
+	N64TEXCONV_16,
+	N64TEXCONV_32
 };
 
-enum n64texconv_acgen
-{
-	                                 /* all invisible pixels become...*/
-	N64TEXCONV_ACGEN_EDGEXPAND = 0   /* edge expand algorithm         */
-	, N64TEXCONV_ACGEN_AVERAGE       /* avg color of visible pixels   */
-	, N64TEXCONV_ACGEN_WHITE         /* white (FFFFFF00)              */
-	, N64TEXCONV_ACGEN_BLACK         /* black (00000000)              */
-	, N64TEXCONV_ACGEN_USER          /* use colors already in image   *
-	                                  * (2many = fallback 2 edgXpand) */
-	, N64TEXCONV_ACGEN_MAX           /* num items in this enum list   */
+enum n64texconv_acgen {
+	/* all invisible pixels become...*/
+	N64TEXCONV_ACGEN_EDGEXPAND = 0, /* edge expand algorithm         */
+	N64TEXCONV_ACGEN_AVERAGE,  /* avg color of visible pixels   */
+	N64TEXCONV_ACGEN_WHITE,    /* white (FFFFFF00)              */
+	N64TEXCONV_ACGEN_BLACK,    /* black (00000000)              */
+	N64TEXCONV_ACGEN_USER,     /* use colors already in image   *
+	                           * (2many = fallback 2 edgXpand) */
+	N64TEXCONV_ACGEN_MAX       /* num items in this enum list   */
 };
-
 
 /* convert N64 texture data to RGBA8888
  * returns 0 (NULL) on success, pointer to error string otherwise
@@ -50,17 +45,16 @@ enum n64texconv_acgen
  * NOTE: `dst` and `pix` can be the same to convert in-place, but
  *       you must ensure the buffer is large enough for the result
  */
-const char *
+const char*
 n64texconv_to_rgba8888(
-	unsigned char *dst
-	, unsigned char *pix
-	, unsigned char *pal
-	, enum n64texconv_fmt fmt
-	, enum n64texconv_bpp bpp
-	, int w
-	, int h
+	unsigned char* dst,
+	unsigned char* pix,
+	unsigned char* pal,
+	enum n64texconv_fmt fmt,
+	enum n64texconv_bpp bpp,
+	int w,
+	int h
 );
-
 
 /* convert RGBA8888 to N64 texture data
  * returns 0 (NULL) on success, pointer to error string otherwise
@@ -73,91 +67,84 @@ n64texconv_to_rgba8888(
  * NOTE: `dst` and `pix` can be the same to convert in-place, but
  *       you must ensure the buffer is large enough for the result
  */
-const char *
+const char*
 n64texconv_to_n64(
-	unsigned char *dst
-	, unsigned char *pix
-	, unsigned char *pal
-	, int pal_colors
-	, enum n64texconv_fmt fmt
-	, enum n64texconv_bpp bpp
-	, int w
-	, int h
-	, unsigned int *sz
+	unsigned char* dst,
+	unsigned char* pix,
+	unsigned char* pal,
+	int pal_colors,
+	enum n64texconv_fmt fmt,
+	enum n64texconv_bpp bpp,
+	int w,
+	int h,
+	unsigned int* sz
 );
-
 
 /* convert RGBA8888 to N64 texture data and back, reducing color depth
  * returns 0 on success, pointer to error string otherwise
  */
-const char *
+const char*
 n64texconv_to_n64_and_back(
-	unsigned char *pix
-	, unsigned char *pal
-	, int pal_colors
-	, enum n64texconv_fmt fmt
-	, enum n64texconv_bpp bpp
-	, int w
-	, int h
+	unsigned char* pix,
+	unsigned char* pal,
+	int pal_colors,
+	enum n64texconv_fmt fmt,
+	enum n64texconv_bpp bpp,
+	int w,
+	int h
 );
-
 
 /* quantize an image and construct a palette of rgba8888 colors */
 /* (in other words, palette-ify it) */
 int
 n64texconv_palette_ify(
-	void *srcdst
-	, void *palette
-	, int w
-	, int h
-	, int n_colors
-	, int dither
-	, void *calloc(size_t, size_t)
-	, void *realloc(void *, size_t)
-	, void free(void *)
+	void* srcdst,
+	void* palette,
+	int w,
+	int h,
+	int n_colors,
+	int dither,
+	void* calloc(size_t, size_t),
+	void* realloc(void*, size_t),
+	void free(void*)
 );
 
 /* returns a pointer to a palette context */
 /* `dst` is where the colors will go */
 /* `colors` is the max colors for the palette */
-struct n64texconv_palctx *
+struct n64texconv_palctx*
 n64texconv_palette_new(
-	int colors
-	, void *dst
-	, void *calloc(size_t, size_t)
-	, void *realloc(void *, size_t)
-	, void free(void *)
+	int colors,
+	void* dst,
+	void* calloc(size_t, size_t),
+	void* realloc(void*, size_t),
+	void free(void*)
 );
-
 
 /* adds an rgba8888 image to a palette context's queue */
 void
 n64texconv_palette_queue(
-	struct n64texconv_palctx *ctx
-	, void *pix
-	, int w
-	, int h
-	, int dither
+	struct n64texconv_palctx* ctx,
+	void* pix,
+	int w,
+	int h,
+	int dither
 );
-
 
 /* make room for alpha colors in palette */
 void
-n64texconv_palette_alpha(struct n64texconv_palctx *ctx, int alpha);
-
+n64texconv_palette_alpha(struct n64texconv_palctx* ctx, int alpha);
 
 /* quantizes all queued images, generates palette, and returns the
  * number of colors in the generated palette
  */
 int
-n64texconv_palette_exec(struct n64texconv_palctx *ctx);
-
+n64texconv_palette_exec(struct n64texconv_palctx* ctx);
 
 /* frees context
  */
 void
-n64texconv_palette_free(struct n64texconv_palctx *ctx);
-
+n64texconv_palette_free(struct n64texconv_palctx* ctx);
 
 /* takes an image containing invisible pixels and generates new colors
  * for them, returning the number of unique invisible colors (<0 = err)
@@ -165,42 +152,38 @@ n64texconv_palette_free(struct n64texconv_palctx *ctx);
  */
 int
 n64texconv_acgen(
-	void *rgba8888
-	, int w
-	, int h
-	, enum n64texconv_acgen formula
-	, int max_alpha_colors
-	, void *calloc(size_t, size_t)
-	, void *realloc(void *, size_t)
-	, void free(void *)
-	, enum n64texconv_fmt fmt
+	void* rgba8888,
+	int w,
+	int h,
+	enum n64texconv_acgen formula,
+	int max_alpha_colors,
+	void* calloc(size_t, size_t),
+	void* realloc(void*, size_t),
+	void free(void*),
+	enum n64texconv_fmt fmt
 );
-
 
 /* given rgba8888 pixel data, determine best format
  * returns 0 on success, pointer to error string otherwise
  */
-const char *
+const char*
 n64texconv_best_format(
-	void *pix
-	, enum n64texconv_fmt *fmt
-	, enum n64texconv_bpp *bpp
-	, int w
-	, int h
+	void* pix,
+	enum n64texconv_fmt* fmt,
+	enum n64texconv_bpp* bpp,
+	int w,
+	int h
 );
-
 
 /* adjusts fmt/bpp so that resulting block is multiple of 64
  * returns 0 on success, pointer to error string otherwise
  */
-const char *
+const char*
 n64texconv_min_size(
-	enum n64texconv_fmt *fmt
-	, enum n64texconv_bpp *bpp
-	, int w
-	, int h
+	enum n64texconv_fmt* fmt,
+	enum n64texconv_bpp* bpp,
+	int w,
+	int h
 );
 
 #endif /* N64TEXCONV_H_INCLUDED */
-
-
