@@ -777,30 +777,9 @@ static void doMaterial(void* addr) {
 		}
 		
 		// populate other misc variables
-		Shader_setVec4(
-			shader,
-			"uPrimColor",
-			gMatState.prim.r,
-			gMatState.prim.g,
-			gMatState.prim.b,
-			gMatState.prim.alpha
-		);
-		Shader_setVec4(
-			shader,
-			"uHighlight",
-			gMatState.xhighlight.r,
-			gMatState.xhighlight.g,
-			gMatState.xhighlight.b,
-			gMatState.xhighlight.factor
-		);
-		Shader_setVec4(
-			shader,
-			"uEnvColor",
-			gMatState.env.r,
-			gMatState.env.g,
-			gMatState.env.b,
-			gMatState.env.alpha
-		);
+		Shader_setVec4(shader, "uPrimColor", gMatState.prim.r, gMatState.prim.g, gMatState.prim.b, gMatState.prim.alpha);
+		Shader_setVec4(shader, "uHighlight", gMatState.xhighlight.r, gMatState.xhighlight.g, gMatState.xhighlight.b, gMatState.xhighlight.factor);
+		Shader_setVec4(shader, "uEnvColor", gMatState.env.r, gMatState.env.g, gMatState.env.b, gMatState.env.alpha);
 		Shader_setVec3(shader, "uFogColor", gFog.color[0], gFog.color[1], gFog.color[2]);
 		Shader_setVec2(shader, "uFog", gFog.fog[0], gFog.fog[1]);
 		Shader_setFloat(shader, "uK4", gMatState.k4);
