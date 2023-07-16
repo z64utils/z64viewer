@@ -1481,10 +1481,10 @@
 extern uintptr_t gStorePointer;
 #define gsGeneric(addr) _Generic( \
 		(addr), \
-		u64: n64_gbi_gfxhi_seg, \
-		s64: n64_gbi_gfxhi_seg, \
-		s32: n64_gbi_gfxhi_seg, \
-		u32: n64_gbi_gfxhi_seg, \
+		uint64_t: n64_gbi_gfxhi_seg, \
+		int64_t: n64_gbi_gfxhi_seg, \
+		int32_t: n64_gbi_gfxhi_seg, \
+		uint32_t: n64_gbi_gfxhi_seg, \
 		default: n64_gbi_gfxhi_ptr \
 )(addr)
 
@@ -3161,7 +3161,7 @@ extern uintptr_t gStorePointer;
 	#define gsSPMatrix(matrix, param)    gsGeneric(matrix), gO_( \
 			G_MTX, \
 			gF_(param, 8, 16) | \
-			gF_(sizeof(Mtx), 16, 0), \
+			gF_(sizeof(int32_t[4][4]), 16, 0), \
 			(gStorePointer) & 0xffffffff \
 	)
 	#define gsSPPopMatrix(param)         gO_(G_POPMTX, 0, param)
@@ -3505,7 +3505,7 @@ extern uintptr_t gStorePointer;
 			) \
 		)
 	#define gsSPForceMatrix(mptr)         gsMoveMem( \
-			sizeof(Mtx), \
+			sizeof(int32_t[4][4]), \
 			G_MV_MATRIX, \
 			0, \
 			mptr \
@@ -3545,16 +3545,16 @@ extern uintptr_t gStorePointer;
 	)
 	#define gsSPMatrix(matrix, param)     gsGeneric(matrix), gO_( \
 			G_MTX, \
-			gF_((sizeof(Mtx) - 1) / 8, 5, 19) | \
+			gF_((sizeof(int32_t[4][4]) - 1) / 8, 5, 19) | \
 			gF_(gI_(param) ^ G_MTX_PUSH, 8, 0), \
 			((uintptr_t)gStorePointer) & 0xffffffff \
 	)
 	#define gsSPPopMatrix(param)          gsSPPopMatrixN(param, 1)
 	#define gsSPPopMatrixN(param, n)      gO_( \
 			G_POPMTX, \
-			gF_((sizeof(Mtx) - 1) / 8, 5, 19) | \
+			gF_((sizeof(int32_t[4][4]) - 1) / 8, 5, 19) | \
 			gF_(2, 8, 0), \
-			sizeof(Mtx) * (n) \
+			sizeof(int32_t[4][4]) * (n) \
 	)
 	#define gsSPLight(l, n)               gsMoveMem( \
 			sizeof(Light), \
