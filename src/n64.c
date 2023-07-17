@@ -1784,15 +1784,84 @@ static void segment_swap_back(void) {
 #define OBJ_REG_B_SIZE    0x3F
 
 typedef struct {
+	float x;
+	float y;
+	float z;
+	float w;
+} N64Quat;
+
+#define N64_INLINE static inline __attribute__((always_inline))
+
+N64_INLINE float lerp(float v, float min, float max) {
+	return min + v * (max - min);
+}
+
+N64_INLINE N64Quat vec3_to_quat(N64Vector3 vec) {
+	N64Quat q;
+	float cos_z = cosf(vec.z / 2);
+	float sin_z = sinf(vec.z / 2);
+	float cos_y = cosf(vec.y / 2);
+	float sin_y = sinf(vec.y / 2);
+	float cos_x = cosf(vec.x / 2);
+	float sin_x = sinf(vec.x / 2);
+	
+	q.w = cos_z * cos_y * cos_x + sin_z * sin_y * sin_x;
+	q.x = cos_z * cos_y * sin_x - sin_z * sin_y * cos_x;
+	q.y = cos_z * sin_y * cos_x + sin_z * cos_y * sin_x;
+	q.z = sin_z * cos_y * cos_x - cos_z * sin_y * sin_x;
+	
+	return q;
+}
+
+N64_INLINE N64Vector3 quat_to_vec3(N64Quat q) {
+	N64Vector3 r;
+	float sinp = 2 * (q.w * q.y - q.z * q.x);
+	
+	r.x = atan2f(2 * (q.w * q.x + q.y * q.z), 1 - 2 * (q.x * q.x + q.y * q.y));
+	
+	if (fabsf(sinp) >= 1)
+		r.y = copysignf(M_PI / 2, sinp);
+	else
+		r.y = asinf(sinp);
+	
+	r.z = atan2f(2 * (q.w * q.z + q.x * q.y), 1 - 2 * (q.y * q.y + q.z * q.z));
+	
+	return r;
+}
+
+N64_INLINE N64Quat quat_lerp(float t, N64Quat a, N64Quat b) {
+	N64Quat result;
+	
+	if (t <= 0)
+		return a;
+	else if (t >= 1)
+		return b;
+	
+	float factor = 1.0 - t;
+	
+	result.w = factor * a.w + t * b.w;
+	result.x = factor * a.x + t * b.x;
+	result.y = factor * a.y + t * b.y;
+	result.z = factor * a.z + t * b.z;
+	
+	float magnitude = sqrt(result.w * result.w + result.x * result.x + result.y * result.y + result.z * result.z);
+	result.w /= magnitude;
+	result.x /= magnitude;
+	result.y /= magnitude;
+	result.z /= magnitude;
+	
+	return result;
+}
+
+typedef struct {
 	float       speed;
 	float       cur;
 	uint32_t    start;
 	uint32_t    end;
 	uint32_t    frame_num;
-	N64Vector3* frame_tbl /* [limb_num * frame_num] */;
-	N64Vector3* anim_rot /* [limb_num] */;
-	N64Vector3* anim_morph /* [limb_num] */;
-	N64Vector3  pos;
+	N64Quat*    frame_tbl; // N64Quat[limb_num * frame_num]
+	N64Vector3* limb_rot; // N64Vector3[limb_num]
+	N64Vector3  root_pos;
 } Anim;
 
 typedef struct {
@@ -1819,35 +1888,36 @@ typedef struct {
 		};
 	};
 } Object;
-
 static_assert(offsetof(Object, dlist) == offsetof(Object, limb));
 static_assert(offsetof(Object, limb_num) == offsetof(Object, dlist_num));
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+typedef struct N64Object {
+	uint16_t obj_id;
+	uint8_t  uniq_id;
+	uint8_t  mtl_setup_dl_id;
+	Anim*    anim;
+	Mtx      mtx;
+} N64Object;
+
 static Object s_object_list[OBJ_REG_A_SIZE][OBJ_REG_B_SIZE];
 
-static Object* get_obj(uint16_t obj_id, uint8_t uniq_id) {
+N64_INLINE Object* get_obj(uint16_t obj_id, uint8_t uniq_id) {
 	assert(obj_id < OBJ_REG_A_SIZE);
 	assert(uniq_id < OBJ_REG_B_SIZE);
+	
 	return &s_object_list[obj_id][uniq_id];
 }
 
 void n64_register_skeleton(uint16_t obj_id, uint8_t uniq_id, const void* data, uint8_t seg_id, uint32_t skel_offset) {
-	Object* obj = get_obj(obj_id, uniq_id);
-	
-	assert(obj->type == OBJ_TYPE_NONE);
-	obj->type = OBJ_TYPE_SKELETON;
-	obj->data = data;
-	obj->seg_id = seg_id;
-	
 	typedef struct N64_ATTR_BIG_ENDIAN {
 		uint32_t list_segment;
 		uint8_t  limb_num;
-	} SkeletonHeader;
+	} ZSkelHead;
 	typedef struct N64_ATTR_BIG_ENDIAN {
 		uint32_t segment;
-	} SegmentList;
+	} ZSegList;
 	typedef struct N64_ATTR_BIG_ENDIAN {
 		int16_t  pos_x, pos_y, pos_z;
 		uint8_t  child;
@@ -1855,9 +1925,18 @@ void n64_register_skeleton(uint16_t obj_id, uint8_t uniq_id, const void* data, u
 		uint32_t dlist;
 	} ZLimb;
 	
+	Object* obj = get_obj(obj_id, uniq_id);
+	ZSkelHead* header;
+	ZSegList* list;
+	
+	assert(obj->type == OBJ_TYPE_NONE);
+	obj->type = OBJ_TYPE_SKELETON;
+	obj->data = data;
+	obj->seg_id = seg_id;
+	
 	segment_swap_to(seg_id, obj->data);
-	SkeletonHeader* header = n64_segment_get(skel_offset);
-	SegmentList* list = n64_segment_get(header->list_segment);
+	header = n64_segment_get(skel_offset);
+	list = n64_segment_get(header->list_segment);
 	
 	obj->limb_num = header->limb_num;
 	assert((obj->limb = calloc(obj->limb_num, sizeof(Limb))) != NULL);
@@ -1904,20 +1983,12 @@ void n64_unregister(uint16_t obj_id, uint8_t uniq_id) {
 	*obj = (Object) {};
 }
 
-typedef struct N64Object {
-	uint16_t obj_id;
-	uint8_t  uniq_id;
-	uint8_t  mtl_setup_dl_id;
-	Anim*    anim;
-	Mtx      mtx;
-} N64Object;
-
-N64Object* n64_object_new(uint16_t obj_id, uint8_t uniq_id, uint8_t mtl_setup_dl_id) {
+N64Object* n64_object_new(uint16_t obj_id, uint8_t uniq_id) {
 	N64Object* obj = calloc(1, sizeof(N64Object));
 	
 	obj->obj_id = obj_id;
 	obj->uniq_id = uniq_id;
-	obj->mtl_setup_dl_id = mtl_setup_dl_id;
+	obj->mtl_setup_dl_id = 0x25;
 	
 	return obj;
 }
@@ -1934,7 +2005,39 @@ void n64_object_destroy(N64Object* self) {
 	n64anim_destroy(&self->anim);
 }
 
+static void update_anim(N64Object* self, Object* obj) {
+	Anim* anim = self->anim;
+	int id_cur_frame = floor(anim->cur);
+	float mod = anim->cur - id_cur_frame;
+	int id_next_frame = (id_cur_frame + 1) % anim->end;
+	
+	N64Quat* frame = &anim->frame_tbl[id_cur_frame * obj->limb_num];
+	N64Quat* next_frame = &anim->frame_tbl[id_next_frame * obj->limb_num];
+	
+	anim->root_pos.x = lerp(mod, frame[0].x, next_frame[0].x);
+	anim->root_pos.y = lerp(mod, frame[0].y, next_frame[0].y);
+	anim->root_pos.z = lerp(mod, frame[0].z, next_frame[0].z);
+	
+	for (uint32_t i = 1; i < obj->limb_num; i++)
+		anim->limb_rot[i - 1] = quat_to_vec3(quat_lerp(mod, frame[i], next_frame[i]));
+	
+	anim->cur = fmod(anim->cur + anim->speed, anim->end);
+}
+
 void n64_object_set_anim(N64Object* self, uint32_t seg_anim, float speed) {
+	typedef struct N64_ATTR_BIG_ENDIAN {
+		int16_t binang;
+	} ZFrame;
+	typedef struct N64_ATTR_BIG_ENDIAN {
+		uint16_t x, y, z;
+	} ZJointID;
+	typedef struct N64_ATTR_BIG_ENDIAN {
+		int16_t  frame_num;
+		uint32_t seg_tbl;
+		uint32_t seg_jnt_id_tbl;
+		uint16_t max;
+	} ZAnimHead;
+	
 	#define BIN_TO_RAD(binang) ((float)((int32_t)binang) * (3.14159265359 / 0x8000))
 	Object* obj = get_obj(self->obj_id, self->uniq_id);
 	
@@ -1943,53 +2046,48 @@ void n64_object_set_anim(N64Object* self, uint32_t seg_anim, float speed) {
 	segment_swap_to(obj->seg_id, obj->data);
 	n64anim_destroy(&self->anim);
 	
-	typedef struct N64_ATTR_BIG_ENDIAN {
-		int16_t binang;
-	} Frame;
-	typedef struct N64_ATTR_BIG_ENDIAN {
-		uint16_t x, y, z;
-	} JointIndex;
-	typedef struct N64_ATTR_BIG_ENDIAN {
-		int16_t  frame_num;
-		uint32_t seg_tbl;
-		uint32_t seg_jnt_id_tbl;
-		uint16_t max;
-	} AnimHeader;
-	
-	AnimHeader* header = n64_segment_get(seg_anim);
-	Frame* frame_tbl = n64_segment_get(header->seg_tbl);
+	ZAnimHead* header = n64_segment_get(seg_anim);
+	ZFrame* frame_tbl = n64_segment_get(header->seg_tbl);
 	Anim* anim;
-	N64Vector3* dst;
+	N64Quat* dst;
 	
 	assert((anim = self->anim = calloc(1, sizeof(Anim))) != NULL);
 	
 	anim->speed = speed;
 	anim->frame_num = anim->end = header->frame_num;
 	
-	assert((dst = anim->frame_tbl = calloc(anim->frame_num * obj->limb_num, sizeof(N64Vector3))) != NULL);
-	assert((anim->anim_rot = calloc(obj->limb_num, sizeof(N64Vector3))) != NULL);
-	assert((anim->anim_morph = calloc(obj->limb_num, sizeof(N64Vector3))) != NULL);
+	assert((dst = anim->frame_tbl = calloc(anim->frame_num * obj->limb_num, sizeof(N64Quat))) != NULL);
+	assert((anim->limb_rot = calloc(obj->limb_num, sizeof(N64Vector3))) != NULL);
 	
 	for (uint32_t k = 0; k < anim->frame_num; k++) {
 		uint16_t static_max = header->max;
-		Frame* fstatic = frame_tbl;
-		Frame* fdynamic = &frame_tbl[k];
-		JointIndex* jnt_id = n64_segment_get(header->seg_jnt_id_tbl);
+		ZFrame* fstatic = frame_tbl;
+		ZFrame* fdynamic = &frame_tbl[k];
+		ZJointID* jnt_id = n64_segment_get(header->seg_jnt_id_tbl);
 		
-		for (uint32_t i = 0; i < obj->limb_num; i++, dst++, jnt_id++) {
-			if (i == 0) {
-				dst->x = (jnt_id->x >= static_max) ? fdynamic[jnt_id->x].binang : fstatic[jnt_id->x].binang;
-				dst->y = (jnt_id->y >= static_max) ? fdynamic[jnt_id->y].binang : fstatic[jnt_id->y].binang;
-				dst->z = (jnt_id->z >= static_max) ? fdynamic[jnt_id->z].binang : fstatic[jnt_id->z].binang;
-			} else {
-				dst->x = BIN_TO_RAD( (jnt_id->x >= static_max) ? fdynamic[jnt_id->x].binang : fstatic[jnt_id->x].binang );
-				dst->y = BIN_TO_RAD( (jnt_id->y >= static_max) ? fdynamic[jnt_id->y].binang : fstatic[jnt_id->y].binang );
-				dst->z = BIN_TO_RAD( (jnt_id->z >= static_max) ? fdynamic[jnt_id->z].binang : fstatic[jnt_id->z].binang );
-			}
-		}
+		*dst = (N64Quat) {
+			.x = (jnt_id->x >= static_max) ? fdynamic[jnt_id->x].binang : fstatic[jnt_id->x].binang,
+			.y = (jnt_id->y >= static_max) ? fdynamic[jnt_id->y].binang : fstatic[jnt_id->y].binang,
+			.z = (jnt_id->z >= static_max) ? fdynamic[jnt_id->z].binang : fstatic[jnt_id->z].binang,
+		};
+		dst++;
+		
+		for (uint32_t i = 1; i < obj->limb_num; i++, dst++, jnt_id++)
+			*dst = vec3_to_quat((N64Vector3) {
+				.x = BIN_TO_RAD( (jnt_id->x >= static_max) ? fdynamic[jnt_id->x].binang : fstatic[jnt_id->x].binang ),
+				.y = BIN_TO_RAD( (jnt_id->y >= static_max) ? fdynamic[jnt_id->y].binang : fstatic[jnt_id->y].binang ),
+				.z = BIN_TO_RAD( (jnt_id->z >= static_max) ? fdynamic[jnt_id->z].binang : fstatic[jnt_id->z].binang ),
+			});
 	}
 	
+	update_anim(self, obj);
+	
 	segment_swap_back();
+}
+
+void n64_object_set_material(N64Object* self, uint8_t id) {
+	assert(id < N64_ARRAY_COUNT(n64_material_setup_dl));
+	self->mtl_setup_dl_id = id;
 }
 
 static void draw_limb(N64Object* self, Object* obj, int id, GbiMtx** gbimtx, Mtx* mtx) {
@@ -2007,8 +2105,8 @@ static void draw_limb(N64Object* self, Object* obj, int id, GbiMtx** gbimtx, Mtx
 	if (self->anim) {
 		Anim* anim = self->anim;
 		
-		if (id == 0) pos = &anim->pos;
-		rot = &anim->anim_rot[id];
+		if (id == 0) pos = &anim->root_pos;
+		rot = &anim->limb_rot[id];
 	}
 	
 	mtx_translate_rot(mtx, pos, rot);
@@ -2034,93 +2132,6 @@ static void draw_limb(N64Object* self, Object* obj, int id, GbiMtx** gbimtx, Mtx
 #undef MTX_POP
 }
 
-static float lerp(float v, float min, float max) {
-	return min + v * (max - min);
-}
-
-typedef struct {
-	float w;
-	float x;
-	float y;
-	float z;
-} N64Quat;
-
-N64Quat vec3_to_quat(N64Vector3 vec) {
-	N64Quat q;
-	float cos_z = cosf(vec.z / 2);
-	float sin_z = sinf(vec.z / 2);
-	float cos_y = cosf(vec.y / 2);
-	float sin_y = sinf(vec.y / 2);
-	float cos_x = cosf(vec.x / 2);
-	float sin_x = sinf(vec.x / 2);
-	
-	q.w = cos_z * cos_y * cos_x + sin_z * sin_y * sin_x;
-	q.x = cos_z * cos_y * sin_x - sin_z * sin_y * cos_x;
-	q.y = cos_z * sin_y * cos_x + sin_z * cos_y * sin_x;
-	q.z = sin_z * cos_y * cos_x - cos_z * sin_y * sin_x;
-	
-	return q;
-}
-
-N64Vector3 quat_to_vec3(N64Quat q) {
-	N64Vector3 r;
-	float sinp = 2 * (q.w * q.y - q.z * q.x);
-	
-	r.x = atan2f(2 * (q.w * q.x + q.y * q.z), 1 - 2 * (q.x * q.x + q.y * q.y));
-	
-	if (fabsf(sinp) >= 1)
-		r.y = copysignf(M_PI / 2, sinp);
-	else
-		r.y = asinf(sinp);
-	
-	r.z = atan2f(2 * (q.w * q.z + q.x * q.y), 1 - 2 * (q.y * q.y + q.z * q.z));
-	
-	return r;
-}
-
-N64Quat quat_lerp(float t, N64Quat a, N64Quat b) {
-	N64Quat result;
-	
-	float factor = 1.0 - t;
-	
-	result.w = factor * a.w + t * b.w;
-	result.x = factor * a.x + t * b.x;
-	result.y = factor * a.y + t * b.y;
-	result.z = factor * a.z + t * b.z;
-	
-	float magnitude = sqrt(result.w * result.w + result.x * result.x + result.y * result.y + result.z * result.z);
-	result.w /= magnitude;
-	result.x /= magnitude;
-	result.y /= magnitude;
-	result.z /= magnitude;
-	
-	return result;
-}
-
-static void update_anim(N64Object* self, Object* obj, Anim* anim) {
-	int id_cur_frame = floor(anim->cur);
-	float mod = anim->cur - id_cur_frame;
-	int id_next_frame = (id_cur_frame + 1) % anim->end;
-	
-	N64Vector3* frame = &anim->frame_tbl[id_cur_frame * obj->limb_num];
-	N64Vector3* next_frame = &anim->frame_tbl[id_next_frame * obj->limb_num];
-	
-	anim->pos.x = lerp(mod, frame->x, next_frame->x);
-	anim->pos.y = lerp(mod, frame->y, next_frame->y);
-	anim->pos.z = lerp(mod, frame->z, next_frame->z);
-	
-	for (uint32_t i = 1; i < obj->limb_num; i++) {
-		if (mod) {
-			N64Quat qa = vec3_to_quat(frame[i]);
-			N64Quat qb = vec3_to_quat(next_frame[i]);
-			anim->anim_rot[i - 1] = quat_to_vec3(quat_lerp(mod, qa, qb));
-		} else
-			anim->anim_rot[i - 1] = frame[i];
-	}
-	
-	anim->cur = fmod(anim->cur + anim->speed, anim->end);
-}
-
 static void draw_skeleton(N64Object* self, Object* obj) {
 	Mtx mtx[obj->limb_num + 1];
 	GbiMtx* gbimtx = n64_graph_alloc(sizeof(GbiMtx[obj->limb_num + 1]));
@@ -2134,8 +2145,8 @@ static void draw_skeleton(N64Object* self, Object* obj) {
 	gSPMatrix(POLY_OPA_DISP++, &curmtx, G_MTX_LOAD);
 	gSPSegment(POLY_OPA_DISP++, 0xD, gbimtx);
 	
-	if (self->anim && s_tick_20fps)
-		update_anim(self, obj, self->anim);
+	if (self->anim && s_tick_20fps && self->anim->speed > __FLT_EPSILON__)
+		update_anim(self, obj);
 	
 	draw_limb(self, obj, 0, &gbimtx, mtx);
 }

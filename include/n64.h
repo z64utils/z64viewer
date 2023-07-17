@@ -97,9 +97,10 @@ void n64_register_skeleton(uint16_t obj_id, uint8_t uniq_id, const void* obj, ui
 void n64_register_dlist(uint16_t obj_id, uint8_t uniq_id, const void* obj, uint8_t seg_id, GbiGfx* dlist, int dlist_num);
 void n64_unregister(uint16_t obj_id, uint8_t uniq_id);
 
-N64Object* n64_object_new(uint16_t obj_id, uint8_t uniq_id, uint8_t mtl_setup_dl_id);
+N64Object* n64_object_new(uint16_t obj_id, uint8_t uniq_id);
 void n64_object_destroy(N64Object*);
 void n64_object_set_anim(N64Object*, uint32_t anim, float speed);
+void n64_object_set_material(N64Object* self, uint8_t id);
 void n64_object_draw(N64Object*);
 void n64_object_set_mtx(N64Object*, const void* mtx);
 
