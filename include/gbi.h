@@ -3435,10 +3435,30 @@ typedef uint16_t g_bgf_t;
 typedef uint8_t  g_objf_t;
 typedef uint32_t g_objlt_t;
 
+#ifndef N64_ATTR_BIG_ENDIAN
+	#define N64_ATTR_BIG_ENDIAN __attribute__((scalar_storage_order("big-endian")))
+#endif
+
 typedef struct N64_ATTR_BIG_ENDIAN GbiGfx {
 	uint32_t hi;
 	uint32_t lo;
 } GbiGfx;
+
+typedef struct N64_ATTR_BIG_ENDIAN {
+	int16_t  x, y, z;
+	uint16_t flag;
+	qs105_t  u, v;
+	union N64_ATTR_BIG_ENDIAN {
+		struct N64_ATTR_BIG_ENDIAN {
+			int8_t  x, y, z;
+			uint8_t a;
+		} normal;
+		struct N64_ATTR_BIG_ENDIAN {
+			uint8_t r, g, b;
+			uint8_t a;
+		} color;
+	};
+} GbiVtx;
 
 typedef union {
 	_Alignas(8)
@@ -3516,23 +3536,6 @@ typedef struct {
 	GbiLightAmbient a;
 	GbiLight l[7];
 } GbiLightsN, GbiLights7;
-
-typedef union {
-	_Alignas(8)
-	struct {
-		int16_t  ob[3];
-		uint16_t flag;
-		qs105_t  tc[2];
-		uint8_t  cn[4];
-	} v;
-	struct {
-		int16_t  ob[3];
-		uint16_t flag;
-		qs105_t  tc[2];
-		int8_t   n[3];
-		uint8_t  a;
-	} n;
-} GbiVtx;
 
 typedef union {
 	_Alignas(8)

@@ -14,6 +14,9 @@
 #define F3DEX_GBI_2
 #include "gbi.h"
 
+#undef bool
+typedef _Bool bool;
+
 #ifndef N64_TEXTURE_CACHE_SIZE
 	#define N64_TEXTURE_CACHE_SIZE 512
 #endif
@@ -46,7 +49,7 @@ extern void* n64_segment[N64_SEGMENT_MAX];
 #define POLY_OPA_DISP n64_poly_opa_disp
 #define POLY_XLU_DISP n64_poly_xlu_disp
 
-enum n64_zmode {
+enum N64ZMode {
 	N64_ZMODE_OPA,
 	N64_ZMODE_INTER,
 	N64_ZMODE_XLU,
@@ -54,45 +57,40 @@ enum n64_zmode {
 	N64_ZMODE_ALL
 };
 
-enum n64_geoLayer {
+enum N64GeoLayer {
 	N64_GEOLAYER_ALL,
 	N64_GEOLAYER_OPAQUE,
 	N64_GEOLAYER_OVERLAY
 };
 
 typedef struct {
-	struct {
-		float x, y, z;
-	} v[3];
-	struct {
-		float x, y, z;
-	} n[3];
-	bool cullBackface;
-	bool cullFrontface;
-} N64Tri;
-
-typedef void (*N64TriCallback)(
-	void* userData,
-	const N64Tri* tri
-);
+	float x, y, z, w;
+} N64Vector4;
 
 typedef struct {
-	float x, y, z, w;
+	float x, y, z;
+} N64Vector3;
+
+typedef struct {
+	N64Vector4 pos;
 	struct {
-		float u, v;
+		float u;
+		float v;
 	} texcoord0, texcoord1;
-	float r, g, b, a;
-	struct {
-		float x, y, z;
-	} n;
+	N64Vector4 color;
+	N64Vector3 norm;
 } N64Vtx;
 
-typedef bool (*N64CullCallback)(
-	void* userData,
-	const N64Vtx* vtx,
-	uint32_t numVtx
-);
+typedef struct {
+	const N64Vtx* vtx[3];
+	struct {
+		bool cullBackface  : 1;
+		bool cullFrontface : 1;
+	};
+} N64Tri;
 
+typedef bool (*N64CullCallback)(void* u_data, const N64Vtx*, uint32_t num);
+typedef void (*N64TriCallback)(void* u_data, const N64Tri*);
 typedef struct N64Object N64Object;
 
 void n64_register_skeleton(uint16_t obj_id, uint8_t uniq_id, const void* obj, uint8_t seg_id, uint32_t skel_offset);
@@ -111,8 +109,8 @@ unsigned int n64_segment_ptr_offset(void* cmd);
 
 GbiGfx n64_gbi_gfxhi_ptr(void*);
 GbiGfx n64_gbi_gfxhi_seg(uint32_t);
-void n64_set_onlyZmode(enum n64_zmode);
-void n64_set_onlyGeoLayer(enum n64_geoLayer);
+void n64_set_onlyZmode(enum N64ZMode);
+void n64_set_onlyGeoLayer(enum N64GeoLayer);
 
 void n64_mtx_model(void*);
 void n64_mtx_view(void*);
@@ -122,6 +120,7 @@ void* n64_graph_alloc(uint32_t);
 void n64_clear_cache(void);
 
 void n64_draw_dlist(void* dlist);
+void n64_update_tick(void);
 void n64_buffer_init(void);
 void n64_buffer_flush(void);
 void n64_buffer_clear(void);
@@ -132,7 +131,7 @@ bool n64_light_bind_dir(int8_t x, int8_t y, int8_t z, uint8_t r, uint8_t g, uint
 bool n64_light_bind_point(int16_t x, int16_t y, int16_t z, uint8_t r, uint8_t g, uint8_t b);
 void n64_light_set_ambient(uint8_t r, uint8_t g, uint8_t b);
 
-void n64_set_triangleCallbackFunc(void* userData, N64TriCallback callback);
-void n64_set_cullingCallbackFunc(void* userData, N64CullCallback callback);
+void n64_set_tri_callback(void* userData, N64TriCallback callback);
+void n64_set_cull_callback(void* userData, N64CullCallback callback);
 
 #endif
