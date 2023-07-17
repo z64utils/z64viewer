@@ -2334,17 +2334,9 @@ void n64_draw_dlist(void* dlist) {
 	n64_drawImpl(dlist);
 }
 
-void n64_rewind_buffers(void) {
-	for (int i = 0; i <= 0xF; i++)
-		n64_segment[i] = NULL;
-	n64_poly_opa_disp = n64_poly_opa_head;
-	n64_poly_xlu_disp = n64_poly_xlu_head;
-	n64_graph_ptr = n64_graph_buffer;
-}
-
 void n64_buffer_init(void) {
 	sLightNum = 0;
-	n64_rewind_buffers();
+	n64_buffer_clear();
 	Shader_use(0);
 	n64_set_onlyZmode(N64_ZMODE_ALL);
 	n64_set_onlyGeoLayer(N64_GEOLAYER_ALL);
@@ -2355,7 +2347,15 @@ void n64_buffer_flush(void) {
 	gSPEndDisplayList(POLY_XLU_DISP++);
 	n64_draw_dlist(n64_poly_opa_head);
 	n64_draw_dlist(n64_poly_xlu_head);
-	n64_rewind_buffers();
+	n64_buffer_clear();
+}
+
+void n64_buffer_clear(void) {
+	for (int i = 0; i <= 0xF; i++)
+		n64_segment[i] = NULL;
+	n64_poly_opa_disp = n64_poly_opa_head;
+	n64_poly_xlu_disp = n64_poly_xlu_head;
+	n64_graph_ptr = n64_graph_buffer;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */

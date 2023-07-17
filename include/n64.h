@@ -124,6 +124,7 @@ void n64_clear_cache(void);
 void n64_draw_dlist(void* dlist);
 void n64_buffer_init(void);
 void n64_buffer_flush(void);
+void n64_buffer_clear(void);
 
 bool n64_culling(bool state);
 void n64_fog(int near, int far, uint8_t r, uint8_t g, uint8_t b);
