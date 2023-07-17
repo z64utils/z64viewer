@@ -23,16 +23,15 @@
 #include <float.h>
 #include <math.h>
 
-typedef float MtxF_t[4][4];
 typedef union {
-	MtxF_t mf;
+	float mf[4][4];
 	struct {
 		float xx, yx, zx, wx,
 			xy, yy, zy, wy,
 			xz, yz, zz, wz,
 			xw, yw, zw, ww;
 	};
-} MtxF;
+} MatrixF;
 
 typedef union {
 	int32_t m[4][4];
@@ -40,7 +39,7 @@ typedef union {
 		uint16_t intPart[4][4];
 		uint16_t fracPart[4][4];
 	};
-} Mtx;
+} MatrixGbi;
 
 typedef struct {
 	uint8_t r, g, b, a;
@@ -52,13 +51,13 @@ typedef struct {
 
 typedef struct {
 	float x, y, z, w;
-} Vec4f;
+} Vector4;
 
 typedef struct {
 	float x, y, z;
-} Vec3f;
+} Vector3;
 
-typedef struct VtxS {
+typedef struct {
 	int16_t x;
 	int16_t y;
 	int16_t z;
@@ -79,16 +78,16 @@ typedef struct VtxS {
 			uint8_t alpha;
 		} normal;
 	} ext;
-} VtxS;
+} VtxGbi;
 
-typedef struct VtxF {
-	Vec4f pos;
+typedef struct {
+	Vector4 pos;
 	struct {
 		float u;
 		float v;
 	} texcoord0, texcoord1;
-	Vec4f color;
-	Vec3f norm;
+	Vector4 color;
+	Vector3 norm;
 } VtxF;
 
 #include <n64.h>
@@ -97,23 +96,21 @@ typedef struct VtxF {
 #include <shader.h>
 #include <glad/glad.h>
 
-#define TEXTURE_CACHE_SIZE 256
-
 static GLuint gVAO;
 static GLuint gVBO;
 static GLuint gEBO;
-static GLuint gTexel[TEXTURE_CACHE_SIZE];
+static GLuint gTexel[N64_TEXTURE_CACHE_SIZE];
 static GLubyte gIndices[4096];
 static int gIndicesUsed = 0;
 static int gTexelCacheCount = 0; // number of textures cached thus far
 static struct {
 	void* data;
-} gTexelDict[TEXTURE_CACHE_SIZE];
+} gTexelDict[N64_TEXTURE_CACHE_SIZE];
 static GLint gFilterMode = GL_LINEAR;
 static void* sTriangleCallbackUserData;
-static n64_triangleCallbackFunc sTriangleCallback;
+static N64TriCallback sTriangleCallback;
 static void* sCullingCallbackUserData;
-static n64_cullingCallbackFunc sCullingCallback;
+static N64CullCallback sCullingCallback;
 
 static uint32_t gRdpHalf1;
 static uint32_t gRdpHalf2;
@@ -127,15 +124,14 @@ static bool gVertexColors = false;
 static bool gFogEnabled = true;
 static bool gForceBl = false;
 static bool gCvgXalpha = false;
-static bool gCullDLenabled = true;
+static bool s_cull_enabled = true;
 
 static int gPolygonOffset = 0;
 
-Gfx gPolyOpaHead[4096];
-Gfx* gPolyOpaDisp;
-Gfx gPolyXluHead[4096];
-Gfx* gPolyXluDisp;
-uint8_t gSegCheckBuf[64];
+GbiGfx n64_poly_opa_head[N64_OPA_STACK_SIZE];
+GbiGfx* n64_poly_opa_disp;
+GbiGfx n64_poly_xlu_head[N64_XLU_STACK_SIZE];
+GbiGfx* n64_poly_xlu_disp;
 
 static enum n64_geoLayer gOnlyThisGeoLayer;
 static enum n64_zmode gOnlyThisZmode;
@@ -151,14 +147,14 @@ static ShaderList* sShaderList = 0;
 
 static struct {
 	//float model[16];
-	MtxF  view;
-	MtxF  projection;
-	MtxF  modelStack[MATRIX_STACK_MAX];
-	MtxF* modelNow;
+	MatrixF  view;
+	MatrixF  projection;
+	MatrixF  modelStack[N64_MTX_STACK_SIZE];
+	MatrixF* modelNow;
 } gMatrix;
 
 static int sLightNum;
-static Lights7 sLights;
+static GbiLights7 sLights;
 
 static struct {
 	float fog[2];
@@ -216,7 +212,7 @@ static struct {
 		float    g;
 		float    b;
 		float    alpha;
-		float    lodfrac; // TODO not yet populated
+		float    lodfrac;      // TODO not yet populated
 	} prim;
 	struct {
 		uint32_t hi;
@@ -230,23 +226,24 @@ static struct {
 		float   r, g, b, factor;
 		uint8_t mode;
 	} xhighlight;
-	float    lodfrac; // TODO not yet populated
-	float    k4; // TODO not yet populated
-	float    k5; // TODO not yet populated
+	float    lodfrac;          // TODO not yet populated
+	float    k4;               // TODO not yet populated
+	float    k5;               // TODO not yet populated
 	uint32_t geometrymode;
-	bool     mixFog; // Condition to mix fog into the material
+	bool     mixFog;           // Condition to mix fog into the material
 } gMatState; /* material state magic */
 
-void* gSegment[SEGMENT_MAX] = { 0 };
-static VtxF gVbuf[VBUF_MAX];
-const MtxF sClearMtx = {
-	1.0f, 0.0f, 0.0f, 0.0f,
-	0.0f, 1.0f, 0.0f, 0.0f,
-	0.0f, 0.0f, 1.0f, 0.0f,
-	0.0f, 0.0f, 0.0f, 1.0f,
+void* n64_segment[N64_SEGMENT_MAX] = { 0 };
+static VtxF gVbuf[N64_VBUF_MAX];
+const MatrixF sClearMtx = {
+	.mf[0] = { 1.0f, 0.0f, 0.0f, 0.0f },
+	.mf[1] = { 0.0f, 1.0f, 0.0f, 0.0f },
+	.mf[2] = { 0.0f, 0.0f, 1.0f, 0.0f },
+	.mf[3] = { 0.0f, 0.0f, 0.0f, 1.0f }
+	,
 };
 
-typedef bool (* gbiFunc)(void* cmd);
+typedef bool (*gbiFunc)(void* cmd);
 
 static void n64_drawImpl(void* dlist);
 
@@ -335,35 +332,35 @@ static void othermode(void) {
 	if (gForceBl == true) {
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	} else { /* false */
+	} else {                   /* false */
 		glDisable(GL_BLEND);
 	}
 	
 	gHideGeometry = false;
-	if (gOnlyThisZmode != ZMODE_ALL && gCurrentZmode != gOnlyThisZmode)
+	if (gOnlyThisZmode != N64_ZMODE_ALL && gCurrentZmode != gOnlyThisZmode)
 		gHideGeometry = true;
 	
-	if (!gHideGeometry && gOnlyThisGeoLayer != GEOLAYER_ALL) {
+	if (!gHideGeometry && gOnlyThisGeoLayer != N64_GEOLAYER_ALL) {
 		int isOverlay = gForceBl || gCvgXalpha;
 		switch (gOnlyThisGeoLayer) {
-			case GEOLAYER_OPAQUE:
+			case N64_GEOLAYER_OPAQUE:
 				if (isOverlay)
 					gHideGeometry = true;
 				break;
 				
-			case GEOLAYER_OVERLAY:
+			case N64_GEOLAYER_OVERLAY:
 				if (!isOverlay)
 					gHideGeometry = true;
 				break;
 				
-			case GEOLAYER_ALL:
+			case N64_GEOLAYER_ALL:
 				break;
 		}
 	}
 	
 	/* hack for eliminating z-fighting on decals */
 	switch (gCurrentZmode) {
-		case ZMODE_DEC: /* ZMODE_DEC */
+		case N64_ZMODE_DEC: /* ZMODE_DEC */
 			glEnable(GL_POLYGON_OFFSET_FILL);
 			gPolygonOffset = -1;
 			break;
@@ -493,7 +490,7 @@ static void doMaterial(void* addr) {
 		if (!gMatState.tile[tile].doUpdate)
 			continue;
 		
-		for (i = 0; i < TEXTURE_CACHE_SIZE; ++i) {
+		for (i = 0; i < N64_TEXTURE_CACHE_SIZE; ++i) {
 			if (gMatState.tile[tile].data == gTexelDict[i].data)
 				break;
 			
@@ -504,7 +501,7 @@ static void doMaterial(void* addr) {
 			}
 		}
 		// no match found
-		if (i == TEXTURE_CACHE_SIZE) {
+		if (i == N64_TEXTURE_CACHE_SIZE) {
 			i = 0;
 		}
 		glActiveTexture(GL_TEXTURE0 + tile);
@@ -561,7 +558,7 @@ static void doMaterial(void* addr) {
 		//src += uls;
 		//fprintf(stderr, "%d %d\n", fmt, siz);
 		//memcpy(tmem, src, bytes); /* TODO dxt emulation requires line-by-line */
-		if (isNew && gTexelCacheCount < TEXTURE_CACHE_SIZE) {
+		if (isNew && gTexelCacheCount < N64_TEXTURE_CACHE_SIZE)	{
 			uint8_t wow[4096 * 8];
 			n64texconv_to_rgba8888(
 				wow
@@ -615,7 +612,7 @@ static void doMaterial(void* addr) {
 			
 			#define SHADER_SOURCE(...) "#version 330 core\n" # __VA_ARGS__
 			//crustify
-			const char* vtx = SHADER_SOURCE(
+			const char *vtx = SHADER_SOURCE(
 				layout (location = 0) in vec4 aPos;
 				layout (location = 1) in vec4 aColor;
 				layout (location = 2) in vec2 aTexCoord0;
@@ -634,25 +631,28 @@ static void doMaterial(void* addr) {
 				uniform vec2 uFog;
 			
 				void main() {
-    				float fogM = uFog.x;
-    				float fogO = uFog.y;
-    				vec4 wow = projection * view * vec4(aPos.xyz, 1.0);
+				float fogM = uFog.x;
+				float fogO = uFog.y;
+				vec4 wow = projection * view * vec4(aPos.xyz, 1.0);
 			
-    				gl_Position = projection * view * aPos;
-    				vColor = aColor;
-    				TexCoord0 = vec2(aTexCoord0.x, aTexCoord0.y);
-    				TexCoord1 = vec2(aTexCoord1.x, aTexCoord1.y);
-    				if (wow.w < 0) {
-    					vFog = -fogM + fogO;
-    				} else {
-    					vFog = wow.z / wow.w * fogM + fogO;
-    				}
-    				vFog = clamp(vFog, 0.0, 255.0) / 255;
+				gl_Position = projection * view * aPos;
+				vColor = aColor;
+				TexCoord0 = vec2(aTexCoord0.x, aTexCoord0.y);
+				TexCoord1 = vec2(aTexCoord1.x, aTexCoord1.y);
+				if (wow.w < 0)
+				{
+					vFog = -fogM + fogO;
+				}
+				else
+				{
+					vFog = wow.z / wow.w * fogM + fogO;
+				}
+				vFog = clamp(vFog, 0.0, 255.0) / 255;
 			
-    				/* when lighting is disabled for a vertex, its normal == 0 */
-    				if (aNorm == vec3(0.0))
-    					vLightColor = vec3(1.0);
-    			}
+				/* when lighting is disabled for a vertex, its normal == 0 */
+				if (aNorm == vec3(0.0))
+					vLightColor = vec3(1.0);
+			}
 			);
 			
 			char frag[4096] = SHADER_SOURCE(
@@ -695,7 +695,7 @@ static void doMaterial(void* addr) {
 				ADD("shading = vColor;");
 				ADD("shading.rgb *= vLightColor;");
 				
-				if (gCvgXalpha || gForceBl) {
+				if (gCvgXalpha || gForceBl)	{
 					/* alpha cycle 0 */
 					ADDF("alpha = %s;", alphaValueString(0, (hi >> 12) & 0x7));
 					ADDF("alpha -= %s;", alphaValueString(1, (lo >> 12) & 0x7));
@@ -771,7 +771,7 @@ static void doMaterial(void* addr) {
 		
 		// using new shader, so update view-projection matrices
 		gShader = shader;
-		if (Shader_use(shader)) {
+		if (Shader_use(shader))	{
 			Shader_setMat4(shader, "view", &gMatrix.view);
 			Shader_setMat4(shader, "projection", &gMatrix.projection);
 		}
@@ -799,7 +799,7 @@ static float shift_to_multiplier(const int shift) {
 		return 1;
 	
 	/* right shift; division by 2 per bit */
-	if (shift < 11) {
+	if (shift < 11)	{
 		return 1.0f / pow(2, shift);
 	}
 	
@@ -808,60 +808,60 @@ static float shift_to_multiplier(const int shift) {
 }
 
 #if 0
-static inline Vec3f vec3_mul_mat44f(void* v_, void* mat_) {
-	Vec3f* v = v_;
-	
-	struct {
-		Vec4f x;
-		Vec4f y;
-		Vec4f z;
-		Vec4f w;
-	}* mat = mat_;
-	
-	return (Vec3f) {
-			   .x = v->x * mat->x.x + v->y * mat->y.x + v->z * mat->z.x + 1 * mat->w.x,
-			   .y = v->x * mat->x.y + v->y * mat->y.y + v->z * mat->z.y + 1 * mat->w.y,
-			   .z = v->x * mat->x.z + v->y * mat->y.z + v->z * mat->z.z + 1 * mat->w.z
-	};
-}
+	static inline Vec3f vec3_mul_mat44f(void* v_, void* mat_) {
+		Vec3f* v = v_;
+		
+		struct {
+			Vec4f x;
+			Vec4f y;
+			Vec4f z;
+			Vec4f w;
+		}* mat = mat_;
+		
+		return (Vec3f) {
+				   .x = v->x * mat->x.x + v->y * mat->y.x + v->z * mat->z.x + 1 * mat->w.x,
+				   .y = v->x * mat->x.y + v->y * mat->y.y + v->z * mat->z.y + 1 * mat->w.y,
+				   .z = v->x * mat->x.z + v->y * mat->y.z + v->z * mat->z.z + 1 * mat->w.z
+		};
+	}
 #endif
 
-static void mtx_multVec3fToVec4f(Vec3f* src, Vec4f* vec, MtxF* mf) {
+static void mtx_multVec3fToVec4f(Vector3* src, Vector4* vec, MatrixF* mf) {
 	vec->x = mf->xw + (mf->xx * src->x + mf->xy * src->y + mf->xz * src->z);
 	vec->y = mf->yw + (mf->yx * src->x + mf->yy * src->y + mf->yz * src->z);
 	vec->z = mf->zw + (mf->zx * src->x + mf->zy * src->y + mf->zz * src->z);
 	vec->w = mf->ww + (mf->wx * src->x + mf->wy * src->y + mf->wz * src->z);
 }
 
-static void mtx_normalReoriantation(Vec3f* src, Vec3f* vec, MtxF* mf) {
+static void mtx_normalReoriantation(Vector3* src, Vector3* vec, MatrixF* mf) {
 	vec->x = (mf->xx * src->x + mf->xy * src->y + mf->xz * src->z);
 	vec->y = (mf->yx * src->x + mf->yy * src->y + mf->yz * src->z);
 	vec->z = (mf->zx * src->x + mf->zy * src->y + mf->zz * src->z);
 }
 
 #if 0
-static Vec4f vec4f_normalize3(Vec4f vec) {
-	Vec4f ret;
-	float mgn = sqrtf(
-		(vec.x * vec.x) + (vec.y * vec.y) + (vec.z * vec.z)
-	);
-	
-	if (mgn == 0) {
-		ret.x = ret.y = ret.z = 0;
-	} else {
-		ret.x = vec.x / mgn;
-		ret.y = vec.y / mgn;
-		ret.z = vec.z / mgn;
+	static Vec4f vec4f_normalize3(Vec4f vec) {
+		Vec4f ret;
+		float mgn = sqrtf(
+			(vec.x * vec.x) + (vec.y * vec.y) + (vec.z * vec.z)
+		);
+		
+		if (mgn == 0) {
+			ret.x = ret.y = ret.z = 0;
+		} else {
+			ret.x = vec.x / mgn;
+			ret.y = vec.y / mgn;
+			ret.z = vec.z / mgn;
+		}
+		
+		ret.w = vec.w;
+		
+		return ret;
 	}
-	
-	ret.w = vec.w;
-	
-	return ret;
-}
 #endif
 
-static Vec3f vec3f_normalize(Vec3f vec) {
-	Vec3f ret;
+static Vector3 vec3f_normalize(Vector3 vec) {
+	Vector3 ret;
 	float mgn = sqrtf(
 		(vec.x * vec.x) + (vec.y * vec.y) + (vec.z * vec.z)
 	);
@@ -877,30 +877,30 @@ static Vec3f vec3f_normalize(Vec3f vec) {
 	return ret;
 }
 
-static float vec3f_dot(Vec3f a, Vec3f b) {
+static float vec3f_dot(Vector3 a, Vector3 b) {
 	return (a.x * b.x) + (a.y * b.y) + (a.z * b.z);
 }
 
-static Vec4f vec4f_color(uint8_t color[3]) {
+static Vector4 vec4f_color(uint8_t color[3]) {
 	const float scale = 1 / 255.0f;
 	
-	return (Vec4f) { color[0] * scale, color[1] * scale, color[2] * scale, 0.0f };
+	return (Vector4) { color[0] * scale, color[1] * scale, color[2] * scale, 0.0f };
 }
 
-static Vec4f light_bind(Vec3f vtxPos, Vec3f vtxNor, int i) {
-	Light* light = &sLights.l[i];
+static Vector4 light_bind(Vector3 vtxPos, Vector3 vtxNor, int i) {
+	GbiLight* light = &sLights.l[i];
 	
 	if (light->dir.pad1 == 0) {
-		LightDir_t* dir = &light->dir;
-		Vec3f onrm;
+		GbiLightDir* dir = &light->dir;
+		Vector3 onrm;
 		onrm.x = (float)dir->dir[0] / __INT8_MAX__;
 		onrm.y = (float)dir->dir[1] / __INT8_MAX__;
 		onrm.z = (float)dir->dir[2] / __INT8_MAX__;
 		
 		// Directional light
-		Vec4f col = vec4f_color(dir->col);
-		Vec3f norm = vec3f_normalize(onrm);
-		float mod = CLAMP(vec3f_dot(vtxNor, norm), 0.0, 1.0);
+		Vector4 col = vec4f_color(dir->col);
+		Vector3 norm = vec3f_normalize(onrm);
+		float mod = N64_CLAMP(vec3f_dot(vtxNor, norm), 0.0, 1.0);
 		
 		col.x *= mod;
 		col.y *= mod;
@@ -908,30 +908,30 @@ static Vec4f light_bind(Vec3f vtxPos, Vec3f vtxNor, int i) {
 		
 		return col;
 	} else {
-		// LightPoint_t* point = &light->point;
+		// GbiLightPoint* point = &light->point;
 	}
 	
-	return (Vec4f) { 0 };
+	return (Vector4) { 0 };
 }
 
-static Vec4f light_bind_all(Vec3f vtxPos, Vec3f vtxNor) {
-	Vec4f final = {
+static Vector4 light_bind_all(Vector3 vtxPos, Vector3 vtxNor) {
+	Vector4 final = {
 		sLights.a.l.col[0] / 255.0f,
 		sLights.a.l.col[1] / 255.0f,
 		sLights.a.l.col[2] / 255.0f,
 		1.0f
 	};
 	
-	for (int i = 0; i < sLightNum; i++) {
-		Vec4f color = light_bind(vtxPos, vtxNor, i);
+	for (int i = 0; i < sLightNum; i++)	{
+		Vector4 color = light_bind(vtxPos, vtxNor, i);
 		final.x += color.x;
 		final.y += color.y;
 		final.z += color.z;
 	}
 	
-	final.x = CLAMP(final.x, 0.0f, 1.0f);
-	final.y = CLAMP(final.y, 0.0f, 1.0f);
-	final.z = CLAMP(final.z, 0.0f, 1.0f);
+	final.x = N64_CLAMP(final.x, 0.0f, 1.0f);
+	final.y = N64_CLAMP(final.y, 0.0f, 1.0f);
+	final.z = N64_CLAMP(final.z, 0.0f, 1.0f);
 	
 	return final;
 }
@@ -941,7 +941,7 @@ static bool gbiFunc_vtx(void* cmd) {
 	
 	int numv = (b[1] << 4) | (b[2] >> 4);
 	int vbidx = (b[3] >> 1) - numv;
-	uint8_t* vaddr = n64_virt2phys(u32r(b + 4));
+	uint8_t* vaddr = n64_segment_get(u32r(b + 4));
 	
 	VtxF* v = gVbuf + vbidx;
 	
@@ -961,7 +961,7 @@ static bool gbiFunc_vtx(void* cmd) {
 		v->pos.y = s16r(vaddr + 2);
 		v->pos.z = s16r(vaddr + 4);
 		
-		Vec3f modelPos = { v->pos.x, v->pos.y, v->pos.z };
+		Vector3 modelPos = { v->pos.x, v->pos.y, v->pos.z };
 		
 		mtx_multVec3fToVec4f(&modelPos, &v->pos, gMatrix.modelNow);
 		
@@ -988,12 +988,13 @@ static bool gbiFunc_vtx(void* cmd) {
 			v->norm.y = 0;
 			v->norm.z = 0;
 		} else {
-			Vec3f n = {
+			Vector3 n = {
 				s8r(vaddr + 12) * div_1_127,
 				s8r(vaddr + 13) * div_1_127,
-				s8r(vaddr + 14) * div_1_127,
+				s8r(vaddr + 14) * div_1_127
+				,
 			};
-			Vec3f mn;
+			Vector3 mn;
 			
 			mtx_normalReoriantation(&n, &mn, gMatrix.modelNow);
 			n = mn;
@@ -1019,7 +1020,7 @@ static bool gbiFunc_vtx(void* cmd) {
 }
 
 static bool gbiFunc_culldl(void* cmd) {
-	if (gCullDLenabled == false)
+	if (s_cull_enabled == false)
 		return false;
 	
 	if (sCullingCallback == NULL)
@@ -1036,23 +1037,25 @@ static bool gbiFunc_culldl(void* cmd) {
 static inline void TryDrawTriangleBatch(const uint8_t* b) {
 	if (
 		(b[8] != G_TRI1 && b[8] != G_TRI2)
-		|| gIndicesUsed + 6 >= ARRAY_COUNT(gIndices)
+		|| (uint32_t)gIndicesUsed + 6 >= N64_ARRAY_COUNT(gIndices)
 	) {
 		if (sTriangleCallback) {
 			for (int i = 0; i < gIndicesUsed; i += 3) {
 				VtxF A = gVbuf[gIndices[i + 0]];
 				VtxF B = gVbuf[gIndices[i + 1]];
 				VtxF C = gVbuf[gIndices[i + 2]];
-				n64_triangleCallbackData triData = {
+				N64Tri triData = {
 					{
 						{ A.pos.x,  A.pos.y,  A.pos.z  },
 						{ B.pos.x,  B.pos.y,  B.pos.z  },
-						{ C.pos.x,  C.pos.y,  C.pos.z  },
+						{ C.pos.x,  C.pos.y,  C.pos.z  }
+						,
 					},
 					{
 						{ A.norm.x, A.norm.y, A.norm.z },
 						{ B.norm.x, B.norm.y, B.norm.z },
-						{ C.norm.x, C.norm.y, C.norm.z },
+						{ C.norm.x, C.norm.y, C.norm.z }
+						,
 					},
 					!!(gMatState.geometrymode & G_CULL_BACK),
 					!!(gMatState.geometrymode & G_CULL_FRONT)
@@ -1109,7 +1112,7 @@ static bool gbiFunc_settimg(void* cmd) {
 	uint8_t bits = b[1];
 	uint16_t hi = u16r(b + 2);
 	uint32_t lo = u32r(b + 4);
-	void* imgaddr = n64_virt2phys(lo);
+	void* imgaddr = n64_segment_get(lo);
 	int fmt = bits >> 5;
 	int siz = (bits >> 3) & 3;
 	int width = hi + 1;
@@ -1339,7 +1342,7 @@ static bool gbiFunc_geometrymode(void* cmd) {
 	return false;
 }
 
-static void MtxToMtxF(Mtx* src, MtxF* dest) {
+static void MtxToMtxF(MatrixGbi* src, MatrixF* dest) {
 	uint16_t* m1 = (void*)((uint8_t*)src);
 	uint16_t* m2 = (void*)((uint8_t*)src + 0x20);
 	
@@ -1361,7 +1364,7 @@ static void MtxToMtxF(Mtx* src, MtxF* dest) {
 	dest->ww = ((m1[15] << 0x10) | m2[15]) * (1 / 65536.0f);
 }
 
-static void MtxFMtxFMult(MtxF* mfA, MtxF* mfB, MtxF* dest) {
+static void MtxFMtxFMult(MatrixF* mfA, MatrixF* mfB, MatrixF* dest) {
 	float cx;
 	float cy;
 	float cz;
@@ -1492,19 +1495,19 @@ static bool gbiFunc_mtx(void* cmd) {
 	uint8_t* b = cmd;
 	uint8_t params = b[3] ^ G_MTX_PUSH;
 	uint32_t mtxaddr = u32r(b + 4);
-	Mtx* mtx;
-	MtxF mtxF;
+	MatrixGbi* mtx;
+	MatrixF mtxF;
 	
 	if (mtxaddr == 0x8012DB20) /* XXX hard-coded gMtxClear */
 		memcpy(&mtxF, &sClearMtx, sizeof(sClearMtx));
 	else {
 		bool wasDirectAddress = gPtrHiSet;
-		mtx = n64_virt2phys(mtxaddr);
+		mtx = n64_segment_get(mtxaddr);
 		
 		if (!mtx)
 			return false;
 		
-		Mtx swap = *mtx;
+		MatrixGbi swap = *mtx;
 		
 		if (wasDirectAddress == false && (mtxaddr & 0xFF000000) != 0x01000000 && (mtxaddr & 0xFF000000) != 0x0D000000) {
 			for (int32_t i = 0; i < 0x40 / 2; i++) {
@@ -1520,7 +1523,7 @@ static bool gbiFunc_mtx(void* cmd) {
 	if (params & G_MTX_PUSH) {
 		gMatrix.modelNow += 1;
 		
-		assert(gMatrix.modelNow - gMatrix.modelStack < MATRIX_STACK_MAX && "matrix stack overflow");
+		assert(gMatrix.modelNow - gMatrix.modelStack < N64_MTX_STACK_SIZE && "matrix stack overflow");
 		
 		*gMatrix.modelNow = *(gMatrix.modelNow - 1);
 	}
@@ -1528,7 +1531,7 @@ static bool gbiFunc_mtx(void* cmd) {
 	if (params & G_MTX_LOAD) {
 		*gMatrix.modelNow = mtxF;
 	} else {
-		MtxF copy = *gMatrix.modelNow;
+		MatrixF copy = *gMatrix.modelNow;
 		MtxFMtxFMult(&copy, &mtxF, gMatrix.modelNow);
 	}
 	
@@ -1550,18 +1553,19 @@ static bool gbiFunc_dl(void* cmd) {
 	// uint32_t hi = u32r(b);
 	uint32_t lo = u32r(b + 4);
 	
-	n64_drawImpl(n64_virt2phys(lo));
+	n64_drawImpl(n64_segment_get(lo));
 	
 	return b[1] != 0;
 }
 
 static bool gbiFunc_setptrhi(void* cmd) {
-	if (sizeof(uintptr_t) == 8) {
+#if __SIZEOF_POINTER__ == 8
 		uint8_t* b = cmd;
 		gPtrHi = u32r(b + 4);
 		gPtrHi <<= 32;
-	} else
+#else
 		gPtrHi = 0;
+#endif
 	gPtrHiSet = true;
 	
 	return false;
@@ -1573,14 +1577,14 @@ static bool gbiFunc_moveword(void* cmd) {
 	uint32_t lo = u32r(b + 4);
 	uint8_t index = b[1];
 	uint16_t offset = hi & 0xffff;
-	void* data = n64_virt2phys(lo);
+	void* data = n64_segment_get(lo);
 	
 	switch (index) {
 		case G_MW_MATRIX: break; // TODO
 		case G_MW_NUMLIGHT: break; // TODO
 		case G_MW_CLIP: break; // TODO
 		case G_MW_SEGMENT:
-			gSegment[offset / 4] = data;
+			n64_segment[offset / 4] = data;
 			break;
 		case G_MW_FOG: break; // TODO
 		case G_MW_LIGHTCOL: break; // TODO
@@ -1600,7 +1604,7 @@ static bool gbiFunc_branch_z(void* cmd) {
 	// int vbidx1 = (hi & 0xfff) / 2;
 	
 	/* TODO simulate branching; for now, just draw everything */
-	n64_drawImpl(n64_virt2phys(gRdpHalf1));
+	n64_drawImpl(n64_segment_get(gRdpHalf1));
 	
 	return false;
 }
@@ -1671,12 +1675,13 @@ static bool gbiFunc_gxHighlight(void* cmd) {
 		};
 	} c = {
 		.upper = *((uint32_t*)cmd),
-		.lower = *((uint32_t*)cmd + 1),
+		.lower = *((uint32_t*)cmd + 1)
+		,
 	};
 	
 	gMatState.xhighlight.mode = c.mode;
 	
-	if (c.mode) {
+	if (c.mode)	{
 		gMatState.xhighlight.r = c.r / 255.0f;
 		gMatState.xhighlight.g = c.g / 255.0f;
 		gMatState.xhighlight.b = c.b / 255.0f;
@@ -1717,22 +1722,448 @@ static gbiFunc gGbi[256] = {
 	[G_RDPHALF_2] = gbiFunc_rdphalf_2,
 	[G_ENDDL] = gbiFunc_enddl,
 	[GX_MODE] = gbiFunc_gxMode,
-	[GX_HILIGHT] = gbiFunc_gxHighlight,
+	[GX_HILIGHT] = gbiFunc_gxHighlight
+	,
 };
 
-/*
- *
- * public
- *
- */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-void n64_set_segment(int seg, void* data) {
-	assert(seg < SEGMENT_MAX);
-	
-	gSegment[seg] = data;
+static void* s_prev_seg;
+static int s_prev_seg_id;
+
+static void segment_swap_to(int seg, const void* data) {
+	s_prev_seg = n64_segment[seg];
+	s_prev_seg_id = seg;
+	n64_segment[seg] = (void*)data;
 }
 
-void* n64_virt2phys(unsigned int segaddr) {
+static void segment_swap_back(void) {
+	n64_segment[s_prev_seg_id] = s_prev_seg;
+}
+
+typedef struct {
+	float    speed;
+	float    start, end;
+	float    cur;
+	float    frame_num;
+	Vector3* frame_tbl;
+} Anim;
+
+static void n64anim_destroy(Anim** self) {
+	if (*self) {
+		free((*self)->frame_tbl);
+		free(*self);
+	}
+	*self = NULL;
+}
+
+typedef struct {
+	Vector3  pos;
+	Vector3  anim_rot;
+	Vector3  anim_morph;
+	uint32_t dlist;
+	uint8_t  child;
+	uint8_t  sibling;
+} Limb;
+
+#define OBJ_TYPE_NONE     0
+#define OBJ_TYPE_DLIST    1
+#define OBJ_TYPE_SKELETON 2
+
+typedef struct N64ObjInstance {
+	const void* data;
+	struct {
+		uint8_t seg_id : 6;
+		uint8_t type   : 2;
+	};
+	
+	union {
+		struct {
+			Limb* limb;
+			int   limb_num;
+		};
+		struct {
+			GbiGfx* dlist;
+			int     dlist_num;
+		};
+	};
+	
+} ObjInstance;
+
+#define N64_OBJECT_ID_REG_SIZE   0x200
+#define N64_OBJECT_UNIQ_REG_SIZE 0x3F
+
+static_assert(offsetof(ObjInstance, dlist) == offsetof(ObjInstance, limb));
+
+static ObjInstance s_object_list[N64_OBJECT_ID_REG_SIZE][N64_OBJECT_UNIQ_REG_SIZE];
+
+static ObjInstance* get_obj(uint16_t obj_id, uint8_t uniq_id) {
+	assert(obj_id < N64_OBJECT_ID_REG_SIZE);
+	assert(uniq_id < N64_OBJECT_UNIQ_REG_SIZE);
+	return &s_object_list[obj_id][uniq_id];
+}
+
+void n64_register_skeleton(uint16_t obj_id, uint8_t uniq_id, const void* data, uint8_t seg_id, uint32_t skel_offset) {
+	ObjInstance* obj = get_obj(obj_id, uniq_id);
+	
+	assert(obj->type == OBJ_TYPE_NONE);
+	obj->type = OBJ_TYPE_SKELETON;
+	obj->data = data;
+	obj->seg_id = seg_id;
+	
+	typedef struct N64_ATTR_BIG_ENDIAN {
+		uint32_t list_segment;
+		uint8_t  limb_num;
+	} SkeletonHeader;
+	typedef struct N64_ATTR_BIG_ENDIAN {
+		uint32_t segment;
+	} SegmentList;
+	typedef struct N64_ATTR_BIG_ENDIAN {
+		int16_t  pos_x, pos_y, pos_z;
+		uint8_t  child;
+		uint8_t  sibling;
+		uint32_t dlist;
+	} ZLimb;
+	
+	segment_swap_to(seg_id, obj->data);
+	SkeletonHeader* header = n64_segment_get(skel_offset);
+	SegmentList* list = n64_segment_get(header->list_segment);
+	
+	obj->limb_num = header->limb_num;
+	assert((obj->limb = calloc(obj->limb_num, sizeof(Limb))) != NULL);
+	
+	for (int i = 0; i < obj->limb_num; i++) {
+		ZLimb* limb = n64_segment_get(list[i].segment);
+		
+		if (!limb) continue;
+		
+		obj->limb[i] = (Limb) {
+			.pos = { limb->pos_x, limb->pos_y, limb->pos_z },
+			.child = limb->child,
+			.sibling = limb->sibling,
+			.dlist = limb->dlist,
+		};
+	}
+	
+	segment_swap_back();
+}
+
+void n64_register_dlist(uint16_t obj_id, uint8_t uniq_id, const void* data, uint8_t seg_id, GbiGfx* dlist, int dlist_num) {
+	ObjInstance* obj = get_obj(obj_id, uniq_id);
+	
+	assert(obj->type == OBJ_TYPE_NONE);
+	
+	obj->type = OBJ_TYPE_DLIST;
+	obj->data = data;
+	obj->seg_id = seg_id;
+	assert((obj->dlist = calloc(dlist_num, sizeof(GbiGfx))) != NULL);
+	obj->dlist_num = dlist_num;
+	
+	memcpy(obj->dlist, dlist, sizeof(GbiGfx[dlist_num]));
+}
+
+void n64_unregister(uint16_t obj_id, uint8_t uniq_id) {
+	ObjInstance* obj = get_obj(obj_id, uniq_id);
+	
+	if (obj->type == OBJ_TYPE_NONE)
+		return;
+	
+	// free limb/dlist
+	if (obj->limb)
+		free(obj->limb);
+	*obj = (ObjInstance) {};
+}
+
+typedef struct N64Object {
+	uint16_t obj_id;
+	uint8_t  uniq_id;
+	uint8_t  mtl_setup_dl_id;
+	Anim*    anim;
+	MatrixF  mtx;
+} N64Object;
+
+N64Object* n64_object_new(uint16_t obj_id, uint8_t uniq_id, uint8_t mtl_setup_dl_id) {
+	N64Object* obj = calloc(1, sizeof(N64Object));
+	
+	obj->obj_id = obj_id;
+	obj->uniq_id = uniq_id;
+	obj->mtl_setup_dl_id = mtl_setup_dl_id;
+	
+	return obj;
+}
+
+void n64_object_destroy(N64Object* self) {
+	n64anim_destroy(&self->anim);
+}
+
+void n64_object_set_anim(N64Object* self, uint32_t seg_anim, float speed) {
+	#define BIN_TO_RAD(binang) ((float)((int32_t)binang) * (3.14159265359 / 0x8000))
+	ObjInstance* obj = get_obj(self->obj_id, self->uniq_id);
+	
+	assert(obj->type == OBJ_TYPE_SKELETON);
+	
+	segment_swap_to(obj->seg_id, obj->data);
+	n64anim_destroy(&self->anim);
+	
+	typedef struct N64_ATTR_BIG_ENDIAN {
+		int16_t v;
+	} Frame;
+	typedef struct N64_ATTR_BIG_ENDIAN {
+		uint16_t x, y, z;
+	} JointIndex;
+	typedef struct N64_ATTR_BIG_ENDIAN {
+		int16_t  frame_num;
+		uint32_t seg_tbl;
+		uint32_t seg_jnt_id_tbl;
+		uint16_t max;
+	} AnimHeader;
+	
+	AnimHeader* header = n64_segment_get(seg_anim);
+	Frame* tbl = n64_segment_get(header->seg_tbl);
+	JointIndex* jnt_id = n64_segment_get(header->seg_jnt_id_tbl);
+	Anim* anim;
+	Vector3* frame;
+	
+	assert((anim = self->anim = calloc(1, sizeof(Anim))) != NULL);
+	anim->frame_num = anim->end = header->frame_num;
+	assert((frame = anim->frame_tbl = calloc(anim->frame_num * obj->limb_num, sizeof(Vector3))) != NULL);
+	
+	for (int k = 0; k < anim->frame_num; k++, frame++) {
+		uint16_t static_max = header->max;
+		Frame* fstatic = &tbl[0];
+		Frame* fdynamic = &tbl[k];
+		
+		for (int i = 0; i < obj->limb_num; i++, frame++, jnt_id++) {
+			frame->x = BIN_TO_RAD( (jnt_id->x >= static_max) ? fdynamic[jnt_id->x].v : fstatic[jnt_id->x].v );
+			frame->y = BIN_TO_RAD( (jnt_id->y >= static_max) ? fdynamic[jnt_id->y].v : fstatic[jnt_id->y].v );
+			frame->z = BIN_TO_RAD( (jnt_id->z >= static_max) ? fdynamic[jnt_id->z].v : fstatic[jnt_id->z].v );
+		}
+	}
+	
+	segment_swap_back();
+}
+
+static void mtx_translate_rot(MatrixF* m, Vector3* translation, Vector3* rotation) {
+	float sin = sinf(rotation->z);
+	float cos = cosf(rotation->z);
+	float temp1;
+	float temp2;
+	
+	temp1 = m->xx;
+	temp2 = m->xy;
+	m->xw += temp1 * translation->x + temp2 * translation->y + m->xz * translation->z;
+	m->xx = temp1 * cos + temp2 * sin;
+	m->xy = temp2 * cos - temp1 * sin;
+	
+	temp1 = m->yx;
+	temp2 = m->yy;
+	m->yw += temp1 * translation->x + temp2 * translation->y + m->yz * translation->z;
+	m->yx = temp1 * cos + temp2 * sin;
+	m->yy = temp2 * cos - temp1 * sin;
+	
+	temp1 = m->zx;
+	temp2 = m->zy;
+	m->zw += temp1 * translation->x + temp2 * translation->y + m->zz * translation->z;
+	m->zx = temp1 * cos + temp2 * sin;
+	m->zy = temp2 * cos - temp1 * sin;
+	
+	temp1 = m->wx;
+	temp2 = m->wy;
+	m->ww += temp1 * translation->x + temp2 * translation->y + m->wz * translation->z;
+	m->wx = temp1 * cos + temp2 * sin;
+	m->wy = temp2 * cos - temp1 * sin;
+	
+	if (rotation->y != 0.0f) {
+		sin = sinf(rotation->y);
+		cos = cosf(rotation->y);
+		
+		temp1 = m->xx;
+		temp2 = m->xz;
+		m->xx = temp1 * cos - temp2 * sin;
+		m->xz = temp1 * sin + temp2 * cos;
+		
+		temp1 = m->yx;
+		temp2 = m->yz;
+		m->yx = temp1 * cos - temp2 * sin;
+		m->yz = temp1 * sin + temp2 * cos;
+		
+		temp1 = m->zx;
+		temp2 = m->zz;
+		m->zx = temp1 * cos - temp2 * sin;
+		m->zz = temp1 * sin + temp2 * cos;
+		
+		temp1 = m->wx;
+		temp2 = m->wz;
+		m->wx = temp1 * cos - temp2 * sin;
+		m->wz = temp1 * sin + temp2 * cos;
+	}
+	
+	if (rotation->x != 0.0f) {
+		sin = sinf(rotation->x);
+		cos = cosf(rotation->x);
+		
+		temp1 = m->xy;
+		temp2 = m->xz;
+		m->xy = temp1 * cos + temp2 * sin;
+		m->xz = temp2 * cos - temp1 * sin;
+		
+		temp1 = m->yy;
+		temp2 = m->yz;
+		m->yy = temp1 * cos + temp2 * sin;
+		m->yz = temp2 * cos - temp1 * sin;
+		
+		temp1 = m->zy;
+		temp2 = m->zz;
+		m->zy = temp1 * cos + temp2 * sin;
+		m->zz = temp2 * cos - temp1 * sin;
+		
+		temp1 = m->wy;
+		temp2 = m->wz;
+		m->wy = temp1 * cos + temp2 * sin;
+		m->wz = temp2 * cos - temp1 * sin;
+	}
+}
+
+static void mtx_to_zmtx(MatrixF* src, MatrixGbi* dest) {
+	int temp;
+	uint16_t* m1 = (void*)(((char*)dest));
+	uint16_t* m2 = (void*)(((char*)dest) + 0x20);
+	
+	temp = src->xx * 0x10000;
+	m1[0] = (temp >> 0x10);
+	m1[16 + 0] = temp & 0xFFFF;
+	
+	temp = src->yx * 0x10000;
+	m1[1] = (temp >> 0x10);
+	m1[16 + 1] = temp & 0xFFFF;
+	
+	temp = src->zx * 0x10000;
+	m1[2] = (temp >> 0x10);
+	m1[16 + 2] = temp & 0xFFFF;
+	
+	temp = src->wx * 0x10000;
+	m1[3] = (temp >> 0x10);
+	m1[16 + 3] = temp & 0xFFFF;
+	
+	temp = src->xy * 0x10000;
+	m1[4] = (temp >> 0x10);
+	m1[16 + 4] = temp & 0xFFFF;
+	
+	temp = src->yy * 0x10000;
+	m1[5] = (temp >> 0x10);
+	m1[16 + 5] = temp & 0xFFFF;
+	
+	temp = src->zy * 0x10000;
+	m1[6] = (temp >> 0x10);
+	m1[16 + 6] = temp & 0xFFFF;
+	
+	temp = src->wy * 0x10000;
+	m1[7] = (temp >> 0x10);
+	m1[16 + 7] = temp & 0xFFFF;
+	
+	temp = src->xz * 0x10000;
+	m1[8] = (temp >> 0x10);
+	m1[16 + 8] = temp & 0xFFFF;
+	
+	temp = src->yz * 0x10000;
+	m1[9] = (temp >> 0x10);
+	m2[9] = temp & 0xFFFF;
+	
+	temp = src->zz * 0x10000;
+	m1[10] = (temp >> 0x10);
+	m2[10] = temp & 0xFFFF;
+	
+	temp = src->wz * 0x10000;
+	m1[11] = (temp >> 0x10);
+	m2[11] = temp & 0xFFFF;
+	
+	temp = src->xw * 0x10000;
+	m1[12] = (temp >> 0x10);
+	m2[12] = temp & 0xFFFF;
+	
+	temp = src->yw * 0x10000;
+	m1[13] = (temp >> 0x10);
+	m2[13] = temp & 0xFFFF;
+	
+	temp = src->zw * 0x10000;
+	m1[14] = (temp >> 0x10);
+	m2[14] = temp & 0xFFFF;
+	
+	temp = src->ww * 0x10000;
+	m1[15] = (temp >> 0x10);
+	m2[15] = temp & 0xFFFF;
+}
+
+static void draw_limb(ObjInstance* obj, Anim* anim, int id, MatrixGbi** nmtx, MatrixF* mtx) {
+	Limb* limb = &obj->limb[id];
+	
+	#define MTX_PUSH() mtx++; *mtx = mtx[-1]
+	#define MTX_POP()  mtx--
+	
+	MTX_PUSH();
+	
+	mtx_translate_rot(mtx, &limb->pos, &limb->anim_rot);
+	
+	if (limb->dlist) {
+		if (nmtx && *nmtx) {
+			mtx_to_zmtx(mtx, (*nmtx));
+			gSPMatrix(POLY_OPA_DISP++, (*nmtx), G_MTX_LOAD);
+			(*nmtx)++;
+		}
+		gSPDisplayList(POLY_OPA_DISP++, limb->dlist);
+	}
+	
+	if (limb->child != 0xFF)
+		draw_limb(obj, anim, limb->child, nmtx, mtx);
+	
+	MTX_POP();
+	
+	if (limb->sibling != 0xFF)
+		draw_limb(obj, anim, limb->sibling, nmtx, mtx);
+}
+
+static void draw_skeleton(N64Object* self, ObjInstance* obj, Anim* anim) {
+	MatrixF mtx[obj->limb_num + 1];
+	MatrixGbi* nmtx = n64_graph_alloc(sizeof(MatrixGbi[obj->limb_num + 1]));
+	MatrixGbi curmtx;
+	
+	memcpy(mtx, &self->mtx, sizeof(MatrixF));
+	mtx_to_zmtx(&self->mtx, &curmtx);
+	
+	gSPDisplayList(POLY_OPA_DISP++, n64_material_setup_dl[self->mtl_setup_dl_id]);
+	gSPSegment(POLY_OPA_DISP++, obj->seg_id, (void*)obj->data);
+	gSPMatrix(POLY_OPA_DISP++, &curmtx, G_MTX_LOAD);
+	gSPSegment(POLY_OPA_DISP++, 0xD, nmtx);
+	
+	draw_limb(obj, anim, 0, &nmtx, mtx);
+}
+
+void n64_object_draw(N64Object* self) {
+	ObjInstance* obj = get_obj(self->obj_id, self->uniq_id);
+	
+	switch (obj->type) {
+		case OBJ_TYPE_DLIST:
+			break;
+			
+		case OBJ_TYPE_SKELETON:
+			draw_skeleton(self, obj, self->anim);
+			break;
+	}
+}
+
+void n64_object_set_mtx(N64Object* self, const void* mtx) {
+	memcpy(&self->mtx, mtx, sizeof(MatrixF));
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+void n64_segment_set(int seg, void* data) {
+	assert(seg < N64_SEGMENT_MAX);
+	
+	n64_segment[seg] = data;
+}
+
+void* n64_segment_get(unsigned int segaddr) {
 	uint8_t* b;
 	
 	if (gPtrHiSet) {
@@ -1745,9 +2176,9 @@ void* n64_virt2phys(unsigned int segaddr) {
 	if (!segaddr)
 		return 0;
 	
-	assert((segaddr >> 24) < SEGMENT_MAX);
+	assert((segaddr >> 24) < N64_SEGMENT_MAX);
 	
-	b = gSegment[segaddr >> 24];
+	b = n64_segment[segaddr >> 24];
 	
 	if (!b)
 		return 0;
@@ -1755,17 +2186,17 @@ void* n64_virt2phys(unsigned int segaddr) {
 	return b + (segaddr & 0xffffff);
 }
 
-unsigned int n64_phys2virt(void* cmd) {
+unsigned int n64_segment_ptr_offset(void* cmd) {
 	uint8_t* b = cmd;
-	uint32_t dist = -1;
+	ptrdiff_t dist = -1;
 	int smallest = -1;
 	int i;
 	
 	if (!b)
 		return 0;
 	
-	for (i = 0; i < SEGMENT_MAX; ++i) {
-		uint8_t* this = gSegment[i];
+	for (i = 0; i < N64_SEGMENT_MAX; ++i) {
+		uint8_t* this = n64_segment[i];
 		
 		if (!this)
 			continue;
@@ -1785,6 +2216,66 @@ unsigned int n64_phys2virt(void* cmd) {
 	return 0;
 }
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+uintptr_t __n64_pointer__;
+
+GbiGfx n64_gbi_gfxhi_ptr(void* ptr) {
+	__n64_pointer__ = (uintptr_t)ptr;
+	
+	return gO_(G_SETPTRHI, 0, (uint64_t)__n64_pointer__ >> 32);
+}
+
+GbiGfx n64_gbi_gfxhi_seg(uint32_t seg) {
+	__n64_pointer__ = seg;
+	
+	return gO_(G_NOOP, 0, 0);
+}
+
+void n64_set_onlyZmode(enum n64_zmode zmode) {
+	gOnlyThisZmode = zmode;
+}
+
+void n64_set_onlyGeoLayer(enum n64_geoLayer geoLayer) {
+	gOnlyThisGeoLayer = geoLayer;
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+void n64_mtx_model(void* data) {
+	//memcpy(gMatrix.model, data, sizeof(gMatrix.model));
+	gMatrix.modelNow = gMatrix.modelStack;
+	memcpy(gMatrix.modelStack, data, sizeof(*gMatrix.modelStack));
+}
+
+void n64_mtx_view(void* data) {
+	memcpy(&gMatrix.view, data, sizeof(gMatrix.view));
+}
+
+void n64_mtx_projection(void* data) {
+	memcpy(&gMatrix.projection, data, sizeof(gMatrix.projection));
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+static uint8_t n64_graph_buffer[1024 * 1024 * 8];
+static uint8_t* n64_graph_ptr;
+
+void* n64_graph_alloc(uint32_t sz) {
+	return (n64_graph_ptr += sz) - sz;
+}
+
+void n64_clear_cache(void) {
+	ShaderList_cleanup();
+	for (int32_t i = 0; i < gTexelCacheCount; i++) {
+		gTexelDict[i].data = 0;
+		gTexel[i] = 0;
+	}
+	gTexelCacheCount = 0;
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 static void n64_drawImpl(void* dlist) {
 	uint8_t* cmd;
 	
@@ -1802,7 +2293,7 @@ static void n64_drawImpl(void* dlist) {
 	
 	/* set up texture stuff */
 	if (!gTexel[0])
-		glGenTextures(TEXTURE_CACHE_SIZE, gTexel);
+		glGenTextures(N64_TEXTURE_CACHE_SIZE, gTexel);
 	
 	/* set up geometry stuff */
 	glBindVertexArray(gVAO);
@@ -1837,47 +2328,72 @@ static void n64_drawImpl(void* dlist) {
 	}
 }
 
-void n64_draw(void* dlist) {
+void n64_draw_dlist(void* dlist) {
 	glEnable(GL_STENCIL_TEST);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 	n64_drawImpl(dlist);
 }
 
-void n64_draw_buffers(void) {
+void n64_rewind_buffers(void) {
+	for (int i = 0; i <= 0xF; i++)
+		n64_segment[i] = NULL;
+	n64_poly_opa_disp = n64_poly_opa_head;
+	n64_poly_xlu_disp = n64_poly_xlu_head;
+	n64_graph_ptr = n64_graph_buffer;
+}
+
+void n64_buffer_init(void) {
+	sLightNum = 0;
+	n64_rewind_buffers();
+	Shader_use(0);
+	n64_set_onlyZmode(N64_ZMODE_ALL);
+	n64_set_onlyGeoLayer(N64_GEOLAYER_ALL);
+}
+
+void n64_buffer_flush(void) {
 	gSPEndDisplayList(POLY_OPA_DISP++);
 	gSPEndDisplayList(POLY_XLU_DISP++);
-	n64_draw(gPolyOpaHead);
-	n64_draw(gPolyXluHead);
-	n64_reset_buffers();
+	n64_draw_dlist(n64_poly_opa_head);
+	n64_draw_dlist(n64_poly_xlu_head);
+	n64_rewind_buffers();
 }
 
-void n64_setMatrix_model(void* data) {
-	//memcpy(gMatrix.model, data, sizeof(gMatrix.model));
-	gMatrix.modelNow = gMatrix.modelStack;
-	memcpy(gMatrix.modelStack, data, sizeof(*gMatrix.modelStack));
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+bool n64_culling(bool state) {
+	return s_cull_enabled = state;
 }
 
-void n64_setMatrix_view(void* data) {
-	memcpy(&gMatrix.view, data, sizeof(gMatrix.view));
+void n64_fog(int near, int far, uint8_t r, uint8_t g, uint8_t b) {
+	int mult;
+	int offset;
+	
+	near &= 0x3FF;
+	
+	if (near >= 1000)
+		mult = offset = 0;
+	else if (near >= 997)
+		mult = 32767,
+		offset = -32512;
+	else if (near < 0)
+		mult = 0,
+		offset = 255;
+	else
+		mult = ((500 * 0x100) / (far - near)),
+		offset = ((500 - near) * 0x100 / (far - near));
+	
+	gFog.fog[0] = mult;
+	gFog.fog[1] = offset;
+	
+	gFog.color[0] = r * (1.0 / 255);
+	gFog.color[1] = g * (1.0 / 255);
+	gFog.color[2] = b * (1.0 / 255);
 }
 
-void n64_setMatrix_projection(void* data) {
-	memcpy(&gMatrix.projection, data, sizeof(gMatrix.projection));
-}
-
-void n64_set_fog(float fog[2], float color[3]) {
-	memcpy(gFog.fog, fog, sizeof(gFog.fog));
-	memcpy(gFog.color, color, sizeof(gFog.color));
-}
-
-static void n64_clear_lights(void) {
-	sLightNum = 0;
-}
-
-bool n64_bind_light(Light* lightInfo, Ambient* ambient) {
+static bool n64_bind_light(GbiLight* lightInfo, GbiLightAmbient* ambient) {
 	bool ret = EXIT_FAILURE;
 	
-	if (lightInfo && sLightNum < 7) {
+	if (lightInfo && sLightNum < 7)	{
 		sLights.l[sLightNum++] = *lightInfo;
 		ret = EXIT_SUCCESS;
 	}
@@ -1890,108 +2406,48 @@ bool n64_bind_light(Light* lightInfo, Ambient* ambient) {
 	return ret;
 }
 
-void n64_set_onlyZmode(enum n64_zmode zmode) {
-	gOnlyThisZmode = zmode;
-}
-
-void n64_set_onlyGeoLayer(enum n64_geoLayer geoLayer) {
-	gOnlyThisGeoLayer = geoLayer;
-}
-
-void n64_swap(Gfx* g) {
-	uint8_t* cmd = (void*)g;
+bool n64_light_bind_dir(int8_t x, int8_t y, int8_t z, uint8_t r, uint8_t g, uint8_t b) {
+	GbiLight light = {
+		.dir.col = { r, g, b },
+		.dir.dir = { x, y, z }
+		,
+	};
 	
-	for (;;) {
-		*(uint32_t*)(cmd) = u32r(cmd);
-		*(uint32_t*)(cmd + 4) = u32r(cmd + 4);
-		if (*cmd == G_ENDDL || (*cmd == G_DL && cmd[1]))
-			break;
-		cmd += 8;
-	}
+	return n64_bind_light(&light, NULL);
 }
 
-/* you'll generally want to run this during scene change; any time
- * heap memory gets freed and more heap memory gets allocated which
- * might potentially occupy the same sets of addresses
- */
-void n64_clearCache() {
-	ShaderList_cleanup();
-	for (int32_t i = 0; i < gTexelCacheCount; i++) {
-		gTexelDict[i].data = 0;
-		gTexel[i] = 0;
-	}
-	gTexelCacheCount = 0;
+bool n64_light_bind_point(int16_t x, int16_t y, int16_t z, uint8_t r, uint8_t g, uint8_t b) {
+	GbiLight light = {
+		.point.c   = 1,
+		.point.col = {
+			r, g, b
+		},
+		.point.pos = {
+			x, y, z
+		}
+		,
+	};
+	
+	return n64_bind_light(&light, NULL);
 }
 
-void* n64_graph_alloc(uint32_t sz) {
-	static uint8_t buf[1024 * 1024 * 8];
-	static uint8_t* ptr;
-	uint8_t* ret;
+void n64_light_set_ambient(uint8_t r, uint8_t g, uint8_t b) {
+	GbiLightAmbient ambient = {
+		.l.col = { r, g, b }
+		,
+	};
 	
-	if (!ptr || !sz)
-		ptr = buf;
-	
-	ret = ptr;
-	ptr += sz;
-	
-	return ret;
+	n64_bind_light(NULL, &ambient);
 }
 
-void n64_set_triangleCallbackFunc(void* userData, n64_triangleCallbackFunc callback) {
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+void n64_set_triangleCallbackFunc(void* userData, N64TriCallback callback) {
 	sTriangleCallbackUserData = userData;
 	sTriangleCallback = callback;
 }
 
-void n64_set_cullingCallbackFunc(void* userData, n64_cullingCallbackFunc callback) {
+void n64_set_cullingCallbackFunc(void* userData, N64CullCallback callback) {
 	sCullingCallbackUserData = userData;
 	sCullingCallback = callback;
-}
-
-uintptr_t gStorePointer;
-
-Gfx n64_gbi_gfxhi_ptr(void* ptr) {
-	gStorePointer = (uintptr_t)ptr;
-	
-	return gO_(G_SETPTRHI, 0, (uint64_t)gStorePointer >> 32);
-}
-
-Gfx n64_gbi_gfxhi_seg(uint32_t seg) {
-	gStorePointer = seg;
-	
-	return gO_(G_NOOP, 0, 0);
-}
-
-bool n64_set_culling(bool state) {
-	return gCullDLenabled = state;
-}
-
-void n64_reset_buffers(void) {
-	gPolyOpaDisp = gPolyOpaHead;
-	gPolyXluDisp = gPolyXluHead;
-}
-
-void n64_graph_init() {
-	n64_clear_lights();
-	n64_graph_alloc(GRAPH_INIT);
-	for (int i = 0; i <= 0xF; i++)
-		gSegment[i] = NULL;
-	n64_reset_buffers();
-	Shader_use(0);
-	n64_set_onlyZmode(ZMODE_ALL);
-	n64_set_onlyGeoLayer(GEOLAYER_ALL);
-}
-
-#undef n64_gbi
-void* n64_gbi(size_t gbiNum, ...) {
-	Gfx* gfx = malloc(sizeof(Gfx) * gbiNum);
-	va_list va;
-	
-	va_start(va, gbiNum);
-	for (uint32_t i = 0; i < gbiNum; i++) {
-		gfx[i] = va_arg(va, Gfx);
-		gfx[i].hi = u32r(&gfx[i].hi);
-		gfx[i].lo = u32r(&gfx[i].lo);
-	}
-	
-	return gfx;
 }

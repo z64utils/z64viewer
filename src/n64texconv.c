@@ -31,16 +31,16 @@ static const unsigned char lut_7[] =
 
 static const unsigned char lut_15[] =
 {
-	0, 17, 34, 51, 68, 85, 102, 119,
-	136, 153, 170, 187, 204, 221, 238, 255
+	0, 17, 34, 51, 68, 85, 102, 119
+	, 136, 153, 170, 187, 204, 221, 238, 255
 };
 
 static const unsigned char lut_31[] =
 {
-	0, 8, 16, 25, 33, 41, 49, 58, 66,
-	74, 82, 90, 99, 107, 115, 123, 132,
-	140, 148, 156, 165, 173, 181, 189,
-	197, 206, 214, 222, 230, 239, 247, 255
+	0, 8, 16, 25, 33, 41, 49, 58, 66
+	, 74, 82, 90, 99, 107, 115, 123, 132
+	, 140, 148, 156, 165, 173, 181, 189
+	, 197, 206, 214, 222, 230, 239, 247, 255
 };
 
 static
@@ -59,27 +59,27 @@ imx(int a, int b)
 	return (a > b) ? a : b;
 }
 
-#define N64_COLOR_FUNC_NAME_TO(FMT) v4b_to_##FMT
+#define N64_COLOR_FUNC_NAME_TO(FMT) v4b_to_ ## FMT
 
-#define N64_COLOR_FUNC_NAME(FMT) v4b_from_##FMT
+#define N64_COLOR_FUNC_NAME(FMT) v4b_from_ ## FMT
 
 #define N64_COLOR_FUNC(FMT) \
-static \
-inline \
-void \
-N64_COLOR_FUNC_NAME(FMT)( \
+	static \
+	inline \
+	void \
+	N64_COLOR_FUNC_NAME(FMT)( \
 	struct vec4b *color \
 	, unsigned char *b \
-)
+	)
 
 #define N64_COLOR_FUNC_TO(FMT) \
-static \
-inline \
-void \
-N64_COLOR_FUNC_NAME_TO(FMT)( \
+	static \
+	inline \
+	void \
+	N64_COLOR_FUNC_NAME_TO(FMT)( \
 	struct vec4b_2n64 *color \
 	, unsigned char *b \
-)
+	)
 
 /* from formats */
 N64_COLOR_FUNC(i4)
@@ -301,40 +301,40 @@ void
 	, unsigned char *b
 ) = {
 	/* rgba = 0 */
-	0,                             /*  4b */
-	0,                             /*  8b */
-	N64_COLOR_FUNC_NAME(rgba5551), /* 16b */
-	N64_COLOR_FUNC_NAME(rgba8888), /* 32b */
+	0                              /*  4b */
+	, 0                            /*  8b */
+	, N64_COLOR_FUNC_NAME(rgba5551) /* 16b */
+	, N64_COLOR_FUNC_NAME(rgba8888), /* 32b */
 	
 	/* yuv = 1 */
-	0,                             /*  4b */
-	0,                             /*  8b */
-	0,                             /* 16b */
-	0,                             /* 32b */
+	0                              /*  4b */
+	, 0                            /*  8b */
+	, 0                            /* 16b */
+	, 0,                           /* 32b */
 	
 	/* ci = 2 */
-	N64_COLOR_FUNC_NAME(ci4),      /*  4b */
-	N64_COLOR_FUNC_NAME(ci8),      /*  8b */
-	0,                             /* 16b */
-	0,                             /* 32b */
+	N64_COLOR_FUNC_NAME(ci4)       /*  4b */
+	, N64_COLOR_FUNC_NAME(ci8)     /*  8b */
+	, 0                            /* 16b */
+	, 0,                           /* 32b */
 	
 	/* ia = 3 */
-	N64_COLOR_FUNC_NAME(ia4),      /*  4b */
-	N64_COLOR_FUNC_NAME(ia8),      /*  8b */
-	N64_COLOR_FUNC_NAME(ia16),     /* 16b */
-	0,                             /* 32b */
+	N64_COLOR_FUNC_NAME(ia4)       /*  4b */
+	, N64_COLOR_FUNC_NAME(ia8)     /*  8b */
+	, N64_COLOR_FUNC_NAME(ia16)    /* 16b */
+	, 0,                           /* 32b */
 	
 	/* i = 4 */
-	N64_COLOR_FUNC_NAME(i4),       /*  4b */
-	N64_COLOR_FUNC_NAME(i8),       /*  8b */
-	0,                             /* 16b */
-	0,                             /* 32b */
+	N64_COLOR_FUNC_NAME(i4)        /*  4b */
+	, N64_COLOR_FUNC_NAME(i8)      /*  8b */
+	, 0                            /* 16b */
+	, 0,                           /* 32b */
 	
 	/* 1bit = 5 */
-	N64_COLOR_FUNC_NAME(onebit),   /*  4b */
-	N64_COLOR_FUNC_NAME(onebit),   /*  8b */
-	N64_COLOR_FUNC_NAME(onebit),   /* 16b */
-	N64_COLOR_FUNC_NAME(onebit)    /* 32b */
+	N64_COLOR_FUNC_NAME(onebit)    /*  4b */
+	, N64_COLOR_FUNC_NAME(onebit)  /*  8b */
+	, N64_COLOR_FUNC_NAME(onebit)  /* 16b */
+	, N64_COLOR_FUNC_NAME(onebit)  /* 32b */
 };
 
 
@@ -346,34 +346,34 @@ void
 	, unsigned char *b
 ) = {
 	/* rgba = 0 */
-	0,                                /*  4b */
-	0,                                /*  8b */
-	N64_COLOR_FUNC_NAME_TO(rgba5551), /* 16b */
-	N64_COLOR_FUNC_NAME_TO(rgba8888), /* 32b */
+	0                                 /*  4b */
+	, 0                               /*  8b */
+	, N64_COLOR_FUNC_NAME_TO(rgba5551) /* 16b */
+	, N64_COLOR_FUNC_NAME_TO(rgba8888), /* 32b */
 	
 	/* yuv = 1 */
-	0,                                /*  4b */
-	0,                                /*  8b */
-	0,                                /* 16b */
-	0,                                /* 32b */
+	0                                 /*  4b */
+	, 0                               /*  8b */
+	, 0                               /* 16b */
+	, 0,                              /* 32b */
 	
 	/* ci = 2 */
-	N64_COLOR_FUNC_NAME_TO(ci4),      /*  4b */
-	N64_COLOR_FUNC_NAME_TO(ci8),      /*  8b */
-	0,                                /* 16b */
-	0,                                /* 32b */
+	N64_COLOR_FUNC_NAME_TO(ci4)       /*  4b */
+	, N64_COLOR_FUNC_NAME_TO(ci8)     /*  8b */
+	, 0                               /* 16b */
+	, 0,                              /* 32b */
 	
 	/* ia = 3 */
-	N64_COLOR_FUNC_NAME_TO(ia4),      /*  4b */
-	N64_COLOR_FUNC_NAME_TO(ia8),      /*  8b */
-	N64_COLOR_FUNC_NAME_TO(ia16),     /* 16b */
-	0,                                /* 32b */
+	N64_COLOR_FUNC_NAME_TO(ia4)       /*  4b */
+	, N64_COLOR_FUNC_NAME_TO(ia8)     /*  8b */
+	, N64_COLOR_FUNC_NAME_TO(ia16)    /* 16b */
+	, 0,                              /* 32b */
 	
 	/* i = 4 */
-	N64_COLOR_FUNC_NAME_TO(i4),       /*  4b */
-	N64_COLOR_FUNC_NAME_TO(i8),       /*  8b */
-	0,                                /* 16b */
-	0                                 /* 32b */
+	N64_COLOR_FUNC_NAME_TO(i4)        /*  4b */
+	, N64_COLOR_FUNC_NAME_TO(i8)      /*  8b */
+	, 0                               /* 16b */
+	, 0                               /* 32b */
 };
 
 
@@ -433,7 +433,7 @@ texture_to_rgba8888(
 	, int h
 )
 {
-	struct vec4b *color = (struct vec4b*)dst;
+	struct vec4b *color = (struct vec4b *)dst;
 	int is_4bit = (bpp == N64TEXCONV_4);
 	int alt = 1;
 	int i;
@@ -481,7 +481,7 @@ texture_to_rgba8888(
 		--color;
 		
 		unsigned char *b = pix;
-		unsigned char  c;
+		unsigned char c;
 		
 		/* 4bpp setup */
 		if (is_4bit)
@@ -531,7 +531,7 @@ texture_to_n64(
 )
 {
 	/* color points to last color */
-	struct vec4b_2n64 *color = (struct vec4b_2n64*)(pix);
+	struct vec4b_2n64 *color = (struct vec4b_2n64 *)(pix);
 	int is_4bit = (bpp == N64TEXCONV_4);
 	int alt = 0;
 	int i;
@@ -539,7 +539,7 @@ texture_to_n64(
 		pal_colors = 16;
 	
 	/* determine resulting size */
-	*sz = get_size_bytes(w, h, 0/*FIXME*/, bpp);
+	*sz = get_size_bytes(w, h, 0 /*FIXME*/, bpp);
 	
 	/* already in desirable format */
 	if (bpp == N64TEXCONV_32)
@@ -548,7 +548,7 @@ texture_to_n64(
 	for (i=0; i < w * h; ++i, ++color)
 	{
 		unsigned char *b = dst;
-		unsigned char  c;
+		unsigned char c;
 		
 		/* 4bpp setup */
 		if (is_4bit)
@@ -568,8 +568,8 @@ texture_to_n64(
 			float nearestRGB = 1.0f;
 			
 			/* this is confirmed working on alpha pixels; try *
-			 * importing eyes-xlu.png with palette 0x5C00 in  *
-			 * object_link_boy.zobj                           */
+			* importing eyes-xlu.png with palette 0x5C00 in  *
+			* object_link_boy.zobj                           */
 			
 			/* step through every color in the palette */
 			for (Pidx = 0; Pidx < pal_colors; ++Pidx)
@@ -593,10 +593,10 @@ texture_to_n64(
 				
 				/* new nearest color */
 				if (/*diff.x <= margin + nearest.x
-					&& diff.y <= margin + nearest.y
-					&& diff.z <= margin + nearest.z*/
+				        && diff.y <= margin + nearest.y
+				        && diff.z <= margin + nearest.z*/
 					diffRGB <= nearestRGB
-					&& diff.w <= margin + nearest.w
+				   && diff.w <= margin + nearest.w
 				)
 				{
 					nearest_idx = Pidx;
@@ -605,9 +605,9 @@ texture_to_n64(
 					
 					/* exact match, safe to break */
 					if (diff.x == 0
-						&& diff.y == 0
-						&& diff.z == 0
-						&& diff.w == 0
+					   && diff.y == 0
+					   && diff.z == 0
+					   && diff.w == 0
 					)
 						break;
 				}
@@ -619,7 +619,6 @@ texture_to_n64(
 			else
 				*dst = nearest_idx;
 		}
-		
 		/* convert pixel */
 		else
 			n64_colorfunc(color, b);
@@ -671,7 +670,7 @@ n64texconv_to_rgba8888(
 	static const char errstr_palette[]    = "no palette";
 	static const char errstr_texture[]    = "no texture";
 	static const char errstr_dst[]        = "no destination buffer";
-
+	
 	/* no destination buffer */
 	if (!dst)
 		return errstr_dst;
@@ -683,8 +682,8 @@ n64texconv_to_rgba8888(
 	/* invalid format */
 	if (
 		fmt >= N64TEXCONV_FMT_MAX
-		|| bpp > N64TEXCONV_32
-		|| n64_colorfunc_array[fmt * 4 + bpp] == 0
+	   || bpp > N64TEXCONV_32
+	   || n64_colorfunc_array[fmt * 4 + bpp] == 0
 	)
 		return errstr_badformat;
 	
@@ -733,7 +732,7 @@ n64texconv_to_n64(
 	static const char errstr_palette[]    = "no palette";
 	
 	unsigned int sz_unused;
-
+	
 	/* no src/dst buffers defined */
 	if (!dst || !pix)
 		return errstr_dst;
@@ -745,8 +744,8 @@ n64texconv_to_n64(
 	/* invalid format */
 	if (
 		fmt >= N64TEXCONV_FMT_MAX
-		|| bpp > N64TEXCONV_32
-		|| n64_colorfunc_array[fmt * 4 + bpp] == 0
+	   || bpp > N64TEXCONV_32
+	   || n64_colorfunc_array[fmt * 4 + bpp] == 0
 	)
 		return errstr_badformat;
 	
@@ -807,11 +806,11 @@ n64texconv_to_n64_and_back(
 
 
 /* lifted from colorquantize.c */
- 
-#define ON_INHEAP	1
+
+#define ON_INHEAP       1
 
 typedef struct oct_node_t oct_node_t, *oct_node;
-struct oct_node_t{
+struct oct_node_t {
 	int64_t r, g, b; /* sum of all child node colors */
 	int count, heap_idx;
 	unsigned char n_kids, kid_idx, flags, depth;
@@ -820,38 +819,40 @@ struct oct_node_t{
 
 typedef struct {
 	int alloc, n;
-	oct_node* buf;
+	oct_node *buf;
 } node_heap;
 
 struct pqueue
 {
-	void   *pix;
-	void   *next;
-	int     w;
-	int     h;
-	int     dither;
+	void *pix;
+	void *next;
+	int w;
+	int h;
+	int dither;
 };
 
 struct n64texconv_palctx
 {
-	oct_node       pool;
-	oct_node       root;
-	node_heap      heap;
-	void        *(*realloc)(void *, size_t);
-	void        *(*calloc)(size_t, size_t);
-	void         (*free)(void *);
-	int            pool_len;
-	int            n_colors;  /* max colors */
-	int            n_alpha;   /* num alpha colors */
-	void          *colors;    /* where colors end up stored (rgba32) */
+	oct_node pool;
+	oct_node root;
+	node_heap heap;
+	void *(*realloc)(void *, size_t);
+	void *(*calloc)(size_t, size_t);
+	void (*free)(void *);
+	int pool_len;
+	int n_colors;             /* max colors */
+	int n_alpha;              /* num alpha colors */
+	void *colors;             /* where colors end up stored (rgba32) */
 	struct pqueue *queue;     /* teimagexture queue */
 };
 
 static
-/*inline */int cmp_node(oct_node a, oct_node b) // why the inline?
+/*inline */ int cmp_node(oct_node a, oct_node b) // why the inline?
 {
-	if (a->n_kids < b->n_kids) return -1;
-	if (a->n_kids > b->n_kids) return 1;
+	if (a->n_kids < b->n_kids)
+		return -1;
+	if (a->n_kids > b->n_kids)
+		return 1;
 	
 	int ac = a->count >> a->depth;
 	int bc = b->count >> b->depth;
@@ -863,13 +864,17 @@ void
 down_heap(node_heap *h, oct_node p)
 {
 	int n = p->heap_idx, m;
-	while (1) {
+	while (1)
+	{
 		m = n * 2;
-		if (m >= h->n) break;
-		if (m + 1 < h->n && cmp_node(h->buf[m], h->buf[m + 1]) > 0) m++;
-
-		if (cmp_node(p, h->buf[m]) <= 0) break;
-
+		if (m >= h->n)
+			break;
+		if (m + 1 < h->n && cmp_node(h->buf[m], h->buf[m + 1]) > 0)
+			m++;
+		
+		if (cmp_node(p, h->buf[m]) <= 0)
+			break;
+		
 		h->buf[n] = h->buf[m];
 		h->buf[n]->heap_idx = n;
 		n = m;
@@ -884,11 +889,13 @@ up_heap(node_heap *h, oct_node p)
 {
 	int n = p->heap_idx;
 	oct_node prev;
-
-	while (n > 1) {
+	
+	while (n > 1)
+	{
 		prev = h->buf[n / 2];
-		if (cmp_node(p, prev) >= 0) break;
-
+		if (cmp_node(p, prev) >= 0)
+			break;
+		
 		h->buf[n] = prev;
 		prev->heap_idx = n;
 		n /= 2;
@@ -906,19 +913,23 @@ heap_add(
 	, oct_node p
 )
 {
-	if ((p->flags & ON_INHEAP)) {
+	if ((p->flags & ON_INHEAP))
+	{
 		down_heap(h, p);
 		up_heap(h, p);
 		return;
 	}
-
+	
 	p->flags |= ON_INHEAP;
-	if (!h->n) h->n = 1;
-	if (h->n >= h->alloc) {
-		while (h->n >= h->alloc) h->alloc += 1024;
+	if (!h->n)
+		h->n = 1;
+	if (h->n >= h->alloc)
+	{
+		while (h->n >= h->alloc)
+			h->alloc += 1024;
 		h->buf = realloc(h->buf, sizeof(oct_node) * h->alloc);
 	}
-
+	
 	p->heap_idx = h->n;
 	h->buf[h->n++] = p;
 	up_heap(h, p);
@@ -930,15 +941,15 @@ pop_heap(node_heap *h)
 {
 	if (h->n <= 1)
 		return 0;
-
+	
 	oct_node ret = h->buf[1];
 	h->buf[1] = h->buf[--h->n];
-
+	
 	h->buf[h->n] = 0;
-
+	
 	h->buf[1]->heap_idx = 1;
 	down_heap(h, h->buf[1]);
-
+	
 	return ret;
 }
 
@@ -952,13 +963,14 @@ node_new(
 	, oct_node p
 )
 {
-	if (ctx->pool_len <= 1) {
+	if (ctx->pool_len <= 1)
+	{
 		oct_node p = ctx->calloc(sizeof(oct_node_t), 2048);
 		p->parent = ctx->pool;
 		ctx->pool = p;
 		ctx->pool_len = 2047;
 	}
-
+	
 	oct_node x = ctx->pool + ctx->pool_len--;
 	x->kid_idx = idx;
 	x->depth = depth;
@@ -992,15 +1004,16 @@ node_insert(
 )
 {
 	unsigned char i, bit, depth = 0;
-
-	for (bit = 1 << 7; ++depth < 8; bit >>= 1) {
+	
+	for (bit = 1 << 7; ++depth < 8; bit >>= 1)
+	{
 		i = !!(pix[1] & bit) * 4 + !!(pix[0] & bit) * 2 + !!(pix[2] & bit);
 		if (!root->kids[i])
 			root->kids[i] = node_new(ctx, i, depth, root);
-
+		
 		root = root->kids[i];
 	}
-
+	
 	root->r += pix[0];
 	root->g += pix[1];
 	root->b += pix[2];
@@ -1012,14 +1025,15 @@ static
 oct_node
 node_fold(oct_node p)
 {
-	if (p->n_kids) abort();
+	if (p->n_kids)
+		abort();
 	oct_node q = p->parent;
 	q->count += p->count;
-
+	
 	q->r += p->r;
 	q->g += p->g;
 	q->b += p->b;
-	q->n_kids --;
+	q->n_kids--;
 	q->kids[p->kid_idx] = 0;
 	return q;
 }
@@ -1029,7 +1043,7 @@ void
 color_replace(oct_node root, unsigned char *pix)
 {
 	unsigned char i, bit;
-
+	
 	for (bit = 1 << 7; bit; bit >>= 1)
 	{
 		i = !!(pix[1] & bit) * 4 + !!(pix[0] & bit) * 2 + !!(pix[2] & bit);
@@ -1051,19 +1065,19 @@ list_colors(oct_node root)
 	int idx;
 	
 	for (idx = 0;
-	unsigned char i, bit;
-	
-	for (bit = 1 << 7; bit; bit >>= 1)
+		unsigned char i, bit;
+		
+		for (bit = 1 << 7; bit; bit >>= 1)
 	{
 		i = !!(pix[1] & bit) * 4 + !!(pix[0] & bit) * 2 + !!(pix[2] & bit);
 		if (!root->kids[i])
 			break;
 		root = root->kids[i];
 	}
-
-	pix[0] = root->r;
-	pix[1] = root->g;
-	pix[2] = root->b;
+		
+		pix[0] = root->r;
+		pix[1] = root->g;
+		pix[2] = root->b;
 }
 #endif
 
@@ -1078,37 +1092,42 @@ error_diffuse(
 )
 {
 	/* TODO alpha channel */
-	oct_node nearest_color(int *v) {
+	oct_node nearest_color(int *v)
+	{
 		int i;
 		int diff, max = 100000000;
 		oct_node o = 0;
-		for (i = 1; i < hp->n; i++) {
-			diff =	  3 * abs(hp->buf[i]->r - v[0])
+		for (i = 1; i < hp->n; i++)
+		{
+			diff =    3 * abs(hp->buf[i]->r - v[0])
 				+ 5 * abs(hp->buf[i]->g - v[1])
 				+ 2 * abs(hp->buf[i]->b - v[2]);
-			if (diff < max) {
+			if (diff < max)
+			{
 				max = diff;
 				o = hp->buf[i];
 			}
 		}
 		return o;
 	}
-
-#	define POS(i, j) (3 * ((i) * w + (j)))
+	
+#       define POS(i, j) (3 * ((i) * w + (j)))
 	int i, j;
 	int *npx = ctx->calloc(sizeof(int), h * w * 3), *px;
 	int v[3];
 	unsigned char *pix = srcdst;
 	oct_node nd;
-
+	
 #define C10 7
 #define C01 5
 #define C11 2
 #define C00 1
 #define CTOTAL (C00 + C11 + C10 + C01)
-
-	for (px = npx, i = 0; i < h; i++) {
-		for (j = 0; j < w; j++, pix += 3, px += 3) {
+	
+	for (px = npx, i = 0; i < h; i++)
+	{
+		for (j = 0; j < w; j++, pix += 3, px += 3)
+		{
 			px[0] = (int)pix[0] * CTOTAL;
 			px[1] = (int)pix[1] * CTOTAL;
 			px[2] = (int)pix[2] * CTOTAL;
@@ -1116,37 +1135,43 @@ error_diffuse(
 	}
 #define clamp(x, i) if (x[i] > 255) x[i] = 255; if (x[i] < 0) x[i] = 0
 	pix = srcdst;
-	for (px = npx, i = 0; i < h; i++) {
-		for (j = 0; j < w; j++, pix += 3, px += 3) {
+	for (px = npx, i = 0; i < h; i++)
+	{
+		for (j = 0; j < w; j++, pix += 3, px += 3)
+		{
 			px[0] /= CTOTAL;
 			px[1] /= CTOTAL;
 			px[2] /= CTOTAL;
 			clamp(px, 0); clamp(px, 1); clamp(px, 2);
-
+			
 			nd = nearest_color(px);
-
+			
 			v[0] = px[0] - nd->r;
 			v[1] = px[1] - nd->g;
 			v[2] = px[2] - nd->b;
-
+			
 			pix[0] = nd->r; pix[1] = nd->g; pix[2] = nd->b;
-			if (j < w - 1) {
+			if (j < w - 1)
+			{
 				npx[POS(i, j+1) + 0] += v[0] * C10;
 				npx[POS(i, j+1) + 1] += v[1] * C10;
 				npx[POS(i, j+1) + 2] += v[2] * C10;
 			}
-			if (i >= h - 1) continue;
-
+			if (i >= h - 1)
+				continue;
+			
 			npx[POS(i+1, j) + 0] += v[0] * C01;
 			npx[POS(i+1, j) + 1] += v[1] * C01;
 			npx[POS(i+1, j) + 2] += v[2] * C01;
-
-			if (j < w - 1) {
+			
+			if (j < w - 1)
+			{
 				npx[POS(i+1, j+1) + 0] += v[0] * C11;
 				npx[POS(i+1, j+1) + 1] += v[1] * C11;
 				npx[POS(i+1, j+1) + 2] += v[2] * C11;
 			}
-			if (j) {
+			if (j)
+			{
 				npx[POS(i+1, j-1) + 0] += v[0] * C00;
 				npx[POS(i+1, j-1) + 1] += v[1] * C00;
 				npx[POS(i+1, j-1) + 2] += v[2] * C00;
@@ -1170,7 +1195,7 @@ palette_apply(
 	assert(pix);
 	assert(w > 0);
 	assert(h > 0);
-
+	
 	if (dither)
 		error_diffuse(ctx, pix, w, h, &ctx->heap);
 	
@@ -1251,7 +1276,8 @@ palette_generate(struct n64texconv_palctx *ctx)
 	oct_node got;
 	double c;
 	unsigned int i;
-	for (i = 1; i < ctx->heap.n; i++) {
+	for (i = 1; i < ctx->heap.n; i++)
+	{
 		got = ctx->heap.buf[i];
 		c = got->count;
 		got->r = got->r / c + .5;
@@ -1284,16 +1310,16 @@ palette_generate(struct n64texconv_palctx *ctx)
 				for (c = 0; c < n_colors; ++c)
 				{
 					if (color[c*4+0] == image[i*4+0]
-						&& color[c*4+1] == image[i*4+1]
-						&& color[c*4+2] == image[i*4+2]
-						&& color[c*4+3] == image[i*4+3]
+					   && color[c*4+1] == image[i*4+1]
+					   && color[c*4+2] == image[i*4+2]
+					   && color[c*4+3] == image[i*4+3]
 					)
 						break;
 				}
 				
 				/* pixel color is not in palette */
 				if (c == n_colors
-					&& n_colors < (ctx->n_colors + ctx->n_alpha)
+				   && n_colors < (ctx->n_colors + ctx->n_alpha)
 				)
 				{
 //					fprintf(stderr, "push color %08X (%d)\n", image[i], c);
@@ -1567,7 +1593,8 @@ lab2rgb(double lab[3])
 	double fy = pow((L + 16.0) / 116.0, 3.0);
 	double fx = fy + a / 500.0;
 	double fz = fy - b / 200.0;
-	if (fy <= T1) fy = L / 903.3;
+	if (fy <= T1)
+		fy = L / 903.3;
 	double Y = fy;
 	double X;
 	double Z;
@@ -1666,7 +1693,7 @@ acfunc_edge_expand(ACFUNC_ARGS)
 	unsigned char *pix = rgba8888;
 	unsigned char *EDpix;         /* edge-detected image */
 	unsigned char *EDcolor;       /* color list containing only solids */
-	unsigned int   n_EDcolor = 0; /* num pixels in EDcolor */
+	unsigned int n_EDcolor = 0;   /* num pixels in EDcolor */
 	
 	/* alloc edge-detected image */
 	if (max_alpha_colors == 0)
@@ -1686,22 +1713,22 @@ acfunc_edge_expand(ACFUNC_ARGS)
 		/* loop through every column */
 		for (int x = 0; x < w; ++x)
 		{
-			unsigned char  *pC  =   &   pix[y * w * 4 + x * 4];
-			unsigned char  *edC  =  & EDpix[y * w * 4 + x * 4];
+			unsigned char *pC  =   &pix[y * w * 4 + x * 4];
+			unsigned char *edC  =  &EDpix[y * w * 4 + x * 4];
 			
 			/* skip invisible pixels */
 			if (PINV(pC))
 				continue;
 			
 			/* sample pixels above below left and right of current */
-			int yup    = imx(y - 1,     0);
+			int yup    = imx(y - 1, 0);
 			int ydown  = imn(y + 1, h - 1);
-			int xleft  = imx(x - 1,     0);
+			int xleft  = imx(x - 1, 0);
 			int xright = imn(x + 1, w - 1);
-			unsigned char  *pUP     = &pix[ yup   * w * 4 + x * 4      ];
-			unsigned char  *pDOWN   = &pix[ ydown * w * 4 + x * 4      ];
-			unsigned char  *pLEFT   = &pix[ y     * w * 4 + xleft  * 4 ];
-			unsigned char  *pRIGHT  = &pix[ y     * w * 4 + xright * 4 ];
+			unsigned char *pUP     = &pix[ yup   * w * 4 + x * 4      ];
+			unsigned char *pDOWN   = &pix[ ydown * w * 4 + x * 4      ];
+			unsigned char *pLEFT   = &pix[ y     * w * 4 + xleft  * 4 ];
+			unsigned char *pRIGHT  = &pix[ y     * w * 4 + xright * 4 ];
 			
 			/* if any sampled pixel is invisible, xfer to edge map */
 			if (PINV(pUP) || PINV(pDOWN) || PINV(pLEFT) || PINV(pRIGHT))
@@ -1777,11 +1804,13 @@ acfunc_edge_expand(ACFUNC_ARGS)
 	}
 	free(EDcolor);
 	
-L_skip_indexing: do{}while(0);
+L_skip_indexing: do
+	{
+	} while(0);
 	/* at this point, `EDpix` contains a color-reduced     *
-	 * edge-detected copy of the input rgba8888 pixel data */
+	* edge-detected copy of the input rgba8888 pixel data */
 	/* if color-indexing is disabled, it will contain an   *
-	 * exact copy of the input pixel data `rgba8888`       */
+	* exact copy of the input pixel data `rgba8888`       */
 	
 	/* expand every pixel */
 	int has_invis = 1;
@@ -1794,31 +1823,31 @@ L_skip_indexing: do{}while(0);
 			/* loop through every column */
 			for (int x = 0; x < w; ++x)
 			{
-				unsigned char  *pC  = & EDpix[y * w * 4 + x * 4];
+				unsigned char *pC  = &EDpix[y * w * 4 + x * 4];
 				
 				/* skip invisible pixels, and pixels just processed */
 				if (PINV(pC) || (pC[3] == 0x01))
 					continue;
 				
 				/* sample pixels above below left and right of current */
-				int yup    = imx(y - 1,     0);
+				int yup    = imx(y - 1, 0);
 				int ydown  = imn(y + 1, h - 1);
-				int xleft  = imx(x - 1,     0);
+				int xleft  = imx(x - 1, 0);
 				int xright = imn(x + 1, w - 1);
-				unsigned char  *pUP     = &EDpix[ yup   * w * 4 + x * 4  ];
-				unsigned char  *pDOWN   = &EDpix[ ydown * w * 4 + x * 4  ];
-				unsigned char  *pLEFT   = &EDpix[ y     * w * 4 + xleft*4];
-				unsigned char  *pRIGHT  = &EDpix[ y     * w * 4 + xright*4];
+				unsigned char *pUP     = &EDpix[ yup   * w * 4 + x * 4  ];
+				unsigned char *pDOWN   = &EDpix[ ydown * w * 4 + x * 4  ];
+				unsigned char *pLEFT   = &EDpix[ y     * w * 4 + xleft*4];
+				unsigned char *pRIGHT  = &EDpix[ y     * w * 4 + xright*4];
 				
 				/* if any sampled pixel is invisible, edit *
-				 * color and mark as just processed        */
+				* color and mark as just processed        */
 				#define PXPROC(P)          \
-					if (PINV(P)) {          \
-						P[0] = pC[0];        \
-						P[1] = pC[1];        \
-						P[2] = pC[2];        \
-						P[3] = 0x01;         \
-					}
+	if (PINV(P)) {          \
+		P[0] = pC[0];        \
+		P[1] = pC[1];        \
+		P[2] = pC[2];        \
+		P[3] = 0x01;         \
+	}
 				PXPROC(pUP)
 				PXPROC(pDOWN)
 				PXPROC(pLEFT)
@@ -1828,7 +1857,7 @@ L_skip_indexing: do{}while(0);
 		}
 		
 		/* stepped through image once; mark all processed pixels *
-		 * as regular opaque pixels for the next iteration       */
+		* as regular opaque pixels for the next iteration       */
 		unsigned int i;
 		for (i = 0; i < w * h; ++i)
 		{
@@ -1941,9 +1970,9 @@ n64texconv_acgen(
 		for (c = 0; c < Nacolor; ++c)
 			if (
 				pix[i*4] == acolor[c*4]
-				&& pix[i*4+1] == acolor[c*4+1]
-				&& pix[i*4+2] == acolor[c*4+2]
-				&& pix[i*4+3] == acolor[c*4+3]
+			   && pix[i*4+1] == acolor[c*4+1]
+			   && pix[i*4+2] == acolor[c*4+2]
+			   && pix[i*4+3] == acolor[c*4+3]
 			)
 				break;
 		
@@ -1981,7 +2010,7 @@ n64texconv_acgen(
 	if (formula == N64TEXCONV_ACGEN_USER)
 	{
 		/* the number of unique invisible pixel colors is small enough *
-		 * that major quality reduction won't happen leaving it as-is  */
+		* that major quality reduction won't happen leaving it as-is  */
 		if (!max_alpha_colors || Nacolor < max_alpha_colors)
 			return Nacolor;
 		
@@ -1991,7 +2020,7 @@ n64texconv_acgen(
 	}
 	
 	/* doing edge expansion with only one color? may as well average */
-	if (formula == N64TEXCONV_ACGEN_EDGEXPAND	&& max_alpha_colors == 1)
+	if (formula == N64TEXCONV_ACGEN_EDGEXPAND       && max_alpha_colors == 1)
 		formula = N64TEXCONV_ACGEN_AVERAGE;
 	
 #if 0 /* not anymore I think */
@@ -2035,44 +2064,45 @@ n64texconv_best_format(
 	
 	/* count up to 257 colors */
 	{uint32_t *png32 = png;
-	uint32_t color_arr[256];
-	for (unsigned int i = 0; i < w * h; ++i, ++png32)
-	{
-		int k;
-		for (k = 0; k < colors; ++k)
-			if (color_arr[k] == *png32)
-				break;
-		if (k == colors)
-		{
-			++colors;
-			if (k >= 256)
-				break;
-			color_arr[k] = *png32;
-		}
-	}}
+	 uint32_t color_arr[256];
+	 for (unsigned int i = 0; i < w * h; ++i, ++png32)
+	 {
+		 int k;
+		 for (k = 0; k < colors; ++k)
+			 if (color_arr[k] == *png32)
+				 break;
+		 if (k == colors)
+		 {
+			 ++colors;
+			 if (k >= 256)
+				 break;
+			 color_arr[k] = *png32;
+		 }
+	 }
+	}
 	
 	/* check grayscale */
 	{unsigned char *png8 = png;
-	for (unsigned int i = 0; i < w * h; i++, png8 += 4)
-	{
-		/* skip invisible pixels */
-		if (png8[3] == 0)
-			continue;
-		
-		/* rgb channels must all contain the same value */
-		if (png8[0] != png8[1] || png8[0] != png8[2])
-		{
-			grayscale = 0;
-			break;
-		}
-	}
+	 for (unsigned int i = 0; i < w * h; i++, png8 += 4)
+	 {
+		 /* skip invisible pixels */
+		 if (png8[3] == 0)
+			 continue;
+		 
+		 /* rgb channels must all contain the same value */
+		 if (png8[0] != png8[1] || png8[0] != png8[2])
+		 {
+			 grayscale = 0;
+			 break;
+		 }
+	 }
 	}
 	
 	/* count up to 257 alpha shades */
 	if (grayscale)
 	{
 		unsigned char *png8 = png;
-		unsigned char  shade[256];
+		unsigned char shade[256];
 		for (unsigned int i = 0; i < w * h; ++i, png8 += 4)
 		{
 			int k;
@@ -2102,14 +2132,14 @@ n64texconv_best_format(
 	}
 	/* check multibit alpha */
 	{unsigned char *png8 = png;
-	for (unsigned int i = 0; i < w * h; i++, png8 += 4)
-	{
-		if (png8[3] > 0 && png8[3] < 0xFF)
-		{
-			multibit_alpha = 1;
-			break;
-		}
-	}
+	 for (unsigned int i = 0; i < w * h; i++, png8 += 4)
+	 {
+		 if (png8[3] > 0 && png8[3] < 0xFF)
+		 {
+			 multibit_alpha = 1;
+			 break;
+		 }
+	 }
 	}
 	
 	if (grayscale)
@@ -2120,7 +2150,7 @@ n64texconv_best_format(
 			*fmt = N64TEXCONV_I;
 			if (colors <= 0b1111)
 				*bpp = N64TEXCONV_4;
-			else// if (colors < 0b11111111)
+			else // if (colors < 0b11111111)
 				*bpp = N64TEXCONV_8;
 		}
 		else
@@ -2214,8 +2244,9 @@ n64texconv_best_format(
 	}
 	
 	{const char *x;
-	x = n64texconv_min_size(fmt, bpp, w, h);
-	if (x) return x;
+	 x = n64texconv_min_size(fmt, bpp, w, h);
+	 if (x)
+		 return x;
 	}
 	
 	return 0;
@@ -2249,7 +2280,7 @@ n64texconv_min_size(
 		else
 		{
 			return "can't make evenly divisible by 64"
-				" (try increasing texture size)"
+			       " (try increasing texture size)"
 			;
 		}
 	}
