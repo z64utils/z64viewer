@@ -1089,6 +1089,19 @@ static bool gbiFunc_setprimcolor(void* cmd) {
 	gMatState.prim.hi = u32r(b);
 	gMatState.prim.lo = u32r(b + 4);
 	
+	// update primcolor register in already-active shader
+	if (gMatState.mtlReady && gShader)
+	{
+		gMatState.prim.r = ((gMatState.prim.lo >> 24) & 0xff) / 255.0f;
+		gMatState.prim.g = ((gMatState.prim.lo >> 16) & 0xff) / 255.0f;
+		gMatState.prim.b = ((gMatState.prim.lo >> 8) & 0xff) / 255.0f;
+		gMatState.prim.alpha = (gMatState.prim.lo & 0xff) / 255.0f;
+		Shader_setVec4(gShader, "uPrimColor", gMatState.prim.r, gMatState.prim.g, gMatState.prim.b, gMatState.prim.alpha);
+		
+		gMatState.prim.lodfrac = (gMatState.prim.hi & 0xff) / 255.0f;
+		Shader_setFloat(gShader, "uPrimLodFrac", gMatState.prim.lodfrac);
+	}
+	
 	return false;
 }
 
@@ -1097,6 +1110,17 @@ static bool gbiFunc_setenvcolor(void* cmd) {
 	
 	gMatState.env.hi = u32r(b);
 	gMatState.env.lo = u32r(b + 4);
+	
+	// update envcolor register in already-active shader
+	if (gMatState.mtlReady && gShader)
+	{
+		gMatState.env.r = ((gMatState.env.lo >> 24) & 0xff) / 255.0f;
+		gMatState.env.g = ((gMatState.env.lo >> 16) & 0xff) / 255.0f;
+		gMatState.env.b = ((gMatState.env.lo >> 8) & 0xff) / 255.0f;
+		gMatState.env.alpha = (gMatState.env.lo & 0xff) / 255.0f;
+		
+		Shader_setVec4(gShader, "uEnvColor", gMatState.env.r, gMatState.env.g, gMatState.env.b, gMatState.env.alpha);
+	}
 	
 	return false;
 }
