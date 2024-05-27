@@ -442,7 +442,8 @@ static void do_mtl(void* addr) {
 		gMatState.env.alpha = (gMatState.env.lo & 0xff) / 255.0f;
 		Shader* shader = ShaderList_add(uuid, &isNew);
 		
-		// TODO also populate lodfrac, prim.lodfrac, k4, and k5 here
+		// TODO also populate lodfrac, k4, and k5 here
+		gMatState.prim.lodfrac = (gMatState.prim.hi & 0xff) / 255.0f;
 		
 		if (isNew) {
 			
