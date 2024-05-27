@@ -1189,10 +1189,11 @@ static bool gbiFunc_mtx(void* cmd) {
 		
 		GbiMtx swap = *mtx;
 		
-		if (wasDirectAddress == false && (mtxaddr & 0xFF000000) != 0x01000000 && (mtxaddr & 0xFF000000) != 0x0D000000) {
+		if (wasDirectAddress == false && (mtxaddr & 0xFF000000) != 0x0D000000) {
 			for (int32_t i = 0; i < 0x40 / 2; i++) {
+				// byteswap
 				uint16_t* ss = (uint16_t*)&swap;
-				ss[i] = u32r(&ss[i]);
+				ss[i] = u16r(&ss[i]);
 			}
 		}
 		
