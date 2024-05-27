@@ -381,7 +381,7 @@ static void do_mtl(void* addr) {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapS);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapT);
 		
-		if (gHideGeometry)
+		if (!isNew && gHideGeometry)
 			continue;
 		
 		//uls >>= 2; /* discard precision; sourcing pixels directly */
@@ -1603,11 +1603,24 @@ void n64_buffer_init(void) {
 	n64_set_onlyGeoLayer(N64_GEOLAYER_ALL);
 }
 
-void n64_buffer_flush(void) {
+void n64_buffer_flush(bool drawDecalsSeparately)
+{
 	gSPEndDisplayList(POLY_OPA_DISP++);
 	gSPEndDisplayList(POLY_XLU_DISP++);
-	n64_draw_dlist(n64_poly_opa_head);
-	n64_draw_dlist(n64_poly_xlu_head);
+	if (drawDecalsSeparately)
+	{
+		n64_set_onlyZmode(N64_ZMODE_OPA);
+		n64_draw_dlist(n64_poly_opa_head);
+		n64_set_onlyZmode(N64_ZMODE_DEC);
+		n64_draw_dlist(n64_poly_opa_head);
+		n64_set_onlyZmode(N64_ZMODE_ALL);
+		n64_draw_dlist(n64_poly_xlu_head);
+	}
+	else
+	{
+		n64_draw_dlist(n64_poly_opa_head);
+		n64_draw_dlist(n64_poly_xlu_head);
+	}
 	n64_buffer_clear();
 }
 
