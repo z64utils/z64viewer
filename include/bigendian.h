@@ -3,11 +3,11 @@
 
 #include <stdint.h>
 
-uint32_t u32r(void* d);
-uint16_t u16r(void* d);
-uint8_t u8r(void* d);
-int32_t s32r(void* d);
-int16_t s16r(void* d);
-int8_t s8r(void* d);
+uint32_t u32r(const void* d);
+uint16_t u16r(const void* d);
+uint8_t u8r(const void* d);
+int32_t s32r(const void* d);
+int16_t s16r(const void* d);
+int8_t s8r(const void* d);
 
 #endif
