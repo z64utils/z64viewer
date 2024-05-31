@@ -1273,7 +1273,7 @@ static bool gbiFunc_mtx(void* cmd) {
 	if (mtxaddr == 0x8012DB20) /* XXX hard-coded gMtxClear */
 		memcpy(&mtxF, &sClearMtx, sizeof(sClearMtx));
 	else {
-		bool wasDirectAddress = gPtrHiSet;
+		//bool wasDirectAddress = gPtrHiSet;
 		mtx = n64_segment_get(mtxaddr);
 		
 		if (!mtx)
