@@ -244,6 +244,21 @@ static char* strcattf(char* dst, const char* fmt, ...) {
 	return dst + strlen(dst);
 }
 
+static void logmatrix(const char *name, const void *data)
+{
+	#define PRI_MATRIX_FLOAT  "%4.3f"
+	
+	fprintf(stderr, "%s:\n", name);
+	
+	for (int i = 0; i < 16; )
+	{
+		for (int k = 0; k < 4; ++k, ++i)
+			fprintf(stderr, "  " PRI_MATRIX_FLOAT, ((const float*)data)[i]);
+		
+		fprintf(stderr, "\n");
+	}
+}
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 static const char* mtl_color_Str(int idx, int v) {
@@ -1266,7 +1281,9 @@ static bool gbiFunc_mtx(void* cmd) {
 		
 		GbiMtx swap = *mtx;
 		
-		if (wasDirectAddress == false && (mtxaddr & 0xFF000000) != 0x0D000000) {
+		// XXX assuming all matrices are in N64 format and in need of byteswap
+		//if (wasDirectAddress || (mtxaddr & 0xFF000000) != 0x0D000000) {
+		if (true) {
 			for (int32_t i = 0; i < 0x40 / 2; i++) {
 				// byteswap
 				uint16_t* ss = (uint16_t*)&swap;
@@ -1580,6 +1597,7 @@ void n64_mtx_model(void* data) {
 	//memcpy(gMatrix.model, data, sizeof(gMatrix.model));
 	gMatrix.modelNow = gMatrix.modelStack;
 	memcpy(gMatrix.modelStack, data, sizeof(*gMatrix.modelStack));
+	//logmatrix("n64_mtx_model()", data);
 }
 
 void n64_mtx_view(void* data) {
