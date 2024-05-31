@@ -1554,7 +1554,7 @@ unsigned int n64_segment_ptr_offset(void* cmd) {
 
 uintptr_t __n64_pointer__;
 
-GbiGfx n64_gbi_gfxhi_ptr(void* ptr) {
+GbiGfx n64_gbi_gfxhi_ptr(const void* ptr) {
 	__n64_pointer__ = (uintptr_t)ptr;
 	
 	return gO_(G_SETPTRHI, 0, (uint64_t)__n64_pointer__ >> 32);

@@ -108,7 +108,7 @@ void n64_segment_set(int seg, void* data);
 void* n64_segment_get(unsigned int segaddr);
 unsigned int n64_segment_ptr_offset(void* cmd);
 
-GbiGfx n64_gbi_gfxhi_ptr(void*);
+GbiGfx n64_gbi_gfxhi_ptr(const void*);
 GbiGfx n64_gbi_gfxhi_seg(uint32_t);
 void n64_set_onlyZmode(enum N64ZMode);
 void n64_set_onlyGeoLayer(enum N64GeoLayer);
