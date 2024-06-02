@@ -414,6 +414,7 @@ static void do_mtl(void* addr) {
 		//src += ult * width;
 		//src += uls;
 		//fprintf(stderr, "%d %d\n", fmt, siz);
+		if (width * height > 4096) width = height = 32; // FIXME getting wrong dimensions
 		//memcpy(tmem, src, bytes); /* TODO dxt emulation requires line-by-line */
 		if (isNew && gTexelCacheCount < N64_TEXTURE_CACHE_SIZE)	{
 			uint8_t wow[4096 * 8];
@@ -1019,6 +1020,8 @@ static bool gbiFunc_settimg(void* cmd) {
 	gMatState.timg.width = width;
 	gMatState.timg.imgaddr = imgaddr;
 	
+	//fprintf(stderr, "settimg %08x\n", lo);
+	
 	return false;
 }
 
@@ -1051,6 +1054,8 @@ static bool gbiFunc_loadtlut(void* cmd) {
 	
 	if (!gMatState.timg.imgaddr)
 		return false;
+	
+	//fprintf(stderr, "loadtlut\n");
 	
 	memcpy(gMatState.pal, gMatState.timg.imgaddr, ((c >> 2) + 1) * sizeof(uint16_t));
 	
