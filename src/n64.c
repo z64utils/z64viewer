@@ -446,6 +446,27 @@ static bool UOT_gbiFunc_settimg(void* cmd)
 {
 	RENDERHOOK_UOT_COMMON
 	
+	void* imgaddr = n64_segment_get(w1);
+	if (!imgaddr)
+	{
+		static uint8_t *blank = 0;
+		
+		if (!blank)
+		{
+			int mem = 4096;
+			
+			blank = malloc(mem);
+			
+			memset(blank, -1, mem);
+		}
+		
+		imgaddr = blank;
+		
+		//fprintf(stderr, "couldn't %08x, using blank\n", Textures(CurrentTex).Dram);
+	}
+	gMatState.timg.imgaddr = imgaddr;
+	
+	/*
 	bool palMode = data[8] == G_RDPTILESYNC;
 	if (HISTORY_GET(0) == G_SETTILESIZE)
 	{
@@ -466,6 +487,7 @@ static bool UOT_gbiFunc_settimg(void* cmd)
 		Textures(0).Dram = w1;
 	else
 		Textures(CurrentTex).Dram = w1;
+	*/
 	
 	return false;
 }
@@ -477,6 +499,10 @@ static bool UOT_gbiFunc_settile(void* cmd)
 	//If .CMDParams(1) > 0 Then SETTILE(.CMDLow, .CMDHigh)
 	{
 		//int tile = SHIFTR(w1, 24, 3);
+		int tile = SHIFTR(w1, 24, 3);
+		if (tile > 1)
+			return false;
+		CurrentTex = tile;
 		
 		Textures(CurrentTex).TexFormatUOT = (w0 >> 16) & 0xff; // uot
 		Textures(CurrentTex).TexFormat =   SHIFTR(w0, 21, 3);
@@ -491,31 +517,14 @@ static bool UOT_gbiFunc_settile(void* cmd)
 		Textures(CurrentTex).TShiftS = ShiftR(w1, 0, 4);
 		Textures(CurrentTex).TShiftT = ShiftR(w1, 10, 4);
 		
+	
+		
 		// getting linesize of 8 on a 32x32 rgba truecolor texture,
 		// should be 16, so maybe this math is required?
 		if (Textures(CurrentTex).TexelSize == G_IM_SIZ_32b)
 			Textures(CurrentTex).LineSize *= 2;
 	}
 	
-	void* imgaddr = n64_segment_get(Textures(CurrentTex).Dram);
-	if (!imgaddr)
-	{
-		static uint8_t *blank = 0;
-		
-		if (!blank)
-		{
-			int mem = 4096;
-			
-			blank = malloc(mem);
-			
-			memset(blank, -1, mem);
-		}
-		
-		imgaddr = blank;
-		
-		//fprintf(stderr, "couldn't %08x, using blank\n", Textures(CurrentTex).Dram);
-	}
-	gMatState.timg.imgaddr = imgaddr;
 	gMatState.tile[CurrentTex].doUpdate = true;
 	gMatState.tile[CurrentTex].data = gMatState.timg.imgaddr;
 	
@@ -525,6 +534,12 @@ static bool UOT_gbiFunc_settile(void* cmd)
 static bool UOT_gbiFunc_settilesize(void* cmd)
 {
 	RENDERHOOK_UOT_COMMON
+	
+	int i = data[4];
+	if (i > 1)
+		return false;
+	
+	CurrentTex = i;
 	
 	{
 		Textures(CurrentTex).ULS =  SHIFTR(w0, 12, 12);
@@ -569,13 +584,13 @@ static bool UOT_gbiFunc_loadtlut(void* cmd)
 {
 	RENDERHOOK_UOT_COMMON
 	
-	uint32_t addr = Textures(0).Dram;
+	//uint32_t addr = Textures(0).Dram;
 	uint32_t count = SHIFTR(w1, 14, 10) + 1;
 	const void *realAddr;
 	
 	//fprintf(stderr, "loadtlut %08x\n", addr);
 	
-	if ((realAddr = n64_segment_get(addr)))
+	if ((realAddr = gMatState.timg.imgaddr))
 	{
 		size_t size = ALIGN8(G_SIZ_BYTES(G_IM_SIZ_16b) * count);
 		
@@ -849,7 +864,7 @@ static void do_mtl(void* addr) {
 		#ifdef RENDERHOOK_UOT
 			width = Textures(tile).Width;
 			height = Textures(tile).Height;
-			fprintf(stderr, "append %p %08x %dx%d\n", gMatState.tile[tile].data, Textures(tile).Dram, width, height);
+			//fprintf(stderr, "append %p %08x %dx%d\n", gMatState.tile[tile].data, Textures(tile).Dram, width, height);
 		#endif
 			n64texconv_to_rgba8888(
 				wow
@@ -1349,6 +1364,13 @@ static bool gbiFunc_vtx(void* cmd) {
 		dst->texcoord0.v = vtx->v * Textures(0).TextureHRatio;
 		dst->texcoord1.u = vtx->u * Textures(1).TextureWRatio;
 		dst->texcoord1.v = vtx->v * Textures(1).TextureHRatio;
+		
+		// scrolling textures
+		// TODO make not hard-coded
+		dst->texcoord0.u -= gMatState.tile[0].uls / 128.0f;
+		dst->texcoord0.v -= gMatState.tile[0].ult / 128.0f;
+		dst->texcoord1.u -= gMatState.tile[1].uls / 128.0f;
+		dst->texcoord1.v -= gMatState.tile[1].ult / 128.0f;
 	#else
 		dst->texcoord0.u = vtx->u * (1.0 / 1024) * (32.0 / gMatState.texWidth);
 		dst->texcoord0.v = vtx->v * (1.0 / 1024) * (32.0 / gMatState.texHeight);
@@ -1562,6 +1584,12 @@ static bool gbiFunc_settile(void* cmd) {
 	
 	gMatState.tile[tile].shiftS_m = shift_to_multiplier(shiftS);
 	gMatState.tile[tile].shiftT_m = shift_to_multiplier(shiftT);
+	
+	// this adjusts the texture coordinates for big multi-textures
+	if (gMatState.tile[tile].cmS & G_TX_MIRROR)
+		gMatState.tile[tile].shiftS_m *= 2;
+	if (gMatState.tile[tile].cmT & G_TX_MIRROR)
+		gMatState.tile[tile].shiftT_m *= 2;
 	
 	return false;
 }
