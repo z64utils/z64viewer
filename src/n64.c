@@ -32,6 +32,11 @@
 
 #define SHADER_SOURCE(...) "#version 330 core\n" # __VA_ARGS__
 
+// new rendering based on UoT (see DataBlobSegmentsPopulateFromMeshNew() in z64scene)
+// TODO is super messy and could use some cleanup
+// (you can comment out #define RENDERHOOK_UOT to go back to the original method)
+#define RENDERHOOK_UOT
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 GbiGfx n64_poly_opa_head[N64_OPA_STACK_SIZE];
@@ -163,6 +168,50 @@ static struct {
 	float    k5;               // TODO not yet populated
 	uint32_t geometrymode;
 	bool     mixFog;           // Condition to mix fog into the material
+
+#ifdef RENDERHOOK_UOT
+	struct {
+		uint32_t Dram;
+		int Width;
+		int Height;
+		int RealWidth;
+		int RealHeight;
+		double ShiftS;
+		double ShiftT;
+		double S_Scale;
+		double T_Scale;
+		double TextureHRatio;
+		double TextureWRatio;
+		// SetTile
+		int TexFormat;
+		int TexFormatUOT;
+		int TexelSize;
+		int LineSize;
+		int CMT;
+		int CMS;
+		int MaskS;
+		int MaskT;
+		int TShiftS;
+		int TShiftT;
+		// SetTileSize
+		qu102_t ULS;
+		qu102_t ULT;
+		qu102_t LRS;
+		qu102_t LRT;
+	} textures[2];
+	#define Textures(X) gMatState.textures[X]
+	int CurrentTex;
+	bool MultiTexCoord;
+	bool MultiTexture;
+	uint8_t history[8];
+	int historyI;
+	#define CurrentTex gMatState.CurrentTex
+	#define MultiTexCoord gMatState.MultiTexCoord
+	#define MultiTexture gMatState.MultiTexture
+	#define HISTORY_GET(n) \
+	gMatState.history[(gMatState.historyI - 1 - (n) < 0) ? (gMatState.historyI - 1 - (n) + ARRLEN(gMatState.history)) : (gMatState.historyI - 1 - (n))]
+#endif // RENDERHOOK_UOT
+
 } gMatState; /* material state magic */
 
 const Mtx sClearMtx = {
@@ -171,6 +220,372 @@ const Mtx sClearMtx = {
 	.mf[2] = { 0.0f, 0.0f, 1.0f, 0.0f },
 	.mf[3] = { 0.0f, 0.0f, 0.0f, 1.0f },
 };
+
+#ifdef RENDERHOOK_UOT // functions, direct copy-paste from datablobs.c
+
+#define Min(A, B) ((A) < (B) ? (A) : (B))
+
+// gbi extras
+/* dl push flag */
+#define G_DL_PUSH   0
+#define G_DL_NOPUSH 1
+/* 10.2 fixed point */
+typedef uint16_t qu102_t;
+#define qu102_I(x) \
+    ((signed int)((x) >> 2))
+#define G_SIZ_BYTES(siz) (G_SIZ_BITS(siz) / 8)
+#define ALIGN8(x) (((x) + 7) & ~7)
+
+#define READ_32_BE(BYTES, OFFSET) ( \
+	(((const uint8_t*)(BYTES))[OFFSET + 0] << 24) | \
+	(((const uint8_t*)(BYTES))[OFFSET + 1] << 16) | \
+	(((const uint8_t*)(BYTES))[OFFSET + 2] <<  8) | \
+	(((const uint8_t*)(BYTES))[OFFSET + 3] <<  0) \
+)
+
+#define ARRLEN(X) (sizeof(X) / sizeof(*(X)))
+#define FALLTHROUGH __attribute__((fallthrough))
+#define SIZEOF_GFX 8
+#define SIZEOF_MTX 0x40
+#define SIZEOF_VTX 0x10
+#define SHIFTL(v, s, w) \
+	((uint32_t)(((uint32_t)(v) & ((0x01 << (w)) - 1)) << (s)))
+#define SHIFTR(v, s, w) \
+	((uint32_t)(((uint32_t)(v) >> (s)) & ((0x01 << (w)) - 1)))
+#define ShiftR SHIFTR
+
+// TODO consolidate it all somehow eventually so no duplicate code
+static int Pow2(int val)
+{
+	int i = 1;
+	while (i < val)
+		i <<= 1;
+	return i;
+}
+static int PowOf(int val)
+{
+	int num = 1;
+	int i = 0;
+	while (num < val)
+	{
+		num <<= 1;
+		i += 1;
+	}
+	return i;
+}
+static float Fixed2Float(float v, int b)
+{
+	float FIXED2FLOATRECIP[] = { 0.5F, 0.25F, 0.125F, 0.0625F, 0.03125F
+		, 0.015625F, 0.0078125F, 0.00390625F, 0.001953125F, 0.0009765625F
+		, 0.00048828125F, 0.000244140625F, 0.000122070313F, 0.0000610351563F
+		, 0.0000305175781F, 0.0000152587891F
+	};
+	return v * FIXED2FLOATRECIP[b - 1];
+}
+static void CalculateTexSize(int id)
+{
+	int MaxTexel = 0;
+	int Line_Shift = 0;
+	
+	switch (Textures(id).TexFormatUOT)
+	{
+		case 0x00: case 0x40:
+			MaxTexel = 4096;
+			Line_Shift = 4;
+			break;
+		case 0x60: case 0x80:
+			MaxTexel = 8192;
+			Line_Shift = 4;
+			break;
+		case 0x8: case 0x48:
+			MaxTexel = 2048;
+			Line_Shift = 3;
+			break;
+		case 0x68: case 0x88:
+			MaxTexel = 4096;
+			Line_Shift = 3;
+			break;
+		case 0x10: case 0x70:
+			MaxTexel = 2048;
+			Line_Shift = 2;
+			break;
+		case 0x50: case 0x90:
+			MaxTexel = 2048;
+			Line_Shift = 0;
+			break;
+		case 0x18:
+			MaxTexel = 1024;
+			Line_Shift = 2;
+			break;
+	}
+	
+	int Line_Width = Textures(id).LineSize << Line_Shift;
+	
+	int Tile_Width = Textures(id).LRS - Textures(id).ULS + 1;
+	int Tile_Height = Textures(id).LRT - Textures(id).ULT + 1;
+	
+	int Mask_Width = 1 << Textures(id).MaskS;
+	int Mask_Height = 1 << Textures(id).MaskT;
+	
+	int Line_Height = 0;
+	if (Line_Width > 0)
+		Line_Height = Min(MaxTexel / Line_Width, Tile_Height);
+	
+	// NPOT
+	// FIXME not working
+	if (false)
+	{
+		if (Textures(id).MaskS > 0 && ((Mask_Width * Mask_Height) <= MaxTexel))
+			Textures(id).RealWidth = Mask_Width;
+		else if ((Tile_Width * Tile_Height) <= MaxTexel)
+			Textures(id).RealWidth = Tile_Width;
+		else
+			Textures(id).RealWidth = (Textures(id).Width >> 2) + 1;//Line_Width;
+		
+		if (Textures(id).MaskT > 0 && ((Mask_Width * Mask_Height) <= MaxTexel))
+			Textures(id).RealHeight = Mask_Height;
+		else if ((Tile_Width * Tile_Height) <= MaxTexel)
+			Textures(id).RealHeight = Tile_Height;
+		else
+			Textures(id).RealHeight = Min(Line_Height, (Textures(id).Height >> 2) + 1);//Line_Height;
+		
+		#ifndef NDEBUG
+		{
+			int width = Textures(id).RealWidth;
+			int height = Textures(id).RealHeight;
+			int siz = Textures(id).TexelSize;
+			size_t size = 0;
+			
+			// old method was returning 0 here
+			if (siz == G_IM_SIZ_4b) size = (width * height) / 2;
+			else size = G_SIZ_BYTES(siz) * width * height;
+			
+			//if (size > 4096) Die("this shouldn't happen");
+		}
+		#endif
+		
+		return;
+	}
+	
+	if (Textures(id).MaskS > 0 && ((Mask_Width * Mask_Height) <= MaxTexel))
+		Textures(id).Width = Mask_Width;
+	else if ((Tile_Width * Tile_Height) <= MaxTexel)
+		Textures(id).Width = Tile_Width;
+	else
+		Textures(id).Width = Line_Width;
+	
+	if (Textures(id).MaskT > 0 && ((Mask_Width * Mask_Height) <= MaxTexel))
+		Textures(id).Height = Mask_Height;
+	else if ((Tile_Width * Tile_Height) <= MaxTexel)
+		Textures(id).Height = Tile_Height;
+	else
+		Textures(id).Height = Line_Height;
+	
+	int Clamp_Width = 0;
+	int Clamp_Height = 0;
+	if (Textures(id).CMS == 1)
+		Clamp_Width = Tile_Width;
+	else
+		Clamp_Width = Textures(id).Width;
+	if (Textures(id).CMT == 1)
+		Clamp_Height = Tile_Height;
+	else
+		Clamp_Height = Textures(id).Height;
+	
+	if (Mask_Width > Textures(id).Width)
+	{
+		Textures(id).MaskS = PowOf(Textures(id).Width);
+		Mask_Width = 1 << Textures(id).MaskS;
+	}
+	if (Mask_Height > Textures(id).Height)
+	{
+		Textures(id).MaskT = PowOf(Textures(id).Height);
+		Mask_Height = 1 << Textures(id).MaskT;
+	}
+	
+	if (Textures(id).CMS == 2 || Textures(id).CMS == 3)
+		Textures(id).RealWidth = Pow2(Clamp_Width);
+	else if (Textures(id).CMS == 1)
+		Textures(id).RealWidth = Pow2(Mask_Width);
+	else
+		Textures(id).RealWidth = Pow2(Textures(id).Width);
+	
+	if (Textures(id).CMT == 2 || Textures(id).CMT == 3)
+		Textures(id).RealHeight = Pow2(Clamp_Height);
+	else if (Textures(id).CMT == 1)
+		Textures(id).RealHeight = Pow2(Mask_Height);
+	else
+		Textures(id).RealHeight = Pow2(Textures(id).Height);
+	
+	Textures(id).ShiftS = 1.0f;
+	Textures(id).ShiftT = 1.0f;
+	
+	if (Textures(id).TShiftS > 10)
+		Textures(id).ShiftS = (1 << (16 - Textures(id).TShiftS));
+	else if (Textures(id).TShiftS > 0)
+		Textures(id).ShiftS /= (1 << Textures(id).TShiftS);
+	
+	if (Textures(id).TShiftT > 10)
+		Textures(id).ShiftT = (1 << (16 - Textures(id).TShiftT));
+	else if (Textures(id).TShiftT > 0)
+		Textures(id).ShiftT /= (1 << Textures(id).TShiftT);
+	
+	Textures(id).TextureHRatio = ((Textures(id).T_Scale * Textures(id).ShiftT) / 32.0f / Textures(id).RealHeight);
+	Textures(id).TextureWRatio = ((Textures(id).S_Scale * Textures(id).ShiftS) / 32.0f / Textures(id).RealWidth);
+}
+#endif // RENDERHOOK_UOT
+
+#ifdef RENDERHOOK_UOT // implementation
+
+#define RENDERHOOK_UOT_COMMON \
+	const uint8_t *data = cmd; (void)data; \
+	uint32_t w0 = u32r(data); (void)w0; \
+	uint32_t w1 = u32r(data + 4); (void)w1; \
+
+static bool UOT_gbiFunc_settimg(void* cmd)
+{
+	RENDERHOOK_UOT_COMMON
+	
+	bool palMode = data[8] == G_RDPTILESYNC;
+	if (HISTORY_GET(0) == G_SETTILESIZE)
+	{
+		CurrentTex = 1;
+		if (true) // GLExtensions.GLMultiTexture And GLExtensions.GLFragProg
+			MultiTexCoord = true;
+		else if (false)
+			MultiTexCoord = false;
+		MultiTexture = true;
+	}
+	else
+	{
+		CurrentTex = 0;
+		MultiTexCoord = false;
+		MultiTexture = false;
+	}
+	if (palMode)
+		Textures(0).Dram = w1;
+	else
+		Textures(CurrentTex).Dram = w1;
+	
+	return false;
+}
+
+static bool UOT_gbiFunc_settile(void* cmd)
+{
+	RENDERHOOK_UOT_COMMON
+	
+	//If .CMDParams(1) > 0 Then SETTILE(.CMDLow, .CMDHigh)
+	{
+		//int tile = SHIFTR(w1, 24, 3);
+		
+		Textures(CurrentTex).TexFormatUOT = (w0 >> 16) & 0xff; // uot
+		Textures(CurrentTex).TexFormat =   SHIFTR(w0, 21, 3);
+		Textures(CurrentTex).TexelSize =   SHIFTR(w0, 19, 2);
+		Textures(CurrentTex).LineSize =  SHIFTR(w0,  9, 9);
+		//tileDescriptors[tile].tmem =  SHIFTR(w0,  0, 9); // unused
+		//tileDescriptors[tile].pal =   SHIFTR(w1, 20, 4); // unused
+		Textures(CurrentTex).CMT = ShiftR(w1, 18, 2);
+		Textures(CurrentTex).CMS = ShiftR(w1, 8, 2);
+		Textures(CurrentTex).MaskS = ShiftR(w1, 4, 4);
+		Textures(CurrentTex).MaskT = ShiftR(w1, 14, 4);
+		Textures(CurrentTex).TShiftS = ShiftR(w1, 0, 4);
+		Textures(CurrentTex).TShiftT = ShiftR(w1, 10, 4);
+		
+		// getting linesize of 8 on a 32x32 rgba truecolor texture,
+		// should be 16, so maybe this math is required?
+		if (Textures(CurrentTex).TexelSize == G_IM_SIZ_32b)
+			Textures(CurrentTex).LineSize *= 2;
+	}
+	
+	void* imgaddr = n64_segment_get(Textures(CurrentTex).Dram);
+	if (!imgaddr)
+	{
+		static uint8_t *blank = 0;
+		
+		if (!blank)
+		{
+			int mem = 4096;
+			
+			blank = malloc(mem);
+			
+			memset(blank, -1, mem);
+		}
+		
+		imgaddr = blank;
+		
+		//fprintf(stderr, "couldn't %08x, using blank\n", Textures(CurrentTex).Dram);
+	}
+	gMatState.timg.imgaddr = imgaddr;
+	gMatState.tile[CurrentTex].doUpdate = true;
+	gMatState.tile[CurrentTex].data = gMatState.timg.imgaddr;
+	
+	return false;
+}
+
+static bool UOT_gbiFunc_settilesize(void* cmd)
+{
+	RENDERHOOK_UOT_COMMON
+	
+	{
+		Textures(CurrentTex).ULS =  SHIFTR(w0, 12, 12);
+		Textures(CurrentTex).ULT =  SHIFTR(w0,  0, 12);
+		Textures(CurrentTex).LRS =  SHIFTR(w1, 12, 12);
+		Textures(CurrentTex).LRT =  SHIFTR(w1,  0, 12);
+		Textures(CurrentTex).Width =  ((Textures(CurrentTex).LRS - Textures(CurrentTex).ULS) + 1);
+		Textures(CurrentTex).Height = ((Textures(CurrentTex).LRT - Textures(CurrentTex).ULT) + 1);
+	}
+	
+	CalculateTexSize(CurrentTex);
+	
+	return false;
+}
+
+static bool UOT_gbiFunc_texture(void* cmd)
+{
+	RENDERHOOK_UOT_COMMON
+	
+	uint32_t w1x = w1 & 0x00ffffff;
+	for (int i = 0; i <= 1; ++i)
+	{
+		if (ShiftR(w1x, 16, 16) < 0xFFFF)
+			Textures(i).S_Scale = Fixed2Float(ShiftR(w1x, 16, 16), 16);
+		else
+			Textures(i).S_Scale = 1.0F;
+		
+		if (ShiftR(w1x, 0, 16) < 0xFFFF)
+			Textures(i).T_Scale = Fixed2Float(ShiftR(w1x, 0, 16), 16);
+		else
+			Textures(i).T_Scale = 1.0F;
+		
+		// uot algorithm (above) doesn't work, but this does:
+		Textures(i).S_Scale = u16r(data + 4) * (1.0f / UINT16_MAX);
+		Textures(i).T_Scale = u16r(data + 6) * (1.0f / UINT16_MAX);
+	}
+	
+	return false;
+}
+
+static bool UOT_gbiFunc_loadtlut(void* cmd)
+{
+	RENDERHOOK_UOT_COMMON
+	
+	uint32_t addr = Textures(0).Dram;
+	uint32_t count = SHIFTR(w1, 14, 10) + 1;
+	const void *realAddr;
+	
+	//fprintf(stderr, "loadtlut %08x\n", addr);
+	
+	if ((realAddr = n64_segment_get(addr)))
+	{
+		size_t size = ALIGN8(G_SIZ_BYTES(G_IM_SIZ_16b) * count);
+		
+		memcpy(gMatState.pal, realAddr, size);
+	}
+	
+	return false;
+}
+
+#endif // RENDERHOOK_UOT
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -372,6 +787,19 @@ static void do_mtl(void* addr) {
 		int width = ((gMatState.tile[tile].lrs >> 2) - (gMatState.tile[tile].uls >> 2)) + 1;
 		int height = ((gMatState.tile[tile].lrt >> 2) - (gMatState.tile[tile].ult >> 2)) + 1;
 		
+	#ifdef RENDERHOOK_UOT
+		gMatState.tile[tile].lrs = Textures(tile).LRS;
+		gMatState.tile[tile].lrt = Textures(tile).LRT;
+		gMatState.tile[tile].uls = Textures(tile).ULS;
+		gMatState.tile[tile].ult = Textures(tile).ULT;
+		gMatState.tile[tile].cmT = Textures(tile).CMT;
+		gMatState.tile[tile].cmS = Textures(tile).CMS;
+		gMatState.tile[tile].fmt = Textures(tile).TexFormat;
+		gMatState.tile[tile].siz = Textures(tile).TexelSize;
+		width = Textures(tile).RealWidth;
+		height = Textures(tile).RealHeight;
+	#endif
+		
 		int fmt = gMatState.tile[tile].fmt;
 		int siz = gMatState.tile[tile].siz;
 		
@@ -418,6 +846,11 @@ static void do_mtl(void* addr) {
 		//memcpy(tmem, src, bytes); /* TODO dxt emulation requires line-by-line */
 		if (isNew && gTexelCacheCount < N64_TEXTURE_CACHE_SIZE)	{
 			uint8_t wow[4096 * 8];
+		#ifdef RENDERHOOK_UOT
+			width = Textures(tile).Width;
+			height = Textures(tile).Height;
+			fprintf(stderr, "append %p %08x %dx%d\n", gMatState.tile[tile].data, Textures(tile).Dram, width, height);
+		#endif
 			n64texconv_to_rgba8888(
 				wow
 				,
@@ -432,7 +865,11 @@ static void do_mtl(void* addr) {
 				width
 				,
 				height
+			#ifdef RENDERHOOK_UOT
+				, Textures(tile).LineSize
+			#else
 				, 0 // TODO lineSize
+			#endif
 			);
 			//fprintf(stderr, "width height %d %d\n", width, height);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, wow);
@@ -907,6 +1344,12 @@ static bool gbiFunc_vtx(void* cmd) {
 		
 		mtx_mul_vec4(&modelPos, &dst->pos, gMatrix.modelNow);
 		
+	#ifdef RENDERHOOK_UOT
+		dst->texcoord0.u = vtx->u * Textures(0).TextureWRatio;
+		dst->texcoord0.v = vtx->v * Textures(0).TextureHRatio;
+		dst->texcoord1.u = vtx->u * Textures(1).TextureWRatio;
+		dst->texcoord1.v = vtx->v * Textures(1).TextureHRatio;
+	#else
 		dst->texcoord0.u = vtx->u * (1.0 / 1024) * (32.0 / gMatState.texWidth);
 		dst->texcoord0.v = vtx->v * (1.0 / 1024) * (32.0 / gMatState.texHeight);
 		dst->texcoord1.u = dst->texcoord0.u;
@@ -921,6 +1364,7 @@ static bool gbiFunc_vtx(void* cmd) {
 		dst->texcoord1.v *= gMatState.tile[1].shiftT_m;
 		dst->texcoord1.u -= gMatState.tile[1].uls / 128.0f; /* TODO hard-coded why? */
 		dst->texcoord1.v -= gMatState.tile[1].ult / 128.0f; /* TODO hard-coded why? */
+	#endif
 		
 		if (gVertexColors) {
 			dst->color.x = vtx->color.r * (1.0 / 255.0);
@@ -1510,6 +1954,15 @@ static GbiFunc gGbi[0xFF] = {
 	
 	[GX_MODE] =           gbiFunc_xmode,
 	[GX_HILIGHT] =        gbiFunc_xhlight,
+	
+#ifdef RENDERHOOK_UOT
+	[G_SETTIMG] = UOT_gbiFunc_settimg,
+	[G_SETTILE] = UOT_gbiFunc_settile,
+	[G_SETTILESIZE] = UOT_gbiFunc_settilesize,
+	[G_TEXTURE] = UOT_gbiFunc_texture,
+	[G_LOADTLUT] = UOT_gbiFunc_loadtlut,
+#endif
+
 };
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -1677,7 +2130,13 @@ static void n64_drawImpl(void* dlist) {
 	
 	for (cmd = dlist; ; cmd += 8) {
 		//fprintf(stderr, "%08x %08x\n", u32r(cmd), u32r(cmd + 4));
-		if (gGbi[*cmd] && gGbi[*cmd](cmd))
+		bool shouldExit = (gGbi[*cmd] && gGbi[*cmd](cmd));
+	#ifdef RENDERHOOK_UOT
+		// Update history ringbuffer
+		gMatState.history[gMatState.historyI] = *cmd;
+		gMatState.historyI = (gMatState.historyI + 1) % ARRLEN(gMatState.history);
+	#endif
+		if (shouldExit)
 			break;
 	}
 }
