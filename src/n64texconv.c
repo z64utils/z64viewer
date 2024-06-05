@@ -431,6 +431,7 @@ texture_to_rgba8888(
 	, enum n64texconv_bpp bpp
 	, int w
 	, int h
+	, int lineSize // optional: how many 64-bit values per row
 )
 {
 	struct vec4b *color = (struct vec4b *)dst;
@@ -439,6 +440,66 @@ texture_to_rgba8888(
 	int i;
 	unsigned int sz;
 	int is_1bit = 0;//(n64_colorfunc == N64_COLOR_FUNC_NAME(onebit));
+	
+	// optional texture conversion using lineSize
+	// (iterates forwards instead of backwards, so dst and src can't overlap)
+	if (lineSize > 0)
+	{
+		alt = 0;
+		
+		// lineSize = how many 64-bit values per row
+		for (int y = 0; y < h; ++y, pix += lineSize * sizeof(uint64_t))
+		{
+			uint8_t *row = pix;
+			
+			for (int x = 0; x < w; ++x)
+			{
+				unsigned char *b = row;
+				unsigned char c;
+				
+				/* 4bpp setup */
+				if (is_4bit)
+				{
+					c = *b;
+					b = &c;
+					if (!(alt))
+						c >>=  4;
+					else
+						c &=  15;
+				}
+				
+				/* color-indexed */
+				if (is_ci)
+				{
+					/* the * 2 is b/c ci textures have 16-bit color palettes */
+					
+					/* 4bpp */
+					if (is_4bit)
+						b = pal + c * 2;
+					else
+						b = pal + *row * 2;
+				}
+				
+				/* convert pixel */
+				n64_colorfunc(color, b);
+				
+				/* pixel advancement logic */
+				/* 4bpp */
+				if (is_4bit)
+					row += alt;
+				/* 32bpp */
+				else if (bpp == N64TEXCONV_32)
+					row += 4;
+				/* 8bpp and 16bpp */
+				else
+					row += bpp;
+				++color;
+				alt = !alt;
+			}
+		}
+		
+		return;
+	}
 	
 	/* determine resulting size */
 	sz = get_size_bytes(w, h, is_1bit, bpp);
@@ -662,6 +723,7 @@ n64texconv_to_rgba8888(
 	, enum n64texconv_bpp bpp
 	, int w
 	, int h
+	, int lineSize
 )
 {
 	/* error strings this function can return */
@@ -705,6 +767,7 @@ n64texconv_to_rgba8888(
 		, bpp
 		, w
 		, h
+		, lineSize
 	);
 	
 	/* success */
@@ -797,7 +860,7 @@ n64texconv_to_n64_and_back(
 	if (err)
 		return err;
 	
-	err = n64texconv_to_rgba8888(pix, pix, pal, fmt, bpp, w, h);
+	err = n64texconv_to_rgba8888(pix, pix, pal, fmt, bpp, w, h, 0);
 	if (err)
 		return err;
 	

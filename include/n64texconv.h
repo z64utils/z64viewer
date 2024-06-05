@@ -53,7 +53,8 @@ n64texconv_to_rgba8888(
 	enum n64texconv_fmt fmt,
 	enum n64texconv_bpp bpp,
 	int w,
-	int h
+	int h,
+	int lineSize // optional: how many 64-bit values per row
 );
 
 /* convert RGBA8888 to N64 texture data

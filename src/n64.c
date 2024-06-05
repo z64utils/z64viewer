@@ -432,6 +432,7 @@ static void do_mtl(void* addr) {
 				width
 				,
 				height
+				, 0 // TODO lineSize
 			);
 			//fprintf(stderr, "width height %d %d\n", width, height);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, wow);
