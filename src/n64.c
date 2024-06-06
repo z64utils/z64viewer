@@ -824,19 +824,23 @@ static void do_mtl(void* addr) {
 		gMatState.texWidth = width;
 		gMatState.texHeight = height;
 		
+		// TODO mirror and clamp should be able to be combined
+		//      in order to accurately emulate everything
+		//      (do it at the shader level)
 		switch (gMatState.tile[tile].cmT) {
 			case G_TX_MIRROR:
 				wrapT = GL_MIRRORED_REPEAT;
 				break;
+			case G_TX_CLAMP | G_TX_MIRROR:
 			case G_TX_CLAMP:
 				wrapT = GL_CLAMP_TO_EDGE;
 				break;
 		}
-		
 		switch (gMatState.tile[tile].cmS) {
 			case G_TX_MIRROR:
 				wrapS = GL_MIRRORED_REPEAT;
 				break;
+			case G_TX_CLAMP | G_TX_MIRROR:
 			case G_TX_CLAMP:
 				wrapS = GL_CLAMP_TO_EDGE;
 				break;
