@@ -65,6 +65,14 @@ static void mtx_mul_vec4(N64Vector3* src, N64Vector4* vec, Mtx* mf) {
 	vec->w = mf->ww + (mf->wx * src->x + mf->wy * src->y + mf->wz * src->z);
 }
 
+static N64Vector3 mtx_mul_vec3(N64Vector3 vec, Mtx* mf) {
+	N64Vector3 src = vec;
+	vec.x = mf->xw + (mf->xx * src.x + mf->xy * src.y + mf->xz * src.z);
+	vec.y = mf->yw + (mf->yx * src.x + mf->yy * src.y + mf->yz * src.z);
+	vec.z = mf->zw + (mf->zx * src.x + mf->zy * src.y + mf->zz * src.z);
+	return vec;
+}
+
 static void mtx_mul_vec3_rot(N64Vector3* src, N64Vector3* vec, Mtx* mf) {
 	vec->x = (mf->xx * src->x + mf->xy * src->y + mf->xz * src->z);
 	vec->y = (mf->yx * src->x + mf->yy * src->y + mf->yz * src->z);

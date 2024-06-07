@@ -32,6 +32,12 @@
 
 #define SHADER_SOURCE(...) "#version 330 core\n" # __VA_ARGS__
 
+// TODO is it possible to combine both calculations?
+#define N64_RSP_TEXTURE_GEN        0b01000000000000000000
+#define N64_RSP_TEXTURE_GEN_LINEAR 0b10000000000000000000
+
+#define UNFOLD_VEC3_EXT(v, action)   (v).x action, (v).y action, (v).z action
+
 // new rendering based on UoT (see DataBlobSegmentsPopulateFromMeshNew() in z64scene)
 // TODO is super messy and could use some cleanup
 // (you can comment out #define RENDERHOOK_UOT to go back to the original method)
@@ -88,6 +94,7 @@ static GbiLightsN sLights;
 static struct {
 	//float model[16];
 	Mtx  view;
+	Mtx  normal;
 	Mtx  projection;
 	Mtx  modelStack[N64_MTX_STACK_SIZE];
 	Mtx* modelNow;
@@ -168,6 +175,7 @@ static struct {
 	float    k5;               // TODO not yet populated
 	uint32_t geometrymode;
 	bool     mixFog;           // Condition to mix fog into the material
+	unsigned texgen:2;
 
 #ifdef RENDERHOOK_UOT
 	struct {
@@ -1374,6 +1382,62 @@ static bool gbiFunc_vtx(void* cmd) {
 		dst->texcoord1.u = vtx->u * Textures(1).TextureWRatio;
 		dst->texcoord1.v = vtx->v * Textures(1).TextureHRatio;
 		
+		// https://github.com/z64me/zzviewer-rrw
+		// TODO texgen uses hard-coded texture sizes
+		if (gMatState.texgen)
+		{
+			N64Vector3 norm;
+			// GL_EYE_LINEAR
+		#if 0
+			// try doing some texgen stuff
+			/* zzviewer-rrw code, for reference
+			vec4 V = vec4_transform(ctx->modelview, vert->pos);
+			struct vec4 e = vec4_normalize3(&V);
+			struct vec4 n = vec4_transform(ctx->projection, vert->col);
+			vec4_normalize3_inplace(&n);
+			
+			struct vec4 r = reflect(&e, &n);
+			float m = 2 * sqrt(r.x*r.x + r.y*r.y + (r.z+1)*(r.z+1));
+			vert->uv.x = r.x / m + 0.5f;
+			vert->uv.y = r.y / m + 0.5f;
+			vert->uv.x *= 16;
+			vert->uv.y *= 16;
+			*/
+		#endif
+			/* zzviewer-rrw
+			struct vec4 n = vec4_transform(ctx->normalmatrix, vert->norm);
+			vec4_normalize3_inplace(&n);
+			vert->uv.x = (n.x + 1) / 2;
+			vert->uv.y = (n.y + 1) / 2;
+			*/
+			{
+				norm = (N64Vector3){ UNFOLD_VEC3_EXT(vtx->normal, * (1.0 / 127.0)) };
+				norm = mtx_mul_vec3(norm, &gMatrix.normal);
+				norm = vec3_normalize(norm);
+			}
+		#if 0 // linear?
+			//vec4_normalize2_inplace(&n);
+			norm.x = acos(norm.x);
+			norm.y = acos(norm.y);
+		#endif
+			/* zzviewer-rrw
+			// TODO 8 or 16? likely varies with texture dimensions...
+			norm.x *= 16;
+			norm.y *= 16;
+			*/
+			// zzviewer-rrw multiplied a value, not necessary here?
+			
+			// approximate spherical
+			//norm.x /= 8;
+			//norm.y /= 8;
+			
+			// apply to uv's
+			dst->texcoord0.u = norm.x;
+			dst->texcoord0.v = norm.y;
+			dst->texcoord1.u = norm.x;
+			dst->texcoord1.v = norm.y;
+		}
+		
 		// scrolling textures
 		// TODO make not hard-coded
 		dst->texcoord0.u -= Textures(0).ULS / 128.0f;
@@ -1730,6 +1794,12 @@ static bool gbiFunc_geometrymode(void* cmd) {
 	if (setbits & G_ZBUFFER)
 		glEnable(GL_DEPTH_TEST);
 	
+	// texgen
+	gMatState.texgen = (gMatState.geometrymode
+		& (N64_RSP_TEXTURE_GEN | N64_RSP_TEXTURE_GEN_LINEAR)
+	) >> 18;
+	//if (gMatState.texgen) fprintf(stderr, "texgen = %d\n", gMatState.texgen);
+	
 	/* backface/frontface culling */
 	glEnable(GL_CULL_FACE);
 	switch (gMatState.geometrymode & (G_CULL_FRONT | G_CULL_BACK)) {
@@ -1959,6 +2029,72 @@ static bool gbiFunc_xhlight(void* cmd) {
 	return false;
 }
 
+// https://github.com/z64me/zzviewer-rrw
+static void recompute_normal_matrix(void)
+{
+	float det, m[16], f[18], *normal;
+	int i, j;
+	
+	const float *mv = (void*)&gMatrix.view;
+	normal = (void*)&gMatrix.normal;
+	
+	/* m = inverse( mv ) */
+	f[ 0] = mv[10] * mv[15] - mv[11] * mv[14];
+	f[ 1] = mv[ 7] * mv[14] - mv[ 6] * mv[15];
+	f[ 2] = mv[ 6] * mv[11] - mv[ 7] * mv[10];
+	f[ 3] = mv[ 2] * mv[15] - mv[ 3] * mv[14];
+	f[ 4] = mv[ 3] * mv[10] - mv[ 2] * mv[11];
+	f[ 5] = mv[ 2] * mv[ 7] - mv[ 3] * mv[ 6];
+	f[ 6] = mv[ 9] * mv[15] - mv[11] * mv[13];
+	f[ 7] = mv[ 7] * mv[13] - mv[ 5] * mv[15];
+	f[ 8] = mv[ 5] * mv[11] - mv[ 7] * mv[ 9];
+	f[ 9] = mv[ 1] * mv[15] - mv[ 3] * mv[13];
+	f[10] = mv[ 3] * mv[ 9] - mv[ 1] * mv[11];
+	f[11] = mv[ 1] * mv[ 7] - mv[ 3] * mv[ 5];
+	f[12] = mv[10] * mv[13] - mv[ 9] * mv[14];
+	f[13] = mv[ 5] * mv[14] - mv[ 6] * mv[13];
+	f[14] = mv[ 6] * mv[ 9] - mv[ 5] * mv[10];
+	f[15] = mv[ 2] * mv[13] - mv[ 1] * mv[14];
+	f[16] = mv[ 1] * mv[10] - mv[ 2] * mv[ 9];
+	f[17] = mv[ 2] * mv[ 5] - mv[ 1] * mv[ 6];
+	
+	m[ 0] =  mv[5] * f[ 0] + mv[9] * f[ 1] + mv[13] * f[ 2];
+	m[ 1] = -mv[1] * f[ 0] + mv[9] * f[ 3] + mv[13] * f[ 4];
+	m[ 2] = -mv[1] * f[ 1] - mv[5] * f[ 3] + mv[13] * f[ 5];
+	m[ 3] = -mv[1] * f[ 2] - mv[5] * f[ 4] - mv[ 9] * f[ 5];
+	
+	m[ 4] = -mv[4] * f[ 0] - mv[8] * f[ 1] - mv[12] * f[ 2];
+	m[ 5] =  mv[0] * f[ 0] - mv[8] * f[ 3] - mv[12] * f[ 4];
+	m[ 6] =  mv[0] * f[ 1] + mv[4] * f[ 3] - mv[12] * f[ 5];
+	m[ 7] =  mv[0] * f[ 2] + mv[4] * f[ 4] + mv[ 8] * f[ 5];
+	
+	m[ 8] =  mv[4] * f[ 6] + mv[8] * f[ 7] + mv[12] * f[ 8];
+	m[ 9] = -mv[0] * f[ 6] + mv[8] * f[ 9] + mv[12] * f[10];
+	m[10] = -mv[0] * f[ 7] - mv[4] * f[ 9] + mv[12] * f[11];
+	m[11] = -mv[0] * f[ 8] - mv[4] * f[10] - mv[ 8] * f[11];
+	
+	m[12] =  mv[4] * f[12] + mv[8] * f[13] + mv[12] * f[14];
+	m[13] =  mv[0] * f[12] + mv[8] * f[15] + mv[12] * f[16];
+	m[14] = -mv[0] * f[13] - mv[4] * f[15] + mv[12] * f[17];
+	m[15] = -mv[0] * f[14] - mv[4] * f[16] - mv[ 8] * f[17];
+	
+	det = mv[0] * m[0] + mv[1] * m[4] + mv[2] * m[8] + mv[3] * m[12];
+	
+	/* normal = transpose(inverse(mv)) = transpose(m/det) */
+	if ((det < -FLT_MIN) || (det > FLT_MIN)) {
+		det = 1.0f / det;
+		
+		for (i = 0; i < 4; ++i) {
+			for (j = 0; j < 4; ++j) {
+				normal[i*4 + j] = m[j*4 + i] * det;
+			}
+		}
+	} else {
+		memset(normal, 0, sizeof(float) * 16);
+		normal[0] = normal[5] = normal[10] = normal[15] = 1.0f;
+	}
+}
+
 static GbiFunc gGbi[0xFF] = {
 	[G_VTX] =             gbiFunc_vtx,
 	[G_CULLDL] =          gbiFunc_culldl,
@@ -2098,6 +2234,7 @@ void n64_mtx_model(void* data) {
 
 void n64_mtx_view(void* data) {
 	memcpy(&gMatrix.view, data, sizeof(gMatrix.view));
+	recompute_normal_matrix();
 }
 
 void n64_mtx_projection(void* data) {
