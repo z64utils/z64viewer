@@ -354,7 +354,7 @@ static void CalculateTexSize(int id)
 			int width = Textures(id).RealWidth;
 			int height = Textures(id).RealHeight;
 			int siz = Textures(id).TexelSize;
-			size_t size = 0;
+			size_t size = 0; (void)size;
 			
 			// old method was returning 0 here
 			if (siz == G_IM_SIZ_4b) size = (width * height) / 2;
@@ -1274,7 +1274,8 @@ static void othermode(void) {
 	 *
 	 * Required further investigation.
 	 */
-	if ((lo & G_RM_CYCLE1_MASK) == GBL_c1(G_BL_CLR_IN, G_BL_0, G_BL_CLR_IN, G_BL_1))
+	//if ((lo & G_RM_CYCLE1_MASK) == GBL_c1(G_BL_CLR_IN, G_BL_0, G_BL_CLR_IN, G_BL_1))
+	if (lo >> 30 == 0)
 		gMatState.mixFog = false;
 	
 	gCurrentZmode = (indep & 0b0000110000000) >> 7;
