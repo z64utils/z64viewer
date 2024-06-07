@@ -906,6 +906,7 @@ static void do_mtl(void* addr) {
 			((uint64_t)gFogEnabled << 63)
 			| ((uint64_t)(gCvgXalpha || gForceBl) << 62)
 			| ((uint64_t)(gMatState.xhighlight.mode != 0) << 61)
+			| ((uint64_t)gMatState.mixFog << 60)
 			| ((uint64_t)(gMatState.setcombine.hi & 0x00ffffff) << 32)
 			| (gMatState.setcombine.lo)
 		;
@@ -1259,8 +1260,10 @@ static void try_draw_tri_batch(const uint8_t* b) {
 }
 
 static void othermode(void) {
-	#define G_RM_CYCLE1_MASK 0xCCCC0000
-	#define G_RM_CYCLE2_MASK 0x33330000
+	///////// PARAMETER ////////////////// PPPP AAAA MMMM BBBB
+	#define G_RM_CYCLE1_MASK 0xCCCC0000 // 1100 1100 1100 1100
+	#define G_RM_CYCLE2_MASK 0x33330000 // 0011 0011 0011 0011
+	///////// CYCLE NO. ////////////////// 1122 1122 1122 1122
 	uint32_t hi = gMatState.othermode_hi;
 	uint32_t lo = gMatState.othermode_lo;
 	uint32_t indep = (lo & 0b1111111111111000) >> 3;
@@ -1275,6 +1278,7 @@ static void othermode(void) {
 	 * Required further investigation.
 	 */
 	//if ((lo & G_RM_CYCLE1_MASK) == GBL_c1(G_BL_CLR_IN, G_BL_0, G_BL_CLR_IN, G_BL_1))
+	//if (!(((lo & G_RM_CYCLE1_MASK) >> (16 + 14)) & G_BL_CLR_FOG))
 	if (lo >> 30 == 0)
 		gMatState.mixFog = false;
 	
