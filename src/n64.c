@@ -1440,10 +1440,10 @@ static bool gbiFunc_vtx(void* cmd) {
 		
 		// scrolling textures
 		// TODO make not hard-coded
-		dst->texcoord0.u -= Textures(0).ULS / 128.0f;
-		dst->texcoord0.v -= Textures(0).ULT / 128.0f;
-		dst->texcoord1.u -= Textures(1).ULS / 128.0f;
-		dst->texcoord1.v -= Textures(1).ULT / 128.0f;
+		dst->texcoord0.u -= (Textures(0).ULS / 128.0f) / (Textures(0).RealWidth  / 32.0f);
+		dst->texcoord0.v -= (Textures(0).ULT / 128.0f) / (Textures(0).RealHeight / 32.0f);
+		dst->texcoord1.u -= (Textures(1).ULS / 128.0f) / (Textures(1).RealWidth  / 32.0f);
+		dst->texcoord1.v -= (Textures(1).ULT / 128.0f) / (Textures(1).RealHeight / 32.0f);
 	#else
 		dst->texcoord0.u = vtx->u * (1.0 / 1024) * (32.0 / gMatState.texWidth);
 		dst->texcoord0.v = vtx->v * (1.0 / 1024) * (32.0 / gMatState.texHeight);
