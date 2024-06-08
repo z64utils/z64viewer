@@ -36,6 +36,7 @@
 #define N64_RSP_TEXTURE_GEN        0b01000000000000000000
 #define N64_RSP_TEXTURE_GEN_LINEAR 0b10000000000000000000
 
+#define UNFOLD_VEC3(v)               (v).x, (v).y, (v).z
 #define UNFOLD_VEC3_EXT(v, action)   (v).x action, (v).y action, (v).z action
 
 // new rendering based on UoT (see DataBlobSegmentsPopulateFromMeshNew() in z64scene)
@@ -1932,14 +1933,31 @@ static bool gbiFunc_moveword(void* cmd) {
 }
 
 static bool gbiFunc_branch_z(void* cmd) {
-	// uint8_t* b = cmd;
-	// uint32_t hi = u32r(b);
-	// uint32_t lo = u32r(b + 4);
-	// int vbidx0 = ((hi >> 12) & 0xfff) / 5;
-	// int vbidx1 = (hi & 0xfff) / 2;
+	uint8_t* b = cmd;
+	uint32_t hi = u32r(b);
+	uint32_t lo = u32r(b + 4);
+	int vbidx0 = ((hi >> 12) & 0xfff) / 5;
+	int vbidx1 = (hi & 0xfff) / 2;
 	
-	/* TODO simulate branching; for now, just draw everything */
-	n64_drawImpl(n64_segment_get(gRdpHalf1));
+	assert(vbidx0 == vbidx1);
+	assert(vbidx0 < N64_VBUF_MAX);
+	
+	N64Vector3 vtx = { UNFOLD_VEC3(sVbuf[vbidx0].pos) };
+	
+	vtx = mtx_mul_vec3(vtx, gMatrix.modelNow);
+	vtx = mtx_mul_vec3(vtx, &gMatrix.view);
+	vtx = mtx_mul_vec3(vtx, &gMatrix.projection);
+	
+	float z = vtx.z;
+	
+	//fprintf(stderr, "vtx.z = %f vs %d\n", vtx.z, lo);
+	
+	// simulate branching
+	if (z <= lo)
+	{
+		n64_drawImpl(n64_segment_get(gRdpHalf1));
+		return true;
+	}
 	
 	return false;
 }
