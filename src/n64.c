@@ -1177,7 +1177,7 @@ static N64Vector4 light_bind_all(N64Vector3 vtxPos, N64Vector3 vtxNor) {
 }
 
 static void try_draw_tri_batch(const uint8_t* b) {
-	if (!( (b[8] != G_TRI1 && b[8] != G_TRI2) || gIndicesUsed + 6 >= N64_ARRAY_COUNT(gIndices) ))
+	if (!( (b[8] != G_TRI1 && b[8] != G_TRI2 && b[8] != G_QUAD) || gIndicesUsed + 6 >= N64_ARRAY_COUNT(gIndices) ))
 		return;
 	
 	if (s_tri_callback) {
@@ -2100,6 +2100,7 @@ static GbiFunc gGbi[0xFF] = {
 	[G_CULLDL] =          gbiFunc_culldl,
 	[G_TRI1] =            gbiFunc_tri1,
 	[G_TRI2] =            gbiFunc_tri2,
+	[G_QUAD] =            gbiFunc_tri2, // quad and tri2 take the same args
 	[G_SETTIMG] =         gbiFunc_settimg,
 	[G_TEXTURE] =         gbiFunc_texture,
 	[G_LOADTLUT] =        gbiFunc_loadtlut,
