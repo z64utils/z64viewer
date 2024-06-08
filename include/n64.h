@@ -50,11 +50,11 @@ extern void* n64_segment[N64_SEGMENT_MAX];
 #define POLY_XLU_DISP n64_poly_xlu_disp
 
 enum N64ZMode {
-	N64_ZMODE_OPA,
-	N64_ZMODE_INTER,
-	N64_ZMODE_XLU,
-	N64_ZMODE_DEC,
-	N64_ZMODE_ALL
+	N64_ZMODE_OPA    = 0b0001,
+	N64_ZMODE_INTER  = 0b0010,
+	N64_ZMODE_XLU    = 0b0100,
+	N64_ZMODE_DEC    = 0b1000,
+	N64_ZMODE_ALL    = 0b1111
 };
 
 enum N64GeoLayer {

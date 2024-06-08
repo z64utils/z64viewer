@@ -1294,6 +1294,9 @@ static void othermode(void) {
 	gForceBl = (indep & 0b0100000000000) >> 11;
 	gCvgXalpha = (indep & 0b0001000000000) >> 9;
 	
+	static uint8_t zmodes[] = { N64_ZMODE_OPA, N64_ZMODE_INTER, N64_ZMODE_XLU, N64_ZMODE_DEC };
+	gCurrentZmode = zmodes[gCurrentZmode];
+	
 	switch (hi & (0b11 << G_MDSFT_TEXTFILT)) {
 		case G_TF_POINT:
 			gFilterMode = GL_NEAREST;
@@ -1313,7 +1316,7 @@ static void othermode(void) {
 	}
 	
 	gHideGeometry = false;
-	if (gOnlyThisZmode != N64_ZMODE_ALL && gCurrentZmode != gOnlyThisZmode)
+	if (gOnlyThisZmode != N64_ZMODE_ALL && !(gOnlyThisZmode & gCurrentZmode))
 		gHideGeometry = true;
 	
 	if (!gHideGeometry && gOnlyThisGeoLayer != N64_GEOLAYER_ALL) {
@@ -2381,10 +2384,15 @@ void n64_buffer_flush(bool drawDecalsSeparately)
 	gSPEndDisplayList(POLY_XLU_DISP++);
 	if (drawDecalsSeparately)
 	{
-		n64_set_onlyZmode(N64_ZMODE_OPA);
+		// supports maps that have xlu on the opa layer
+		n64_set_onlyZmode(N64_ZMODE_OPA | N64_ZMODE_INTER | N64_ZMODE_XLU);
 		n64_draw_dlist(n64_poly_opa_head);
+		
+		// decals
 		n64_set_onlyZmode(N64_ZMODE_DEC);
 		n64_draw_dlist(n64_poly_opa_head);
+		
+		// draw xlu
 		n64_set_onlyZmode(N64_ZMODE_ALL);
 		n64_draw_dlist(n64_poly_xlu_head);
 	}
