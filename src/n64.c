@@ -1316,6 +1316,9 @@ static void othermode(void) {
 		glDisable(GL_BLEND);
 	}
 	
+	// fixes overlapping transparency where used (uncommon)
+	glDepthMask(!(!gCvgXalpha && gForceBl));
+	
 	gHideGeometry = false;
 	if (gOnlyThisZmode != N64_ZMODE_ALL && !(gOnlyThisZmode & gCurrentZmode))
 		gHideGeometry = true;
