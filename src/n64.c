@@ -833,6 +833,29 @@ static void do_mtl(void* addr) {
 		gMatState.texWidth = width;
 		gMatState.texHeight = height;
 		
+// very hacky but seems to do a fine job distinguishing
+// between what looks best w/ GL_CLAMP vs GL_MIRRORED_REPEAT
+// in retail scenes
+#define MIRROR_CLAMP_HOTFIX(AXIS, axis) \
+	if (Textures(tile).Mask##AXIS \
+		&& (((gMatState.tile[tile].lr##axis >> 2) \
+			- (gMatState.tile[tile].ul##axis >> 2) \
+			) + 1 \
+		) != (1 << Textures(tile).Mask##AXIS) \
+	) { wrap##AXIS = GL_MIRRORED_REPEAT; break; }
+// this hotfix addresses clamped textures that actually wrap
+#define CLAMP_REPEAT_HOTFIX(AXIS, axis) \
+	if (Textures(tile).Mask##AXIS \
+		&& gMatState.tile[tile].cm##AXIS == G_TX_CLAMP \
+		&& (((gMatState.tile[tile].lr##axis >> 2) \
+			- (gMatState.tile[tile].ul##axis >> 2) \
+			) + 1 \
+		) != (1 << Textures(tile).Mask##AXIS) \
+	) \
+		wrap##AXIS = GL_REPEAT;
+// 99% of things look fine w/o the above hotfixes, they mostly
+// exist to address some very rare/odd corner cases
+
 		// TODO mirror and clamp should be able to be combined
 		//      in order to accurately emulate everything
 		//      (do it at the shader level)
@@ -841,6 +864,8 @@ static void do_mtl(void* addr) {
 				wrapT = GL_MIRRORED_REPEAT;
 				break;
 			case G_TX_CLAMP | G_TX_MIRROR:
+				MIRROR_CLAMP_HOTFIX(T, t)
+				// fallthrough
 			case G_TX_CLAMP:
 				wrapT = GL_CLAMP_TO_EDGE;
 				break;
@@ -850,10 +875,16 @@ static void do_mtl(void* addr) {
 				wrapS = GL_MIRRORED_REPEAT;
 				break;
 			case G_TX_CLAMP | G_TX_MIRROR:
+				MIRROR_CLAMP_HOTFIX(S, s)
+				// fallthrough
 			case G_TX_CLAMP:
 				wrapS = GL_CLAMP_TO_EDGE;
 				break;
 		}
+		
+		// address clamped textures that actually wrap
+		CLAMP_REPEAT_HOTFIX(T, t)
+		CLAMP_REPEAT_HOTFIX(S, s)
 		
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapS);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapT);
