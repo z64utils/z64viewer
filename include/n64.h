@@ -87,6 +87,7 @@ typedef struct {
 		bool cullBackface  : 1;
 		bool cullFrontface : 1;
 	};
+	uint32_t setId;
 } N64Tri;
 
 typedef bool (*N64CullCallback)(void* u_data, const N64Vtx*, uint32_t num);

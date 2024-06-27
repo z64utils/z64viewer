@@ -34,6 +34,9 @@
 #define GX_HILIGHT_MIX   0x05
 #define GX_HILIGHT_DODGE 0x06
 
+// sets a unique id that will be used for raycasting
+#define GX_SETID  0x82
+
 #include <string.h>
 #include <stdint.h>
 
@@ -3412,6 +3415,9 @@ extern uintptr_t __n64_pointer__;
 #define gsXPDrawOutline(r, g, b, f) gO_(GX_DRAW_OUTLINE, \
 		((uint8_t)r) << 24 | ((uint8_t)g) << 16 | (uint8_t)b << 8 | f, 0)
 #define gXPDrawOutline(gdl, ...)    gD_(gdl, gsXPDrawOutline, __VA_ARGS__)
+
+#define gsXPSetId(id)       gO_(GX_SETID, 0, id)
+#define gXPSetId(gdl, ...)  gD_(gdl, gsXPSetId, __VA_ARGS__)
 
 /* data types and structures */
 typedef uint8_t  qu08_t;

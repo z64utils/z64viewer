@@ -69,6 +69,7 @@ static void* s_cull_callback_data;
 static N64TriCallback s_tri_callback;
 static N64CullCallback s_cull_callback;
 
+static uint32_t gSetId;
 static uint32_t gRdpHalf1;
 static uint32_t gRdpHalf2;
 static uintptr_t gPtrHi = 0;
@@ -1223,7 +1224,8 @@ static void try_draw_tri_batch(const uint8_t* b) {
 				{
 					(gMatState.geometrymode & G_CULL_BACK),
 					(gMatState.geometrymode & G_CULL_FRONT),
-				}
+				},
+				.setId = gSetId
 			};
 			
 			s_tri_callback(s_tri_callback_data, &triData);
@@ -2084,6 +2086,13 @@ static bool gbiFunc_xhlight(void* cmd) {
 	return false;
 }
 
+static bool gbiFunc_setid(void* cmd) {
+	const uint8_t* b = cmd;
+	gSetId = u32r(b + 4);
+
+	return false;
+}
+
 // https://github.com/z64me/zzviewer-rrw
 static void recompute_normal_matrix(void)
 {
@@ -2183,6 +2192,7 @@ static GbiFunc gGbi[0xFF] = {
 	
 	[GX_MODE] =           gbiFunc_xmode,
 	[GX_HILIGHT] =        gbiFunc_xhlight,
+	[GX_SETID] =          gbiFunc_setid,
 	
 #ifdef RENDERHOOK_UOT
 	[G_SETTIMG] = UOT_gbiFunc_settimg,
