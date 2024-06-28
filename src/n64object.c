@@ -1,3 +1,6 @@
+
+#if 0 // shouldn't need
+
 #include "n64.h"
 #include "n64types.h"
 
@@ -284,3 +287,5 @@ void n64_object_draw(N64Object* self) {
 void n64_object_set_mtx(N64Object* self, const void* mtx) {
 	self->mtx = *(const Mtx*)mtx;
 }
+
+#endif // 0
