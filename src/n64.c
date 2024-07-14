@@ -985,6 +985,8 @@ static void do_mtl(void* addr) {
 				uniform mat4 view;
 				uniform mat4 projection;
 				uniform vec2 uFog;
+				uniform vec4 uMultiplyTexCoord;
+				uniform vec4 uShiftTexCoord;
 			
 				void main() {
 				float fogM = uFog.x;
@@ -993,8 +995,8 @@ static void do_mtl(void* addr) {
 			
 				gl_Position = projection * view * aPos;
 				vColor = aColor;
-				TexCoord0 = vec2(aTexCoord0.x, aTexCoord0.y);
-				TexCoord1 = vec2(aTexCoord1.x, aTexCoord1.y);
+				TexCoord0 = uMultiplyTexCoord.xy * vec2(aTexCoord0.x, aTexCoord0.y) - uShiftTexCoord.xy;
+				TexCoord1 = uMultiplyTexCoord.zw * vec2(aTexCoord1.x, aTexCoord1.y) - uShiftTexCoord.zw;
 				if (wow.w < 0)
 				{
 					vFog = -fogM + fogO;
@@ -1140,6 +1142,28 @@ static void do_mtl(void* addr) {
 		Shader_setFloat(shader, "uPrimLodFrac", gMatState.prim.lodfrac);
 		Shader_setInt(shader, "texture0", 0);
 		Shader_setInt(shader, "texture1", 1);
+	}
+}
+
+static inline void TryMtlReady(void *cmd) __attribute__((always_inline));
+static inline void TryMtlReady(void *cmd)
+{
+	if (!gMatState.mtlReady)
+	{
+		gMatState.mtlReady = 1;
+		do_mtl(cmd);
+		
+		// TODO optimize: create gShaderUniforms instead of looking up by string each time
+		Shader_setVec4(gShader, "uMultiplyTexCoord",
+			Textures(0).TextureWRatio, Textures(0).TextureHRatio,
+			Textures(1).TextureWRatio, Textures(1).TextureHRatio
+		);
+		Shader_setVec4(gShader, "uShiftTexCoord",
+			(Textures(0).ULS / 128.0f) / (Textures(0).RealWidth  / 32.0f),
+			(Textures(0).ULT / 128.0f) / (Textures(0).RealHeight / 32.0f),
+			(Textures(1).ULS / 128.0f) / (Textures(1).RealWidth  / 32.0f),
+			(Textures(1).ULT / 128.0f) / (Textures(1).RealHeight / 32.0f)
+		);
 	}
 }
 
@@ -1399,10 +1423,7 @@ static bool gbiFunc_vtx(void* cmd) {
 	GbiVtx* vtx = n64_segment_get(u32r(b + 4));
 	N64Vtx* dst = sVbuf + vbidx;
 	
-	if (!gMatState.mtlReady) {
-		do_mtl(cmd);
-		gMatState.mtlReady = 1;
-	}
+	TryMtlReady(cmd);
 	
 	if (gHideGeometry)
 		return false;
@@ -1417,10 +1438,17 @@ static bool gbiFunc_vtx(void* cmd) {
 		mtx_mul_vec4(&modelPos, &dst->pos, gMatrix.modelNow);
 		
 	#ifdef RENDERHOOK_UOT
+		// XXX moved the multiplication into the shader (uMultiplyTexCoord)
+		dst->texcoord0.u = vtx->u;
+		dst->texcoord0.v = vtx->v;
+		dst->texcoord1.u = vtx->u;
+		dst->texcoord1.v = vtx->v;
+		/* // the math that was moved into the shader:
 		dst->texcoord0.u = vtx->u * Textures(0).TextureWRatio;
 		dst->texcoord0.v = vtx->v * Textures(0).TextureHRatio;
 		dst->texcoord1.u = vtx->u * Textures(1).TextureWRatio;
 		dst->texcoord1.v = vtx->v * Textures(1).TextureHRatio;
+		*/
 		
 		// https://github.com/z64me/zzviewer-rrw
 		// TODO texgen uses hard-coded texture sizes
@@ -1480,10 +1508,13 @@ static bool gbiFunc_vtx(void* cmd) {
 		
 		// scrolling textures
 		// TODO make not hard-coded
+		// XXX moved this math into shader (uShiftTexCoord)
+		/*
 		dst->texcoord0.u -= (Textures(0).ULS / 128.0f) / (Textures(0).RealWidth  / 32.0f);
 		dst->texcoord0.v -= (Textures(0).ULT / 128.0f) / (Textures(0).RealHeight / 32.0f);
 		dst->texcoord1.u -= (Textures(1).ULS / 128.0f) / (Textures(1).RealWidth  / 32.0f);
 		dst->texcoord1.v -= (Textures(1).ULT / 128.0f) / (Textures(1).RealHeight / 32.0f);
+		*/
 	#else
 		dst->texcoord0.u = vtx->u * (1.0 / 1024) * (32.0 / gMatState.texWidth);
 		dst->texcoord0.v = vtx->v * (1.0 / 1024) * (32.0 / gMatState.texHeight);
@@ -1554,6 +1585,8 @@ static bool gbiFunc_culldl(void* cmd) {
 static bool gbiFunc_tri1(void* cmd) {
 	uint8_t* b = cmd;
 	
+	TryMtlReady(cmd);
+	
 	if (gHideGeometry)
 		return false;
 	
@@ -1568,6 +1601,8 @@ static bool gbiFunc_tri1(void* cmd) {
 
 static bool gbiFunc_tri2(void* cmd) {
 	uint8_t* b = cmd;
+	
+	TryMtlReady(cmd);
 	
 	if (gHideGeometry)
 		return false;
