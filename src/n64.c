@@ -1452,6 +1452,7 @@ static bool gbiFunc_vtx(void* cmd) {
 		
 		// https://github.com/z64me/zzviewer-rrw
 		// TODO texgen uses hard-coded texture sizes
+		// TODO use more accurate method (this code only approximates texgen uv's)
 		if (gMatState.texgen)
 		{
 			N64Vector3 norm;
@@ -1504,6 +1505,13 @@ static bool gbiFunc_vtx(void* cmd) {
 			dst->texcoord0.v = norm.y;
 			dst->texcoord1.u = norm.x;
 			dst->texcoord1.v = norm.y;
+			
+			// shader multiplies by these, so divide here to counteract that
+			// TODO texgen textures can also scroll, so need hack for that too
+			dst->texcoord0.u /= Textures(0).TextureWRatio;
+			dst->texcoord0.v /= Textures(0).TextureHRatio;
+			dst->texcoord1.u /= Textures(1).TextureWRatio;
+			dst->texcoord1.v /= Textures(1).TextureHRatio;
 		}
 		
 		// scrolling textures
