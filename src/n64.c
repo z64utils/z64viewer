@@ -1958,6 +1958,11 @@ static bool gbiFunc_popmtx(void* cmd) {
 	int num = u32r(b + 4) / 0x40;
 	
 	gMatrix.modelNow -= num;
+	
+	// safety
+	if (gMatrix.modelNow < gMatrix.modelStack)
+		gMatrix.modelNow = gMatrix.modelStack;
+	
 	assert(gMatrix.modelNow >= gMatrix.modelStack && "matrix stack underflow");
 	
 	return false;
