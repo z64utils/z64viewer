@@ -34,7 +34,7 @@ typedef _Bool bool;
 #endif
 
 #define N64_SEGMENT_MAX 16
-#define N64_VBUF_MAX    32
+#define N64_VBUF_MAX    64 // originally 32
 
 #define N64_CLAMP(val, min, max) ((val) < (min) ? (min) : (val) > (max) ? (max) : (val))
 #define N64_ARRAY_COUNT(arr)     (uint32_t)(sizeof(arr) / sizeof(arr[0]))
